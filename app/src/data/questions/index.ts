@@ -5,8 +5,8 @@ import ragQuestions from "./rag.json";
 import agentQuestions from "./agent.json";
 import ontologyQuestions from "./ontology.json";
 import tuningQuestions from "./tuning.json";
-import { evalQuestions } from "./eval";
-import { engineeringQuestions } from "./engineering";
+import evalQuestions from "./eval.json";
+import engineeringQuestions from "./engineering.json";
 
 /**
  * 题库源数据是 JSON（由 tools/gen-questions.mjs 校验 / 生成），
