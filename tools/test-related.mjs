@@ -21,6 +21,8 @@ const APP = "app";
 // （来自 walk，原本是相对路径）无法比较，会漏选测试。
 const SRC = resolve(APP, "src");
 const EXTS = [".ts", ".tsx"];
+/** 题库源数据是 JSON，改动它同样要能选中依赖它的测试。 */
+const SOURCE_RE = /\.(tsx?|json)$/;
 
 function walk(dir, out = []) {
   for (const name of readdirSync(dir)) {
@@ -72,7 +74,7 @@ if (useAll) {
     .split("\n")
     .filter(Boolean)
     .map((p) => resolve(p))
-    .filter((p) => p.startsWith(resolve(SRC)) && /\.tsx?$/.test(p));
+    .filter((p) => p.startsWith(resolve(SRC)) && SOURCE_RE.test(p));
 }
 
 const changedSet = new Set(changed);

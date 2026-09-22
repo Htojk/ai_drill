@@ -11,4 +11,9 @@ set -e
 node tools/check-commit-size.mjs --staged
 node tools/check-layers.mjs
 
+# 动了题库源数据或出题流水线，就跑一遍题库不变量校验（含每个错项的 wrongReason、来源原文片段）
+if git diff --cached --name-only | grep -qE '^(app/src/data/questions/.*\.json|tools/gen-questions\.mjs)$'; then
+  node tools/gen-questions.mjs --check
+fi
+
 exit 0

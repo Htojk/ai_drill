@@ -49,7 +49,8 @@ node tools/finish-task.mjs --task T-00N \
 
 | 你要做的事 | 该读的文件 | 大致行数 |
 | --- | --- | --- |
-| 加/改某分类的题 | `data/questions/<分类>.ts` + `data/questions/index.ts` | 各 ~75 行 |
+| 加/改某分类的题 | `data/questions/<分类>.json`（源数据）+ `data/questions/index.ts` | 各 ~145 行 |
+| 出题流水线（素材 → 草稿 → 合并） | `tools/gen-questions.mjs` | ~330 行 |
 | 改每日出题规则 | `lib/recommend.ts` | ~180 行 |
 | 改间隔重复节奏 | `lib/review.ts` | ~31 行 |
 | 改本地存储 / 导出码 | `lib/storage.ts` | ~170 行 |
@@ -147,7 +148,7 @@ node tools/finish-task.mjs --task T-003 --message "feat(scope): 说明" --eviden
 - 不要为了让测试通过而放宽断言，或删掉既有用例。
 - 不要在 `pages/` 里写业务规则（那属于 `lib/`）；页面负责渲染与交互。
 - 不要跨层反向 import（见第 1 节）。
-- 不要把题库数据写回 `data/questions.ts`（那是组装入口），新增题一律加到对应分类文件。
+- 不要把题目写进 `data/questions/index.ts`（那是组装入口），新增题一律加到对应分类的 `.json`。
 - 不要引入重量级依赖（UI 框架、状态库、jsdom 等）而不先说明理由。
 - 不要提交 `app/dist/`、`node_modules/`（已在 `.gitignore`）。
 
@@ -167,13 +168,27 @@ tools/                        约束与流程脚本
   check-layers.mjs            分层方向 + 文件体积门禁
   test-related.mjs            只跑相关测试
   finish-task.mjs             收尾：校验 + 测试 + 计划 + 提交
+  gen-icons.mjs               生成 PWA / iOS 的 PNG 图标
+  gen-questions.mjs           出题流水线：--check 校验题库 / --draft 生成草稿 / --merge 合并
 app/src/
   types.ts                    全局类型（最底层）
-  data/questions/index.ts      题库组装 + 查询
-  data/questions/<分类>.ts     分类题库（加题只动这里）
+  data/questions/index.ts      题库组装 + 查询（把 JSON 断言成 Question[]）
+  data/questions/<分类>.json   分类题库源数据（加题只动这里）
   lib/                         纯逻辑，可测
   pages/                       页面渲染
   App.tsx                      路由与状态编排
 ```
+
+### 题库改动流程
+
+```bash
+node tools/gen-questions.mjs --check                                   # 校验题库不变量
+node tools/gen-questions.mjs --draft content/sources/<素材>.md --offline # 生成草稿（无 key 也能跑）
+node tools/gen-questions.mjs --merge content/drafts/<草稿>.json RAG      # 校验后合并进题库
+```
+
+- 题库源数据是 `data/questions/*.json`，运行时由 `index.ts` import 进来。
+- 草稿写在 `content/drafts/`（已 gitignore），人工修订来源与解析后再 merge。
+- 合并会改变题目顺序：记得同步 `data/questions/all.test.ts` 里的 `EXPECTED_IDS`。
 
 （v0.1 · 2026-09-22 建立）
