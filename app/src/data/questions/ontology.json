@@ -2081,5 +2081,440 @@
       "url": "https://www.w3.org/TR/owl2-primer/",
       "snippet": "OWL 2 is an ontology language for the Semantic Web with formally defined meaning."
     }
+  },
+  {
+    "id": "q_onto_056",
+    "type": "short",
+    "isPractice": false,
+    "stem": "GraphRAG 这类「图 + 检索」的方案，主要想解决传统 RAG 的什么短板？",
+    "options": [],
+    "referenceAnswer": "向量 RAG 擅长「找相似段落」，但面对「这批文档整体在讨论哪些主题」这类全局问题时，无论怎么调 top-k 都只能取到局部片段。GraphRAG 先从文档中抽取实体与关系构建图，然后对图做社区划分并生成社区摘要，查询时按层级逐步汇总，从而支持全局性、总结性提问。代价是索引构建更重、抽取质量直接影响结果，且文档更新需要同步维护图结构。",
+    "keyPoints": [
+      "传统 RAG 按语义相似度取片段，难以回答需要跨文档汇总的全局性问题",
+      "图方案先抽取实体与关系构成图，再通过社区划分与摘要支持「整体性」提问",
+      "代价是构建成本高、抽取有噪声，且更新链路更复杂"
+    ],
+    "explanation": "选型判断很简单：问题需要「局部证据」就用向量检索，需要「全局概览」才值得上图。",
+    "extension": "图抽取可以用 LLM 完成，但要用一致性校验与人工抽检控制噪声。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "GraphRAG",
+      "全局问答"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "From Local to Global: A Graph RAG Approach to Query-Focused Summarization",
+      "url": "https://arxiv.org/abs/2404.16130",
+      "snippet": "We propose GraphRAG, a graph-based approach to retrieval augmented generation."
+    }
+  },
+  {
+    "id": "q_onto_057",
+    "type": "short",
+    "isPractice": false,
+    "stem": "实体链接的候选生成与消歧分别要解决什么？常见做法是什么？",
+    "options": [],
+    "referenceAnswer": "候选生成阶段用别名表、字符串相似度或稠密检索，目标是「不漏」，因此通常召回几十个候选。消歧阶段综合两方面证据：先验（该实体被链接的频率、是否是页面标题）与上下文（提及周围的词、所属主题），按分数排序取最优。此外必须处理 NIL 情况——知识库里确实没有这个实体，强行链接会产生错误事实，这比不链接更糟。",
+    "keyPoints": [
+      "候选生成从词表或索引中召回该提及可能对应的若干实体，追求高召回",
+      "消歧结合上下文在候选中选出最可能的实体，常用先验流行度 + 上下文相似度",
+      "难点在于同名异义、缩写与别名、以及知识库里根本没有对应实体（NIL）"
+    ],
+    "explanation": "实体链接的错误会直接变成图谱里的错误事实，因此宁可返回 NIL 也不要硬链。",
+    "extension": "别名表的质量决定候选生成的上限：常见简称、缩写、历史名称都应显式维护。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "实体链接",
+      "消歧"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "A Survey on Knowledge Graphs: Representation, Acquisition and Applications",
+      "url": "https://arxiv.org/abs/2002.00388",
+      "snippet": "Knowledge Graphs (KGs) have gained increasing attention in recent years."
+    }
+  },
+  {
+    "id": "q_onto_058",
+    "type": "short",
+    "isPractice": false,
+    "stem": "关系抽取有哪些技术路线？在 LLM 时代该怎么选？",
+    "options": [],
+    "referenceAnswer": "三条路线各有位置：规则适合格式稳定的文本（票据、日志），准确且可解释，但换一种表述就失效；监督模型在有标注数据时效果好，代价是标注成本与迭代周期；LLM 抽取几乎没有冷启动成本，能处理多样表述，但会编造关系、同一文本多次抽取结果可能不一致。务实做法是「LLM 抽候选 + 规则/校验器过滤 + 关键关系人工抽检」，并把抽取结果与原文片段绑定以支持核验。",
+    "keyPoints": [
+      "规则/模式匹配：准确率高、覆盖窄，适合结构固定的文本与关键场景",
+      "监督模型：需要标注数据，泛化较好但标注成本高",
+      "LLM 抽取（含少样本提示）：上手快、覆盖广，但存在幻觉与不一致，需要校验"
+    ],
+    "explanation": "不论哪条路线，抽取结果都要保留来源片段，否则无法验证也无法追责。",
+    "extension": "可以用一致性检查（同一文本多次抽取取交集）来过滤 LLM 的不稳定输出。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "关系抽取",
+      "LLM"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "A Survey on Knowledge Graphs: Representation, Acquisition and Applications",
+      "url": "https://arxiv.org/abs/2002.00388",
+      "snippet": "Knowledge Graphs (KGs) have gained increasing attention in recent years."
+    }
+  },
+  {
+    "id": "q_onto_059",
+    "type": "short",
+    "isPractice": false,
+    "stem": "远监督（distant supervision）为什么会产生大量噪声？怎么缓解？",
+    "options": [],
+    "referenceAnswer": "远监督用知识库中已有的关系作为标签，把同时出现这两个实体的句子都标成该关系。问题很直接：一句话里同时出现「苹果」和「乔布斯」，并不代表这句话在说「创始人」关系，可能只是并列提及。因此训练数据里混入大量假正例。缓解办法是多实例学习（把一个实体对的多句话作为一个包，只取最有证据的一句）配合注意力机制；工程上还要用置信度阈值过滤，并用小规模人工标注验证阈值是否合理。",
+    "keyPoints": [
+      "它假设「包含两个实体的句子都表达它们之间的关系」，这个假设本身不成立",
+      "缓解手段包括多实例学习、注意力机制筛选、以及置信度过滤与人工抽检",
+      "另一条路是用少量人工标注做校准与阈值选择"
+    ],
+    "explanation": "远监督是「用已有知识换标注成本」的交易，噪声是结构性代价而不是可以彻底消除的 bug。",
+    "extension": "对关键关系建议保留人工复核环节，尤其是会影响下游决策的关系。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "远监督",
+      "噪声"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "A Survey on Knowledge Graphs: Representation, Acquisition and Applications",
+      "url": "https://arxiv.org/abs/2002.00388",
+      "snippet": "Knowledge Graphs (KGs) have gained increasing attention in recent years."
+    }
+  },
+  {
+    "id": "q_onto_060",
+    "type": "short",
+    "isPractice": false,
+    "stem": "图神经网络（GNN）在知识图谱上主要用来做什么？",
+    "options": [],
+    "referenceAnswer": "GNN 把邻居节点的信息按边聚合到中心节点，使表示包含结构信息，因此常用于链接预测（补全缺失关系）、实体分类（预测缺失类型）与推荐。它的优势是能高效利用多跳结构，且容易和特征结合；短板是可解释性——它能给出「这两者可能相关」的分数，但无法给出可核验的证据链。对需要审计的场景，通常还要回到显式路径或规则推理。",
+    "keyPoints": [
+      "学习实体与关系的表示用于链接预测、实体分类与推荐",
+      "通过邻居聚合把图结构信息融入表示，能利用多跳结构信息",
+      "与纯图结构方法相比可扩展性好，但可解释性弱，难以给出推理链"
+    ],
+    "explanation": "工程上常见组合是「GNN 召回候选 + 显式路径或规则验证」。",
+    "extension": "GNN 的效果高度依赖图的质量：噪声边会沿着聚合传播，放大错误。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "图神经网络",
+      "表示学习"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "A Survey on Knowledge Graphs: Representation, Acquisition and Applications",
+      "url": "https://arxiv.org/abs/2002.00388",
+      "snippet": "Knowledge Graphs (KGs) have gained increasing attention in recent years."
+    }
+  },
+  {
+    "id": "q_onto_061",
+    "type": "short",
+    "isPractice": false,
+    "stem": "知识图谱链接预测的评估有哪些常见陷阱？",
+    "options": [],
+    "referenceAnswer": "三个常见陷阱：一是不做 filtering，测试三元组的其他正确答案出现在候选里被算作错误排名；二是划分方式不当，随机划分会让训练集里包含测试实体的其他关系，导致分数虚高，更合理的是按时间或按实体划分；三是把预测分数当成事实——链接预测的输出应当作候选供人工或下游验证，直接写入图谱会引入错误。",
+    "keyPoints": [
+      "必须使用 filtered setting，否则其他正确三元组排名会压低指标",
+      "随机划分数据会导致信息泄漏，应按时间或实体划分测试集",
+      "要区分「预测结果正确」与「事实为真」，模型的输出是候选而非事实"
+    ],
+    "explanation": "报告结果时要写清划分方式与 filtering 设置，否则数字不可比。",
+    "extension": "对高风险领域，建议报告前 K 候选中的人工准确率而不仅是自动指标。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "链接预测",
+      "评估陷阱"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "A Survey on Knowledge Graphs: Representation, Acquisition and Applications",
+      "url": "https://arxiv.org/abs/2002.00388",
+      "snippet": "Knowledge Graphs (KGs) have gained increasing attention in recent years."
+    }
+  },
+  {
+    "id": "q_onto_062",
+    "type": "short",
+    "isPractice": false,
+    "stem": "知识融合时出现事实冲突（同一属性多个不同取值）该怎么处理？",
+    "options": [],
+    "referenceAnswer": "冲突处理的第一步是分类：同名不同人属于数据错误需去重；「CEO 是 A」与「CEO 是 B」可能是不同时期的真实事实，属于时效差异；「营收 10 亿」与「营收 12 亿」也可能是统计口径不同。分类之后才能制定规则：时效类按时间保留多个值并标注有效期；可信度类按来源等级赋权；口径类需要模型层面显式区分（用不同属性表达）。无论哪种，都应保留全部来源，而不是直接覆盖导致证据丢失。",
+    "keyPoints": [
+      "先区分冲突类型：数据错误、时效差异、还是定义口径不同",
+      "按时效与来源可信度赋权，保留全部来源与时间以便追溯",
+      "无法自动裁决时保留多值并标注来源，而不是任选一个覆盖"
+    ],
+    "explanation": "直接覆盖是知识融合中最常见的错误：短期看起来干净，长期无法解释「为什么变成这个值」。",
+    "extension": "把来源与置信度作为一等公民存储，是后续做冲突消解与审计的前提。",
+    "difficulty": 5,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "知识融合",
+      "冲突消解"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "PROV-O: The PROV Ontology",
+      "url": "https://www.w3.org/TR/prov-o/",
+      "snippet": "The PROV Ontology (PROV-O) expresses the PROV Data Model using the OWL2 Web Ontology Language."
+    }
+  },
+  {
+    "id": "q_onto_063",
+    "type": "short",
+    "isPractice": false,
+    "stem": "如何在知识图谱中表达事实的时间有效性？",
+    "options": [],
+    "referenceAnswer": "RDF 三元组本身没有时间维度，常见做法是「具体化」：要么为每条事实建一个带 validFrom/validTo 的中间节点，要么使用 RDF-star 之类的扩展在三元组上直接附属性。查询时必须显式过滤时间，否则历史事实会与当前事实一起返回。此外要统一语义约定：结束时间是否包含、未知的结束时间用什么表示、如何表达「不确定的起始时间」。",
+    "keyPoints": [
+      "用具体化的方式给三元组加上时间区间（起始/结束），例如 qualified relation 模式",
+      "查询时需要显式加上时间条件，否则会命中过期事实",
+      "时间区间要统一语义：闭区间还是开区间、是否允许未知端点"
+    ],
+    "explanation": "没有时间维度的图谱在业务上会持续出错，只是错误很难被立刻发现。",
+    "extension": "常见替代方案是保持当前态与历史态两张表，简单但会牺牲跨时间的联合查询能力。",
+    "difficulty": 5,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "时间知识图谱",
+      "建模"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "PROV-O: The PROV Ontology",
+      "url": "https://www.w3.org/TR/prov-o/",
+      "snippet": "The PROV Ontology (PROV-O) expresses the PROV Data Model using the OWL2 Web Ontology Language."
+    }
+  },
+  {
+    "id": "q_onto_064",
+    "type": "short",
+    "isPractice": false,
+    "stem": "「事件」和「状态」在本体里应该怎么建模？为什么不建议直接建成类？",
+    "options": [],
+    "referenceAnswer": "类描述的是「一组同质的对象」，而一次具体的会议、一次发布是一个有时间有参与者的具体发生，属于个体。如果把它建成类，就很难自然地挂上时间、参与者这些属性，实例层次也会混乱。常见模式是定义事件类（如 Conference），用一个个体表示一次具体发生，再用属性连接参与者、时间、地点。状态则更适合用「带时间区间的属性值」或状态节点表达，以便记录变更历史。",
+    "keyPoints": [
+      "事件有参与者、时间、地点等结构化属性，更适合作个体（加类型）而不是类",
+      "状态是随时间变化的属性取值，通常用带时间区间的事实或状态节点表达",
+      "把事件建成类会导致「实例」语义混乱，也难以附加属性"
+    ],
+    "explanation": "区分的实用标准：能被「某年某月发生过一次」修饰的是事件个体，能被「属于某一类」修饰的是类。",
+    "extension": "事件建模常配合溯源信息，记录谁在什么时间把这条事实写入图谱。",
+    "difficulty": 5,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "事件建模",
+      "本体模式"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "OWL 2 Primer",
+      "url": "https://www.w3.org/TR/owl2-primer/",
+      "snippet": "OWL 2 is an ontology language for the Semantic Web with formally defined meaning."
+    }
+  },
+  {
+    "id": "q_onto_065",
+    "type": "short",
+    "isPractice": false,
+    "stem": "数据溯源（provenance）在知识图谱里为什么重要？怎么表达？",
+    "options": [],
+    "referenceAnswer": "没有溯源的图谱只能看到结论，无法回答「这条事实从哪来、谁写的、什么时候写的」。这在冲突消解（该信谁）、可信度评估（来源等级）、合规（删除请求需要定位数据来源）、以及错误排查（是抽取错了还是源文档错了）时都会卡住。表达方式上可以用 PROV-O 的实体-活动-主体三元组，也可以把来源、时间、抽取器版本作为属性挂在具体化的事实节点上，后者实现更简单、查询更方便。",
+    "keyPoints": [
+      "溯源支持冲突消解、可信度评估与合规审计，也是数据可删可改的前提",
+      "W3C PROV-O 提供了 entity/activity/agent 的标准表达，也可用具体化三元组挂来源",
+      "至少要记录来源文档、抽取方式、写入时间与责任人/流程"
+    ],
+    "explanation": "把溯源做成「事后补充」是行不通的：抽取阶段不记录，后面就再也补不回来。",
+    "extension": "溯源信息同时是数据删除能力的基础：能定位来源才谈得上按来源删除。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "溯源",
+      "PROV-O"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "PROV-O: The PROV Ontology",
+      "url": "https://www.w3.org/TR/prov-o/",
+      "snippet": "The PROV Ontology (PROV-O) expresses the PROV Data Model using the OWL2 Web Ontology Language."
+    }
+  },
+  {
+    "id": "q_onto_066",
+    "type": "short",
+    "isPractice": false,
+    "stem": "评估知识图谱质量应该看哪些维度？",
+    "options": [],
+    "referenceAnswer": "至少四类维度：准确率（抽样人工验证，是置信度的基础）、覆盖率/完整度（有多少目标实体与关系被收录，避免「查不到但其实存在」）、一致性（是否满足本体约束、是否存在矛盾事实）、时效性（事实的更新时间与有效期）。此外还应看链接质量（实体链接与对齐的正确率），因为错误链路会污染所有下游查询。指标要按领域分层报告，整体均值容易掩盖某个子领域的严重缺失。",
+    "keyPoints": [
+      "准确率：事实是否正确，通常靠人工抽检估计",
+      "覆盖率与完整度：相对目标领域遗漏了多少实体与关系",
+      "一致性与时效：是否满足本体约束与业务规则、事实是否已过期"
+    ],
+    "explanation": "只报准确率不报覆盖率会误导：一个只收录 1% 数据的图谱可以做到 100% 准确。",
+    "extension": "把抽检结果按来源与抽取器分组，能直接定位质量问题出在哪个环节。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "质量评估",
+      "指标"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "A Survey on Knowledge Graphs: Representation, Acquisition and Applications",
+      "url": "https://arxiv.org/abs/2002.00388",
+      "snippet": "Knowledge Graphs (KGs) have gained increasing attention in recent years."
+    }
+  },
+  {
+    "id": "q_onto_067",
+    "type": "short",
+    "isPractice": false,
+    "stem": "知识图谱可视化在工程中的作用是什么？",
+    "options": [],
+    "referenceAnswer": "可视化不是装饰：在数据校验阶段，孤岛节点（没有任何连接的实体）、密度异常的子图、错误的 sameAs 连接，往往一眼就能看出来。在评审阶段，把本体结构或推理路径画出来，能让业务方快速判断模型是否符合预期。在调试阶段，把一次图谱问答的检索路径可视化，能立刻看出是哪一跳走错了。",
+    "keyPoints": [
+      "用于人工校验：直观发现孤岛、断链、错误对齐与异常中心节点",
+      "用于沟通：向业务方解释模型结构与推理结果，降低评审成本",
+      "也是调试工具：把查询结果与推理路径画出来，便于定位问题"
+    ],
+    "explanation": "可视化要配「可点击到证据」的能力，否则只是好看的图，无法用于验证。",
+    "extension": "大图要先做聚合或按社区分层展示，否则节点一多就失去可读性。",
+    "difficulty": 3,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "可视化",
+      "人工校验"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "A Survey on Knowledge Graphs: Representation, Acquisition and Applications",
+      "url": "https://arxiv.org/abs/2002.00388",
+      "snippet": "Knowledge Graphs (KGs) have gained increasing attention in recent years."
+    }
+  },
+  {
+    "id": "q_onto_068",
+    "type": "short",
+    "isPractice": false,
+    "stem": "上层本体（upper ontology）如 BFO、DOLCE 有什么用？值得引入吗？",
+    "options": [],
+    "referenceAnswer": "上层本体定义的是「任何领域都成立」的基本范畴与关系，例如 BFO 区分持续体与发生体、对象与过程。它的价值在多领域整合时最明显：若医学、制造、财务各自的本体都对齐到同一顶层，它们之间就可以进行有意义的概念映射。代价是抽象度高、上手成本大，团队需要理解这些范畴的取舍。对只服务单一领域、且没有跨域整合计划的项目，引入上层本体通常得不偿失。",
+    "keyPoints": [
+      "提供跨领域的顶层范畴（如持续体/发生体、对象/过程），让不同领域本体可以对齐",
+      "引入后可以复用标准的关系与约束，避免各领域各自为政",
+      "代价是抽象度高、学习成本大，小规模项目往往收益有限"
+    ],
+    "explanation": "引入的时机是「出现跨领域整合的真实需求」，而不是「为了显得专业」。",
+    "extension": "折中做法是只借用顶层本体中最相关的几个范畴，而不是全套采纳。",
+    "difficulty": 5,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "上层本体",
+      "跨域对齐"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "OWL 2 Primer",
+      "url": "https://www.w3.org/TR/owl2-primer/",
+      "snippet": "OWL 2 is an ontology language for the Semantic Web with formally defined meaning."
+    }
+  },
+  {
+    "id": "q_onto_069",
+    "type": "short",
+    "isPractice": false,
+    "stem": "在大模型时代，本体还有价值吗？价值体现在哪里？",
+    "options": [],
+    "referenceAnswer": "本体解决的是「语义的定义与约束」，这恰恰是大模型的短板：模型知道很多，但同一次会话里对同一概念可能给出不同说法，也无法保证数字与关系的精确性。本体可以提供受控词表约束输出、可以提供可核验的结构化查询通道（问事实就去查图谱而不是让模型回忆）、也可以作为跨系统集成的契约。因此二者的关系是互补：本体制约语义与事实，模型负责理解自然语言与生成表达。",
+    "keyPoints": [
+      "为 LLM 提供受控术语与约束，减少歧义与不一致输出",
+      "支撑可核验的推理链与结构化查询，补足 LLM 无法保证的事实精确性",
+      "作为数据治理与系统集成的语义契约，让不同系统对概念达成一致"
+    ],
+    "explanation": "把本体当作「LLM 的约束层与验证层」，是最容易落地的结合方式。",
+    "extension": "实践中可以先从术语表 + SHACL 校验起步，不必先建完整形式化本体。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "本体价值",
+      "LLM"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "OWL 2 Primer",
+      "url": "https://www.w3.org/TR/owl2-primer/",
+      "snippet": "OWL 2 is an ontology language for the Semantic Web with formally defined meaning."
+    }
+  },
+  {
+    "id": "q_onto_070",
+    "type": "short",
+    "isPractice": false,
+    "stem": "知识图谱推理出来的新事实，可以直接当作证据展示给用户吗？",
+    "options": [],
+    "referenceAnswer": "推理的价值在于补全隐含信息，但它是基于前提的演绎：前提错了，结论一样会以确定的语气呈现。因此展示时必须同时给出推导依据（用了哪几条断言、走了哪条规则），让用户可以沿着链条回到原始数据。对影响较大的结论（合规判定、风险评分），应把推理结果视为候选，配合人工确认或附加置信度，而不是当作已核实的事实直接输出。",
+    "keyPoints": [
+      "推理事实应标注来源链（由哪些原始断言推出），否则无法核验",
+      "推断结果存在错误传播风险：错误的前提会推出看似合理的错误结论",
+      "对高风险场景，应把推断结果作为候选而非既定事实"
+    ],
+    "explanation": "「看起来很有道理」是推理结果最危险的地方：它比随机错误更容易被采信。",
+    "extension": "把推理链落库或可重放，是支持审计与排查的必要条件。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "推理",
+      "可解释性"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "OWL 2 Primer",
+      "url": "https://www.w3.org/TR/owl2-primer/",
+      "snippet": "OWL 2 is an ontology language for the Semantic Web with formally defined meaning."
+    }
   }
 ]
