@@ -1,0 +1,143 @@
+[
+  {
+    "id": "q_prompt_001",
+    "type": "single",
+    "isPractice": false,
+    "stem": "以下哪类任务最能从思维链（CoT）中获益？",
+    "options": [
+      {
+        "key": "A",
+        "content": "多步数学应用题",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "从文本中抽取关键词",
+        "isCorrect": false,
+        "wrongReason": "单步映射任务，展开推理没有收益，反而增加延迟。"
+      },
+      {
+        "key": "C",
+        "content": "情感二分类",
+        "isCorrect": false,
+        "wrongReason": "简单任务上 CoT 收益很小。"
+      },
+      {
+        "key": "D",
+        "content": "把 JSON 转成 YAML",
+        "isCorrect": false,
+        "wrongReason": "纯格式转换，确定性任务不需要推理。"
+      }
+    ],
+    "explanation": "CoT 的价值在于把需要多步才能完成的任务显式展开，让模型逐步分配计算。任务本身不需要多步推理时，收益接近于零。",
+    "extension": "对简单任务强行加 CoT，不仅增加 token 成本和延迟，还可能引入本不存在的中间错误。",
+    "difficulty": 2,
+    "categories": [
+      "提示工程"
+    ],
+    "tags": [
+      "CoT",
+      "提示策略"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "Chain-of-Thought Prompting Elicits Reasoning in Large Language Models",
+      "url": "https://arxiv.org/abs/2201.11903",
+      "snippet": "generating a chain of thought - a series of intermediate reasoning steps - significantly improves the ability..."
+    }
+  },
+  {
+    "id": "q_prompt_002",
+    "type": "single",
+    "isPractice": true,
+    "stem": "给分类任务写 few-shot 示例时，最需要注意示例的哪个属性？",
+    "options": [
+      {
+        "key": "A",
+        "content": "示例越多越好，把能塞的都塞进去",
+        "isCorrect": false,
+        "wrongReason": "占满上下文、抬高成本，还可能因分布失衡放大偏差。"
+      },
+      {
+        "key": "B",
+        "content": "标签分布应接近真实分布，同时注意近因偏差（越靠后的示例影响越大）",
+        "isCorrect": true
+      },
+      {
+        "key": "C",
+        "content": "示例必须按字母序排列",
+        "isCorrect": false,
+        "wrongReason": "字母序无依据，反而可能造成某种标签总是靠后。"
+      },
+      {
+        "key": "D",
+        "content": "只要示例本身正确，顺序完全无影响",
+        "isCorrect": false,
+        "wrongReason": "顺序会显著影响结果，这是被反复验证的现象。"
+      }
+    ],
+    "explanation": "示例标签分布失衡会让模型倒向多数标签；同时靠后的示例对输出影响更大，形成近因偏差。两者叠加会让指标虚高或虚低。",
+    "extension": "工程做法：对示例顺序做多次随机洗牌并集成结果，可明显降低方差，但代价是调用次数翻倍。",
+    "difficulty": 3,
+    "categories": [
+      "提示工程"
+    ],
+    "tags": [
+      "Few-shot",
+      "偏差"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "Fantastically Ordered Prompts and Where to Find Them",
+      "url": "https://arxiv.org/abs/2104.00703",
+      "snippet": "the order of examples in the prompt can cause accuracy to vary from near chance to near state-of-the-art..."
+    }
+  },
+  {
+    "id": "q_prompt_003",
+    "type": "single",
+    "isPractice": false,
+    "stem": "需要模型稳定输出可被程序解析的 JSON，最可靠的做法是？",
+    "options": [
+      {
+        "key": "A",
+        "content": "在提示词里写「请只输出 JSON，不要任何解释」",
+        "isCorrect": false,
+        "wrongReason": "属于软约束，仍有一定概率夹带解释文字导致解析失败。"
+      },
+      {
+        "key": "B",
+        "content": "使用支持 JSON Schema 约束的结构化输出能力",
+        "isCorrect": true
+      },
+      {
+        "key": "C",
+        "content": "调高温度让格式更灵活",
+        "isCorrect": false,
+        "wrongReason": "温度越高越不稳定，方向相反。"
+      },
+      {
+        "key": "D",
+        "content": "用正则从自由文本里抽取字段",
+        "isCorrect": false,
+        "wrongReason": "可行的兜底，但脆弱且维护成本高。"
+      }
+    ],
+    "explanation": "提示词约束是「软约束」，模型可能自作主张加说明；结构化输出是在解码阶段强制符合 schema，属于「硬约束」。",
+    "extension": "没有原生结构化输出时，退一步的方案是 few-shot + 解析失败自动重试，但要设重试上限避免成本失控。",
+    "difficulty": 2,
+    "categories": [
+      "提示工程"
+    ],
+    "tags": [
+      "结构化输出",
+      "可靠性"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Structured Outputs",
+      "url": "https://platform.openai.com/docs/guides/structured-outputs",
+      "snippet": "Structured Outputs is a feature that ensures the model will always generate responses that adhere to your supplied JSON Schema."
+    }
+  }
+]

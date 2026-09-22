@@ -1,12 +1,20 @@
 import type { Question } from "../../types";
-import { baseQuestions } from "./base";
-import { promptQuestions } from "./prompt";
-import { ragQuestions } from "./rag";
+import baseQuestions from "./base.json";
+import promptQuestions from "./prompt.json";
+import ragQuestions from "./rag.json";
 import { agentQuestions } from "./agent";
 import { ontologyQuestions } from "./ontology";
 import { tuningQuestions } from "./tuning";
 import { evalQuestions } from "./eval";
 import { engineeringQuestions } from "./engineering";
+
+/**
+ * 题库源数据是 JSON（由 tools/gen-questions.mjs 校验 / 生成），
+ * 这里在编译期断言成 Question[]；字段完整性由 all.test.ts 与 --check 兜底。
+ */
+function asQuestions(raw: unknown): Question[] {
+  return raw as Question[];
+}
 
 /** 题库分类。新增分类时同步补一个同名的 <分类>.ts 数据文件。 */
 export const CATEGORIES = [
@@ -26,9 +34,9 @@ export const CATEGORIES = [
  * 所以新增分类请追加到末尾，不要插在中间。
  */
 export const QUESTIONS: Question[] = [
-  ...baseQuestions,
-  ...promptQuestions,
-  ...ragQuestions,
+  ...asQuestions(baseQuestions),
+  ...asQuestions(promptQuestions),
+  ...asQuestions(ragQuestions),
   ...agentQuestions,
   ...ontologyQuestions,
   ...tuningQuestions,
