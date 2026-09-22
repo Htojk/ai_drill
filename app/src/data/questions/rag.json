@@ -1,7 +1,7 @@
 [
   {
     "id": "q_rag_001",
-    "type": "scenario",
+    "type": "single",
     "isPractice": true,
     "stem": "线上 RAG 服务的召回率指标正常，但用户反馈答案质量明显下降。你最应该先排查哪一层？",
     "options": [
@@ -96,7 +96,7 @@
   },
   {
     "id": "q_rag_003",
-    "type": "scenario",
+    "type": "single",
     "isPractice": true,
     "stem": "文档切分用了 chunk_size=512、overlap=0，用户反馈「答案经常只答对一半」。最该先调整什么？",
     "options": [
@@ -843,6 +843,481 @@
       "title": "Self-RAG: Learning to Retrieve, Generate, and Critique through Self-Reflection",
       "url": "https://arxiv.org/abs/2310.11511",
       "snippet": "Self-RAG trains a model to adaptively retrieve passages on demand and to critique its own generation with reflection tokens."
+    }
+  },
+  {
+    "id": "q_rag_024",
+    "type": "single",
+    "isPractice": false,
+    "stem": "在 RAG 链路里，「召回」与「重排序」的分工，最准确的描述是？",
+    "options": [
+      {
+        "key": "A",
+        "content": "召回保量（尽量不漏），重排序保质（把真正相关的排到前面）",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "召回保质，重排序保量",
+        "isCorrect": false,
+        "wrongReason": "反了：召回追求高覆盖、允许含噪声，重排序才负责精挑。"
+      },
+      {
+        "key": "C",
+        "content": "两者都是为降低延迟做的工程优化",
+        "isCorrect": false,
+        "wrongReason": "它们决定的是上下文质量，与延迟优化无关（重排序反而增加延迟）。"
+      },
+      {
+        "key": "D",
+        "content": "重排序的作用是压缩上下文长度",
+        "isCorrect": false,
+        "wrongReason": "压缩长度是上下文压缩（contextual compression）的职责，重排序只改顺序。"
+      }
+    ],
+    "explanation": "经典分工是「召回保量、重排保质」：召回阶段用较便宜的向量检索取回大量候选，保证相关文档不被漏掉；重排序用小候选集上的强模型精算相关性，把有用的提到前面。",
+    "extension": "两者的评估指标也不同：召回看 recall@k，重排看 NDCG/MRR。",
+    "difficulty": 2,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "召回",
+      "重排序"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "LlamaIndex - Optimizing Production RAG",
+      "url": "https://docs.llamaindex.ai/en/stable/optimizing/production_rag/",
+      "snippet": "Reranking improves retrieval quality by re-scoring the retrieved nodes with a more accurate model."
+    }
+  },
+  {
+    "id": "q_rag_025",
+    "type": "single",
+    "isPractice": true,
+    "stem": "对文档做切分时，下列哪种做法最可能损害检索质量？",
+    "options": [
+      {
+        "key": "A",
+        "content": "按标题层级与语义边界切分",
+        "isCorrect": false,
+        "wrongReason": "这是推荐做法，能让每块语义自洽。"
+      },
+      {
+        "key": "B",
+        "content": "按固定字符数硬切，完全不考虑句子与段落边界",
+        "isCorrect": true
+      },
+      {
+        "key": "C",
+        "content": "相邻块保留 10%–20% 的重叠",
+        "isCorrect": false,
+        "wrongReason": "重叠是为缓解边界切断问题，属于正向实践。"
+      },
+      {
+        "key": "D",
+        "content": "给每块附上所属标题路径作为元数据",
+        "isCorrect": false,
+        "wrongReason": "标题路径既能辅助过滤也能用于引用，是加分项。"
+      }
+    ],
+    "explanation": "纯机械硬切会在句子中间下刀，产出大量语义残缺的块（一句话被拆成两半），既降低匹配精度也让生成时缺少上下文。",
+    "extension": "更好的顺序是：先按结构（标题、段落）切，超长时再降级到句子、最后才硬切。",
+    "difficulty": 2,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "切分",
+      "工程判断"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "LangChain - Text Splitters",
+      "url": "https://python.langchain.com/docs/concepts/text_splitters/",
+      "snippet": "Recursive splitting tries to keep together semantically related pieces of text by splitting on natural boundaries first."
+    }
+  },
+  {
+    "id": "q_rag_026",
+    "type": "single",
+    "isPractice": true,
+    "stem": "产品编号、错误码、函数名这类「精确 token」检索命中率低，最直接的改进是？",
+    "options": [
+      {
+        "key": "A",
+        "content": "引入 BM25 等稀疏检索，与向量检索做混合召回",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "把生成温度调高",
+        "isCorrect": false,
+        "wrongReason": "温度影响生成随机性，完全不解决检索命中的问题。"
+      },
+      {
+        "key": "C",
+        "content": "把 chunk 缩到 50 字符",
+        "isCorrect": false,
+        "wrongReason": "过度碎片化会丢上下文，且不解决「精确匹配」这个根因。"
+      },
+      {
+        "key": "D",
+        "content": "把 embedding 维度从 1536 降到 256",
+        "isCorrect": false,
+        "wrongReason": "降维通常损失信息，会让检索更差。"
+      }
+    ],
+    "explanation": "稠密向量擅长语义泛化，但对「ERR-4021」这类无语文意义的字符串不敏感。BM25 基于词项精确匹配，正好补上这块短板，因此用混合召回最直接。",
+    "extension": "两路结果用 RRF 这类基于名次的融合，避免分数尺度不可比的问题。",
+    "difficulty": 3,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "混合检索",
+      "BM25",
+      "工程判断"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "Reciprocal Rank Fusion outperforms Condorcet and individual Rank Learning Methods",
+      "url": "https://dl.acm.org/doi/10.1145/1571941.1572114",
+      "snippet": "Reciprocal Rank Fusion combines the ranks of documents from multiple retrieval systems into a single fused ranking."
+    }
+  },
+  {
+    "id": "q_rag_027",
+    "type": "single",
+    "isPractice": true,
+    "stem": "更换 embedding 模型后必须重建索引，根本原因是？",
+    "options": [
+      {
+        "key": "A",
+        "content": "新模型一定比旧模型更快",
+        "isCorrect": false,
+        "wrongReason": "速度不是重建索引的原因，也未必更快。"
+      },
+      {
+        "key": "B",
+        "content": "不同模型的向量空间不可比，新旧向量之间的相似度失去意义",
+        "isCorrect": true
+      },
+      {
+        "key": "C",
+        "content": "向量数据库不支持混合存储两种向量",
+        "isCorrect": false,
+        "wrongReason": "多数库能存，问题是存了也没法算相似度。"
+      },
+      {
+        "key": "D",
+        "content": "旧索引会占用更多磁盘空间",
+        "isCorrect": false,
+        "wrongReason": "磁盘占用与是否重建无关。"
+      }
+    ],
+    "explanation": "向量索引是「用某个模型编码出来的产物」。查询用新模型、文档用旧模型时，两者不在同一空间，计算出的相似度没有意义。",
+    "extension": "线上切换建议双索引并行 + 灰度对比评测，确认新模型确实更好再下线旧索引。",
+    "difficulty": 3,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "embedding",
+      "索引重建",
+      "工程判断"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI Cookbook - Question answering using embeddings",
+      "url": "https://github.com/openai/openai-cookbook/blob/main/examples/Question_answering_using_embeddings.ipynb",
+      "snippet": "Embeddings from different models are not comparable; the document index must be rebuilt with the same model used to embed the query."
+    }
+  },
+  {
+    "id": "q_rag_028",
+    "type": "single",
+    "isPractice": false,
+    "stem": "评估检索质量时，recall@k 最直接回答的问题是？",
+    "options": [
+      {
+        "key": "A",
+        "content": "前 k 个结果里是否包含了相关文档",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "相关文档平均排在第几名",
+        "isCorrect": false,
+        "wrongReason": "那是 MRR 关注的量。"
+      },
+      {
+        "key": "C",
+        "content": "单次检索的响应延迟是多少",
+        "isCorrect": false,
+        "wrongReason": "延迟是性能指标，不属于检索质量指标。"
+      },
+      {
+        "key": "D",
+        "content": "生成的答案是否忠实于上下文",
+        "isCorrect": false,
+        "wrongReason": "那是生成侧指标（忠实度/groundedness）。"
+      }
+    ],
+    "explanation": "recall@k = 前 k 个结果中命中的相关文档数 / 全部相关文档数，衡量「捞到没有」，不关心名次。",
+    "extension": "检索评估要「有没有捞到」（recall@k）+「排得准不准」（NDCG/MRR）一起看，只看一个会漏掉失败模式。",
+    "difficulty": 3,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "评估指标",
+      "recall@k"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "RAGAS: Automated Evaluation of Retrieval Augmented Generation",
+      "url": "https://arxiv.org/abs/2309.15217",
+      "snippet": "Context recall measures whether the retrieved context contains the information required to answer the question."
+    }
+  },
+  {
+    "id": "q_rag_029",
+    "type": "single",
+    "isPractice": true,
+    "stem": "把「最相关的文档放在上下文最前面」，主要针对的是哪一类问题？",
+    "options": [
+      {
+        "key": "A",
+        "content": "模型对长上下文中间位置的利用显著下降",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "向量维度不匹配",
+        "isCorrect": false,
+        "wrongReason": "维度问题与上下文顺序无关。"
+      },
+      {
+        "key": "C",
+        "content": "索引构建耗时过长",
+        "isCorrect": false,
+        "wrongReason": "离线索引构建与在线拼装顺序无关。"
+      },
+      {
+        "key": "D",
+        "content": "检索阶段的网络延迟",
+        "isCorrect": false,
+        "wrongReason": "顺序调整不影响检索耗时。"
+      }
+    ],
+    "explanation": "Lost in the Middle 现象表明，相关信息放在开头或结尾时模型利用最好，放到中间容易被忽略。因此上下文拼装顺序本身就是一个可优化的变量。",
+    "extension": "除了放到首位，减少无关文档数量来缩短「中段」同样是有效手段。",
+    "difficulty": 3,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "上下文",
+      "Lost in the Middle",
+      "工程判断"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "Lost in the Middle: How Language Models Use Long Contexts",
+      "url": "https://arxiv.org/abs/2307.03172",
+      "snippet": "Performance is often highest when relevant information occurs at the beginning or end of the input context, and significantly degrades when models must access relevant information in the middle."
+    }
+  },
+  {
+    "id": "q_rag_030",
+    "type": "single",
+    "isPractice": false,
+    "stem": "「父文档检索」（小块检索、大块生成）主要化解的是哪一对矛盾？",
+    "options": [
+      {
+        "key": "A",
+        "content": "检索定位精度与生成所需上下文完整性之间的矛盾",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "存储成本与网络带宽之间的矛盾",
+        "isCorrect": false,
+        "wrongReason": "它与存储/带宽无关，反而可能增加存储。"
+      },
+      {
+        "key": "C",
+        "content": "模型参数量与推理速度之间的矛盾",
+        "isCorrect": false,
+        "wrongReason": "与模型规模无关。"
+      },
+      {
+        "key": "D",
+        "content": "数据权限与合规之间的矛盾",
+        "isCorrect": false,
+        "wrongReason": "权限控制是另一套机制。"
+      }
+    ],
+    "explanation": "小块匹配更准但语义不全，大块语义完整但匹配发散。父子文档检索在索引里放子块负责命中，命中后返回父块供生成，两个目标分开满足。",
+    "extension": "同族做法还有「句子窗口检索」：命中一句后返回它前后若干句。",
+    "difficulty": 3,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "父子文档",
+      "切分"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "LangChain - Parent Document Retriever",
+      "url": "https://python.langchain.com/docs/how_to/parent_document_retriever/",
+      "snippet": "The parent document retriever splits documents into small child chunks for retrieval while returning the larger parent documents for generation."
+    }
+  },
+  {
+    "id": "q_rag_031",
+    "type": "single",
+    "isPractice": true,
+    "stem": "线上 RAG 出现「答案很流利但事实错误」，第一步最应该排查什么？",
+    "options": [
+      {
+        "key": "A",
+        "content": "把生成温度调低",
+        "isCorrect": false,
+        "wrongReason": "温度只影响多样性，不是编造事实的主因，且这是「改」不是「查」。"
+      },
+      {
+        "key": "B",
+        "content": "检索是否真的拿到了支撑该事实的内容，以及提示词是否要求「无依据就说不知道」",
+        "isCorrect": true
+      },
+      {
+        "key": "C",
+        "content": "用户的问题是不是太短",
+        "isCorrect": false,
+        "wrongReason": "问题长短是因素之一，但要先确认上下文里有没有依据。"
+      },
+      {
+        "key": "D",
+        "content": "向量数据库版本是否过旧",
+        "isCorrect": false,
+        "wrongReason": "版本几乎不会是事实错误的直接原因，优先级过低。"
+      }
+    ],
+    "explanation": "流畅但错误通常意味着模型在没有依据的情况下靠参数记忆补全。先确认上下文里有没有对应事实，再确认提示词是否提供了「无依据时拒答」的出口。",
+    "extension": "排查顺序：召回率 → 重排序结果 → 上下文组装 → 提示词 → 生成参数。",
+    "difficulty": 3,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "幻觉",
+      "排查方法",
+      "工程判断"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks",
+      "url": "https://arxiv.org/abs/2005.11401",
+      "snippet": "RAG conditions generation on retrieved passages, so the faithfulness of the answer is bounded by what retrieval supplies."
+    }
+  },
+  {
+    "id": "q_rag_032",
+    "type": "single",
+    "isPractice": false,
+    "stem": "HyDE 最适合下列哪种场景？",
+    "options": [
+      {
+        "key": "A",
+        "content": "用户查询很短、口语化，与文档段落的表达分布差异大",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "对端到端延迟有极严格要求",
+        "isCorrect": false,
+        "wrongReason": "HyDE 每次查询多一次生成调用，会拉高延迟。"
+      },
+      {
+        "key": "C",
+        "content": "语料只有几十条、向量检索本身就够准",
+        "isCorrect": false,
+        "wrongReason": "语料很小时收益有限，不值得多付一次生成成本。"
+      },
+      {
+        "key": "D",
+        "content": "完全离线、不能调用任何模型的场景",
+        "isCorrect": false,
+        "wrongReason": "HyDE 本身就依赖模型生成假设答案。"
+      }
+    ],
+    "explanation": "问题短、文档长时，两者的向量分布差异大，直接检索效果差。HyDE 让模型先写一段假设答案，用它的向量去检索，从而把「问题向量」拉近「文档向量」。",
+    "extension": "风险是假设答案跑偏会把检索带偏，所以适合模型对该领域已有较好常识的场景。",
+    "difficulty": 3,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "HyDE",
+      "查询改写"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "Precise Zero-Shot Dense Retrieval without Relevance Labels (HyDE)",
+      "url": "https://arxiv.org/abs/2212.10496",
+      "snippet": "HyDE generates a hypothetical document in response to the query and then embeds it to retrieve real documents."
+    }
+  },
+  {
+    "id": "q_rag_033",
+    "type": "single",
+    "isPractice": false,
+    "stem": "混合检索里用 RRF 融合而不是「两路分数加权求和」，主要原因是？",
+    "options": [
+      {
+        "key": "A",
+        "content": "两路检索的分数尺度不可比，RRF 只用名次因而不需要归一化",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "RRF 的计算复杂度更低",
+        "isCorrect": false,
+        "wrongReason": "复杂度不是选它的理由，加权求和同样很便宜。"
+      },
+      {
+        "key": "C",
+        "content": "RRF 能自动学习最优权重",
+        "isCorrect": false,
+        "wrongReason": "RRF 并不学习权重，它固定用 1/(k+rank) 累加。"
+      },
+      {
+        "key": "D",
+        "content": "加权融合在数学上不成立",
+        "isCorrect": false,
+        "wrongReason": "加权融合数学上成立，只是需要先把分数归一化。"
+      }
+    ],
+    "explanation": "BM25 分数是无上界的词项得分，向量相似度通常在 0–1，两者直接加权需要人为设计归一化。RRF 只用排名（1/(k+rank)）累加，天然规避了这个问题。",
+    "extension": "如果坚持加权融合，就必须先做分数归一化（如 min-max 或 z-score），并对权重调参。",
+    "difficulty": 4,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "RRF",
+      "混合检索",
+      "融合"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "Reciprocal Rank Fusion outperforms Condorcet and individual Rank Learning Methods",
+      "url": "https://dl.acm.org/doi/10.1145/1571941.1572114",
+      "snippet": "Reciprocal Rank Fusion combines the ranks of documents from multiple retrieval systems into a single fused ranking."
     }
   }
 ]
