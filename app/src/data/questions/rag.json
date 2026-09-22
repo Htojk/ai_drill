@@ -140,5 +140,709 @@
       "url": "https://python.langchain.com/docs/concepts/text_splitters/",
       "snippet": "Chunk overlap is helpful in maintaining continuity between chunks, ensuring that information isn't lost..."
     }
+  },
+  {
+    "id": "q_rag_004",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：在向量检索里，余弦相似度分数越高，说明该文档与查询的语义越接近。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": false,
+        "wrongReason": "余弦相似度衡量的就是向量方向的一致性，方向越一致语义越接近；它不衡量长短，所以不是「长度越大分越高」。"
+      }
+    ],
+    "explanation": "余弦相似度是两个向量夹角的余弦值，只与方向有关、与模长无关，因此常用来度量文本嵌入之间的语义接近程度。",
+    "extension": "若向量已归一化，余弦相似度与点积等价，很多向量库因此直接用内积加速检索。",
+    "difficulty": 2,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "向量检索",
+      "相似度"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks",
+      "url": "https://arxiv.org/abs/1908.10084",
+      "snippet": "Cosine similarity is used to compare the semantic similarity of two sentence embeddings."
+    }
+  },
+  {
+    "id": "q_rag_005",
+    "type": "judge",
+    "isPractice": true,
+    "stem": "判断：只要把检索的 top-k 调得更大，RAG 的回答质量就会单调变好。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": false,
+        "wrongReason": "top-k 变大会同时引入更多无关内容，噪声和「中间遗忘」会让效果先升后降，并非单调变好。"
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": true
+      }
+    ],
+    "explanation": "上下文变长会带来两类损失：无关文档稀释了关键信息，以及模型对长上下文中间位置的内容利用率下降。实践中 top-k 存在最优点，需要评测确定。",
+    "extension": "先调 top-k 做粗筛，再用重排序把最相关的少量文档放进上下文，通常比单纯加大 top-k 更划算。",
+    "difficulty": 3,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "top-k",
+      "工程判断",
+      "上下文"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "Lost in the Middle: How Language Models Use Long Contexts",
+      "url": "https://arxiv.org/abs/2307.03172",
+      "snippet": "Performance is often highest when relevant information occurs at the beginning or end of the input context, and significantly degrades when models must access relevant information in the middle."
+    }
+  },
+  {
+    "id": "q_rag_006",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：chunk 切得越小，检索的召回率一定越高。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": false,
+        "wrongReason": "过小的 chunk 会丢掉上下文，语义不完整，反而可能匹配不上问题真正指向的内容。"
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": true
+      }
+    ],
+    "explanation": "chunk 尺寸是「定位精度」与「语义完整性」的权衡：太小则语义残缺、指代不清；太大则噪声多、定位不准。没有哪个方向是单调更优的。",
+    "extension": "常见折中是 200–500 token 配少量重叠，或改用「小块检索、大块生成」的父子文档策略。",
+    "difficulty": 3,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "切分",
+      "chunk"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "LlamaIndex - Optimizing Production RAG",
+      "url": "https://docs.llamaindex.ai/en/stable/optimizing/production_rag/",
+      "snippet": "Chunk size is a trade-off between retrieval precision and the semantic completeness of the retrieved context."
+    }
+  },
+  {
+    "id": "q_rag_007",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：BM25 属于稀疏检索，它依赖词项统计，不需要把文本编码成稠密向量。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": false,
+        "wrongReason": "BM25 建立在词频与逆文档频率之上，是典型的稀疏词项匹配方法，本身不涉及稠密向量。"
+      }
+    ],
+    "explanation": "BM25 是 TF-IDF 家族的经典改进，靠词项频率、逆文档频率和文档长度归一化打分，属于稀疏检索。它的强项是精确词匹配（编号、专有名词）。",
+    "extension": "稀疏与稠密检索的互补性正是混合检索的出发点：BM25 保精确匹配，向量保语义泛化。",
+    "difficulty": 2,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "BM25",
+      "稀疏检索"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "Okapi BM25（Robertson & Zaragoza, 2009）",
+      "url": "https://dl.acm.org/doi/10.1561/1500000019",
+      "snippet": "BM25 ranks documents by term frequency weighted by inverse document frequency, with document length normalization."
+    }
+  },
+  {
+    "id": "q_rag_008",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：把稀疏检索（BM25）与稠密向量检索的结果融合（如 RRF），可以缓解单一检索方式的偏差。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": false,
+        "wrongReason": "两类检索的失败模式不同，融合正是为了互补；这是混合检索被广泛采用的原因。"
+      }
+    ],
+    "explanation": "BM25 擅长精确词匹配、向量擅长语义泛化，两者召回集合不同。用 RRF 这类基于排名而非分数的融合方式，可以避免两套分数尺度不可比的问题。",
+    "extension": "RRF 用 1/(k+rank) 累加各路排名，只依赖名次不依赖分数，因此不需要分数归一化就能融合异构检索器。",
+    "difficulty": 3,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "混合检索",
+      "RRF"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "Reciprocal Rank Fusion outperforms Condorcet and individual Rank Learning Methods",
+      "url": "https://dl.acm.org/doi/10.1145/1571941.1572114",
+      "snippet": "Reciprocal Rank Fusion combines the ranks of documents from multiple retrieval systems into a single fused ranking."
+    }
+  },
+  {
+    "id": "q_rag_009",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：重排序（rerank）在 RAG 链路里的位置是「召回之后、生成之前」。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": false,
+        "wrongReason": "重排序的输入是候选文档、输出是精排后的顺序，因此必然位于召回与生成之间。"
+      }
+    ],
+    "explanation": "典型链路是「召回候选（可能上千条）→ 重排序精排（保留 top 几条）→ 组装上下文 → 生成」。重排序是提高上下文质量的关键一环。",
+    "extension": "重排序常用交叉编码器（cross-encoder）逐对打分，精度高但无法离线预计算，所以只放在小候选集上跑。",
+    "difficulty": 2,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "重排序",
+      "链路"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "LlamaIndex - Reranking",
+      "url": "https://docs.llamaindex.ai/en/stable/optimizing/production_rag/",
+      "snippet": "Reranking improves retrieval quality by re-scoring the retrieved nodes with a more accurate model."
+    }
+  },
+  {
+    "id": "q_rag_010",
+    "type": "judge",
+    "isPractice": true,
+    "stem": "判断：只要把检索到的文档尽量多地塞进上下文，就能显著减少模型幻觉。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": false,
+        "wrongReason": "上下文并非越多越好：无关内容会稀释信号，冲突内容反而可能诱发新的幻觉。"
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": true
+      }
+    ],
+    "explanation": "幻觉的根源之一是「检索内容与问题不匹配」而不是「检索内容不够多」。堆量会引入噪声与相互矛盾的信息，正确做法是提高上下文的相关性与一致性。",
+    "extension": "实践上更有效的是：控制 top-k、加重排序、在提示词里要求「无依据时明确说明不知道」。",
+    "difficulty": 3,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "幻觉",
+      "工程判断",
+      "上下文"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks",
+      "url": "https://arxiv.org/abs/2005.11401",
+      "snippet": "RAG models combine a parametric generator with a non-parametric dense index, conditioning generation on retrieved passages."
+    }
+  },
+  {
+    "id": "q_rag_011",
+    "type": "judge",
+    "isPractice": true,
+    "stem": "判断：更换 embedding 模型后，必须重建文档索引，否则查询向量与文档向量不在同一语义空间。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": false,
+        "wrongReason": "不同 embedding 模型的向量空间互不兼容，混用会让相似度计算失去意义。"
+      }
+    ],
+    "explanation": "向量索引是「用某个模型编码出来的」。换模型后，老索引里的向量与新查询向量来自不同空间，相似度不可比，必须整体重编码。",
+    "extension": "因此线上切换 embedding 模型往往需要双写/双索引过渡，并配合灰度对比评测。",
+    "difficulty": 3,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "embedding",
+      "索引重建",
+      "工程判断"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI Cookbook - Question answering using embeddings",
+      "url": "https://github.com/openai/openai-cookbook/blob/main/examples/Question_answering_using_embeddings.ipynb",
+      "snippet": "Embeddings from different models are not comparable; the document index must be rebuilt with the same model used to embed the query."
+    }
+  },
+  {
+    "id": "q_rag_012",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：HyDE 的思路是先让模型生成一个「假设答案」，再用这个假设答案去检索。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": false,
+        "wrongReason": "HyDE 的核心就是「用生成的假答案替换原始查询去检索」，前提是假答案在向量空间里更接近真文档。"
+      }
+    ],
+    "explanation": "用户问题通常很短，与文档段落的表达分布差异大。HyDE 让模型先写一段假设性答案，用它的嵌入去检索，能显著缩小「问题—文档」的表达鸿沟。",
+    "extension": "代价是每次查询多一次生成调用，且假设答案跑偏时会把检索也带偏。",
+    "difficulty": 3,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "HyDE",
+      "查询改写"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "Precise Zero-Shot Dense Retrieval without Relevance Labels (HyDE)",
+      "url": "https://arxiv.org/abs/2212.10496",
+      "snippet": "HyDE generates a hypothetical document in response to the query and then embeds it to retrieve real documents."
+    }
+  },
+  {
+    "id": "q_rag_013",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：GraphRAG 的主要价值是把实体与关系显式建模，从而更好地回答需要跨文档汇总的全局性问题。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": false,
+        "wrongReason": "GraphRAG 针对的正是「向量检索难以做全局汇总」的短板，靠社区摘要回答整体性问题。"
+      }
+    ],
+    "explanation": "纯向量检索擅长局部事实定位，但「这批文档整体上讲了什么」这类问题需要全局结构。GraphRAG 构建实体关系图并预生成社区摘要来支撑这类查询。",
+    "extension": "代价是构建索引的 LLM 调用成本显著高于普通向量索引，适合语料稳定、查询偏全局分析的场景。",
+    "difficulty": 4,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "GraphRAG",
+      "知识图谱"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "From Local to Global: A Graph RAG Approach to Query-Focused Summarization",
+      "url": "https://arxiv.org/abs/2404.16130",
+      "snippet": "GraphRAG builds an entity knowledge graph and pre-generates community summaries to answer global questions over a corpus."
+    }
+  },
+  {
+    "id": "q_rag_014",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：在长上下文里，把最相关的文档放在正中间，模型的利用效果最好。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": false,
+        "wrongReason": "实测相反：放在开头或结尾时效果最好，放在中间时模型最容易「看漏」。"
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": true
+      }
+    ],
+    "explanation": "这就是著名的 Lost in the Middle 现象：模型对上下文首尾的利用显著优于中段。因此上下文拼装顺序本身就是一个可优化的变量。",
+    "extension": "工程上可以把最相关的文档放在首位，或减少无关文档数量来缩短中段。",
+    "difficulty": 3,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "上下文",
+      "Lost in the Middle"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "Lost in the Middle: How Language Models Use Long Contexts",
+      "url": "https://arxiv.org/abs/2307.03172",
+      "snippet": "Performance is often highest when relevant information occurs at the beginning or end of the input context, and significantly degrades when models must access relevant information in the middle."
+    }
+  },
+  {
+    "id": "q_rag_015",
+    "type": "judge",
+    "isPractice": true,
+    "stem": "判断：有了 RAG 之后，就完全不需要再考虑微调了。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": false,
+        "wrongReason": "两者解决不同问题：RAG 补外部知识，微调改行为与风格，很多场景需要同时用。"
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": true
+      }
+    ],
+    "explanation": "RAG 解决「知识不在模型里」，微调解决「模型行为不符合要求」（格式、语气、领域推理方式）。需要最新事实时微调也补不上，需要稳定输出格式时 RAG 也管不了。",
+    "extension": "常见组合：先做 RAG 保证事实性，再用少量样本微调收敛输出格式与拒答行为。",
+    "difficulty": 3,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "RAG vs 微调",
+      "工程判断"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks",
+      "url": "https://arxiv.org/abs/2005.11401",
+      "snippet": "RAG combines parametric memory with a non-parametric retrieval index, and the two components can be updated independently."
+    }
+  },
+  {
+    "id": "q_rag_016",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：相邻 chunk 之间保留一定重叠（overlap），可以缓解语义在切分边界被切断的问题。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": false,
+        "wrongReason": "重叠的目的正是让跨越边界的句子至少完整出现在某一块里，减少信息丢失。"
+      }
+    ],
+    "explanation": "固定长度切分会在句子或段落中间下刀，导致关键表述被一分为二。设置 10%–20% 的重叠能让边界内容在相邻块中重复出现。",
+    "extension": "重叠会放大索引体积与检索时的重复命中，所以通常还需要配合去重（如按指纹或 MMR）。",
+    "difficulty": 2,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "切分",
+      "overlap"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "LangChain - Text Splitters",
+      "url": "https://python.langchain.com/docs/concepts/text_splitters/",
+      "snippet": "Chunk overlap controls how much adjacent chunks share, which helps preserve context across chunk boundaries."
+    }
+  },
+  {
+    "id": "q_rag_017",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：在检索评估中，recall@k 衡量的是「相关文档被排在前 k 位时的平均名次」。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": false,
+        "wrongReason": "recall@k 衡量的是前 k 个结果里是否包含相关文档（覆盖比例），不涉及名次。"
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": true
+      }
+    ],
+    "explanation": "recall@k = 前 k 个结果中命中的相关文档数 / 全部相关文档数，只看有没有捞到。衡量名次的指标是 MRR、NDCG 这一类。",
+    "extension": "评估 RAG 检索要同时看「有没有捞到」（recall@k）与「捞到的排得准不准」（NDCG/MRR），只看一个会漏掉失败模式。",
+    "difficulty": 3,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "评估指标",
+      "recall@k"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "RAGAS: Automated Evaluation of Retrieval Augmented Generation",
+      "url": "https://arxiv.org/abs/2309.15217",
+      "snippet": "Retrieval quality is evaluated with context relevance and context recall, which measure whether the retrieved context contains the information needed to answer."
+    }
+  },
+  {
+    "id": "q_rag_018",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：父子文档检索（parent document retriever）的做法是用小粒度子块做检索、返回较大的父块给模型。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": false,
+        "wrongReason": "方向正好相反：检索用小粒度子块提升定位精度，生成用父块保证上下文完整。"
+      }
+    ],
+    "explanation": "小块适合精确匹配，大块适合提供完整语境。父子文档检索把两者拆开：索引里放子块，命中后返回其父块，兼顾精度与完整性。",
+    "extension": "这种「检索粒度 ≠ 生成粒度」的思路还可扩展成句子窗口检索（返回命中句前后若干句）。",
+    "difficulty": 3,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "父子文档",
+      "切分"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "LangChain - Parent Document Retriever",
+      "url": "https://python.langchain.com/docs/how_to/parent_document_retriever/",
+      "snippet": "The parent document retriever splits documents into small child chunks for retrieval while returning the larger parent documents for generation."
+    }
+  },
+  {
+    "id": "q_rag_019",
+    "type": "judge",
+    "isPractice": true,
+    "stem": "判断：RAG 系统的答案质量只取决于生成模型的能力，与检索环节无关。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": false,
+        "wrongReason": "生成只能基于拿到的上下文作答，检索没捞到正确内容时，再强的模型也无从下手。"
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": true
+      }
+    ],
+    "explanation": "RAG 的上限由检索决定：上下文里没有答案，模型要么说不知道、要么编造。所以线上问题常常要先查检索而不是先换模型。",
+    "extension": "排查顺序建议：召回率 → 重排序结果 → 上下文组装 → 提示词 → 生成参数。",
+    "difficulty": 2,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "排查方法",
+      "工程判断"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "LlamaIndex - Optimizing Production RAG",
+      "url": "https://docs.llamaindex.ai/en/stable/optimizing/production_rag/",
+      "snippet": "Retrieval quality bounds the quality of the final answer, so production issues should be diagnosed retrieval-first."
+    }
+  },
+  {
+    "id": "q_rag_020",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：MMR（最大边际相关性）常用来在检索结果里做多样性挑选，减少内容重复。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": false,
+        "wrongReason": "MMR 的目标函数同时考虑「与查询相关」和「与已选结果不相似」，正是为去冗余设计的。"
+      }
+    ],
+    "explanation": "top-k 检索常返回大段互相重复的邻近文本。MMR 在每一步选「相关性高且与已选内容差异大」的文档，让有限的上下文覆盖更多信息。",
+    "extension": "MMR 的 λ 参数控制相关性与多样性的权重，λ=1 退化为纯相关性排序。",
+    "difficulty": 3,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "MMR",
+      "去冗余"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "The Use of MMR, Diversity-Based Reranking for Reordering Documents",
+      "url": "https://dl.acm.org/doi/10.1145/290941.291025",
+      "snippet": "Maximal Marginal Relevance selects documents that are relevant to the query while being dissimilar to already selected documents."
+    }
+  },
+  {
+    "id": "q_rag_021",
+    "type": "judge",
+    "isPractice": true,
+    "stem": "判断：把用户原始问题直接当作检索 query，在多数场景下已经是最优做法。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": false,
+        "wrongReason": "口语化、含指代或多轮上下文的问题直接检索往往效果差，改写/扩展通常能显著提升召回。"
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": true
+      }
+    ],
+    "explanation": "用户提问常带口语、省略与指代（「它怎么配？」），与文档表达分布差异大。查询改写、扩展（多查询）或 HyDE 都是为了缩小这个鸿沟。",
+    "extension": "多轮对话里还要先把「它」这类指代替换成具体实体，否则检索到的是上一轮的主题。",
+    "difficulty": 3,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "查询改写",
+      "工程判断"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "LangChain - Query Transformation",
+      "url": "https://python.langchain.com/docs/concepts/retrieval/",
+      "snippet": "Query transformation rewrites or expands the user question to improve retrieval effectiveness before searching the index."
+    }
+  },
+  {
+    "id": "q_rag_022",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：向量数据库常用的 HNSW 索引属于近似最近邻搜索，会用少量召回精度换取查询速度。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": false,
+        "wrongReason": "HNSW 是基于图的 ANN 索引，本质是近似算法，不保证返回真正的最近邻。"
+      }
+    ],
+    "explanation": "精确最近邻在大规模向量上代价过高，HNSW 等图索引通过可导航的小世界图结构把复杂度降到近似对数级，代价是可能漏掉真正的最近邻。",
+    "extension": "efSearch / efConstruction 等参数就是「召回率 ↔ 延迟」的旋钮，调参时要盯住 recall 而不是只看 QPS。",
+    "difficulty": 4,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "向量数据库",
+      "HNSW",
+      "ANN"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "Efficient and Robust Approximate Nearest Neighbor Search Using Hierarchical Navigable Small World Graphs",
+      "url": "https://arxiv.org/abs/1603.09320",
+      "snippet": "Hierarchical Navigable Small World graphs provide approximate nearest neighbor search with logarithmic scaling."
+    }
+  },
+  {
+    "id": "q_rag_023",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：Self-RAG 让模型自己判断「是否需要检索」以及「生成的内容是否有依据」。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": false,
+        "wrongReason": "Self-RAG 的核心正是引入反思标记，对是否检索与是否被支持做自我评判。"
+      }
+    ],
+    "explanation": "Self-RAG 训练模型在生成过程中产出反思标记：是否需要检索、检索内容是否相关、生成内容是否被上下文支持。这样不是「逢问必检索」，而是按需检索并自我校验。",
+    "extension": "这类「先判断再检索」的思路对简单常识问题能显著降低无谓的检索开销。",
+    "difficulty": 4,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "Self-RAG",
+      "自适应检索"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "Self-RAG: Learning to Retrieve, Generate, and Critique through Self-Reflection",
+      "url": "https://arxiv.org/abs/2310.11511",
+      "snippet": "Self-RAG trains a model to adaptively retrieve passages on demand and to critique its own generation with reflection tokens."
+    }
   }
 ]
