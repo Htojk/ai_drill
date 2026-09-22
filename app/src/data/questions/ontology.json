@@ -939,5 +939,705 @@
       "url": "https://arxiv.org/abs/2002.00388",
       "snippet": "Knowledge Graphs (KGs) have gained increasing attention in recent years."
     }
+  },
+  {
+    "id": "q_onto_021",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：RDF 三元组里的谓语部分可以是字面量（literal）。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": false,
+        "wrongReason": "谓语必须是 IRI；只有宾语才可以是字面量，主语可以是 IRI 或空白节点。"
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": true
+      }
+    ],
+    "explanation": "谓语必须是 IRI；只有宾语才可以是字面量，主语可以是 IRI 或空白节点。",
+    "extension": "",
+    "difficulty": 3,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "本体",
+      "判断"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "RDF 1.1 Concepts and Abstract Syntax",
+      "url": "https://www.w3.org/TR/rdf11-concepts/",
+      "snippet": "An RDF triple consists of three components: the subject, the predicate, and the object."
+    }
+  },
+  {
+    "id": "q_onto_022",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：RDF 的全局 IRI 设计让来自不同来源的数据可以自然拼接，这是它相对属性图的主要优势之一。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": false,
+        "wrongReason": "共享的 IRI 空间让跨库合并不需要额外的命名空间映射，天然支持知识融合。"
+      }
+    ],
+    "explanation": "共享的 IRI 空间让跨库合并不需要额外的命名空间映射，天然支持知识融合。",
+    "extension": "",
+    "difficulty": 3,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "本体",
+      "判断"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "RDF 1.1 Concepts and Abstract Syntax",
+      "url": "https://www.w3.org/TR/rdf11-concepts/",
+      "snippet": "An RDF triple consists of three components: the subject, the predicate, and the object."
+    }
+  },
+  {
+    "id": "q_onto_023",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：OWL 的表达能力弱于 RDFS，因此推理更快。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": false,
+        "wrongReason": "方向相反：OWL 在 RDFS 之上增强了表达能力，推理代价通常也更高。"
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": true
+      }
+    ],
+    "explanation": "方向相反：OWL 在 RDFS 之上增强了表达能力，推理代价通常也更高。",
+    "extension": "",
+    "difficulty": 3,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "本体",
+      "判断"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "RDF 1.1 Concepts and Abstract Syntax",
+      "url": "https://www.w3.org/TR/rdf11-concepts/",
+      "snippet": "An RDF triple consists of three components: the subject, the predicate, and the object."
+    }
+  },
+  {
+    "id": "q_onto_024",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：在开放世界假设下，「查询不到某条事实」可以推出「该事实不成立」。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": false,
+        "wrongReason": "开放世界下查不到只代表未知，不能推出为假；要判断为假需要封闭世界语义。"
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": true
+      }
+    ],
+    "explanation": "开放世界下查不到只代表未知，不能推出为假；要判断为假需要封闭世界语义。",
+    "extension": "",
+    "difficulty": 3,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "本体",
+      "判断"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "RDF 1.1 Concepts and Abstract Syntax",
+      "url": "https://www.w3.org/TR/rdf11-concepts/",
+      "snippet": "An RDF triple consists of three components: the subject, the predicate, and the object."
+    }
+  },
+  {
+    "id": "q_onto_025",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：SHACL 适合用来校验 RDF 数据是否满足结构约束，并给出具体违规报告。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": false,
+        "wrongReason": "SHACL 用形状描述数据应满足的条件，是数据质量检查与入库验证的标准手段。"
+      }
+    ],
+    "explanation": "SHACL 用形状描述数据应满足的条件，是数据质量检查与入库验证的标准手段。",
+    "extension": "",
+    "difficulty": 3,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "本体",
+      "判断"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "RDF 1.1 Concepts and Abstract Syntax",
+      "url": "https://www.w3.org/TR/rdf11-concepts/",
+      "snippet": "An RDF triple consists of three components: the subject, the predicate, and the object."
+    }
+  },
+  {
+    "id": "q_onto_026",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：在 OWL 里用 owl:FunctionalProperty 声明属性，可以保证该属性一定有值。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": false,
+        "wrongReason": "functional 只限制「最多一个取值」，不要求必须有值；必须有值要用基数约束的下限。"
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": true
+      }
+    ],
+    "explanation": "functional 只限制「最多一个取值」，不要求必须有值；必须有值要用基数约束的下限。",
+    "extension": "",
+    "difficulty": 3,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "本体",
+      "判断"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "RDF 1.1 Concepts and Abstract Syntax",
+      "url": "https://www.w3.org/TR/rdf11-concepts/",
+      "snippet": "An RDF triple consists of three components: the subject, the predicate, and the object."
+    }
+  },
+  {
+    "id": "q_onto_027",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：SPARQL 的 SELECT 查询返回的是三元组构成的图。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": false,
+        "wrongReason": "SELECT 返回变量绑定表；返回图的是 CONSTRUCT，返回布尔值的是 ASK。"
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": true
+      }
+    ],
+    "explanation": "SELECT 返回变量绑定表；返回图的是 CONSTRUCT，返回布尔值的是 ASK。",
+    "extension": "",
+    "difficulty": 3,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "本体",
+      "判断"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "RDF 1.1 Concepts and Abstract Syntax",
+      "url": "https://www.w3.org/TR/rdf11-concepts/",
+      "snippet": "An RDF triple consists of three components: the subject, the predicate, and the object."
+    }
+  },
+  {
+    "id": "q_onto_028",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：属性路径（property path）可以表达任意跳数的传递关系，因此在深度不受限时不会带来性能风险。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": false,
+        "wrongReason": "路径表达式允许任意跳数，稍有不慎就会遍历整个图，必须限制深度或预先物化。"
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": true
+      }
+    ],
+    "explanation": "路径表达式允许任意跳数，稍有不慎就会遍历整个图，必须限制深度或预先物化。",
+    "extension": "",
+    "difficulty": 3,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "本体",
+      "判断"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "RDF 1.1 Concepts and Abstract Syntax",
+      "url": "https://www.w3.org/TR/rdf11-concepts/",
+      "snippet": "An RDF triple consists of three components: the subject, the predicate, and the object."
+    }
+  },
+  {
+    "id": "q_onto_029",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：实体链接与实体对齐是同一个任务的两个名字。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": false,
+        "wrongReason": "实体链接把文本提及映射到知识库实体，实体对齐是识别两个图谱中指代同一对象的实体，输入与目标都不同。"
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": true
+      }
+    ],
+    "explanation": "实体链接把文本提及映射到知识库实体，实体对齐是识别两个图谱中指代同一对象的实体，输入与目标都不同。",
+    "extension": "",
+    "difficulty": 3,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "本体",
+      "判断"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "RDF 1.1 Concepts and Abstract Syntax",
+      "url": "https://www.w3.org/TR/rdf11-concepts/",
+      "snippet": "An RDF triple consists of three components: the subject, the predicate, and the object."
+    }
+  },
+  {
+    "id": "q_onto_030",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：知识图谱链接预测常用 MRR 与 Hits@K 评估，且通常要在 filtered setting 下计算。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": false,
+        "wrongReason": "排名类指标配合 filtered setting 才能排除其他正确三元组的干扰，否则指标被系统性低估。"
+      }
+    ],
+    "explanation": "排名类指标配合 filtered setting 才能排除其他正确三元组的干扰，否则指标被系统性低估。",
+    "extension": "",
+    "difficulty": 3,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "本体",
+      "判断"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "RDF 1.1 Concepts and Abstract Syntax",
+      "url": "https://www.w3.org/TR/rdf11-concepts/",
+      "snippet": "An RDF triple consists of three components: the subject, the predicate, and the object."
+    }
+  },
+  {
+    "id": "q_onto_031",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：TransE 能很好地建模一对多与对称关系。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": false,
+        "wrongReason": "「头 + 关系 ≈ 尾」的平移假设在一对多与对称关系上会冲突，多个头实体会被压到相近位置。"
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": true
+      }
+    ],
+    "explanation": "「头 + 关系 ≈ 尾」的平移假设在一对多与对称关系上会冲突，多个头实体会被压到相近位置。",
+    "extension": "",
+    "difficulty": 3,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "本体",
+      "判断"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "RDF 1.1 Concepts and Abstract Syntax",
+      "url": "https://www.w3.org/TR/rdf11-concepts/",
+      "snippet": "An RDF triple consists of three components: the subject, the predicate, and the object."
+    }
+  },
+  {
+    "id": "q_onto_032",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：命名图把三元组划分为可命名的子图，常用于表达来源、版本与访问控制的边界。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": false,
+        "wrongReason": "命名图给一组三元组一个 IRI 标识，使数据可按来源或批次分组，便于增量更新与权限隔离。"
+      }
+    ],
+    "explanation": "命名图给一组三元组一个 IRI 标识，使数据可按来源或批次分组，便于增量更新与权限隔离。",
+    "extension": "",
+    "difficulty": 3,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "本体",
+      "判断"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "RDF 1.1 Concepts and Abstract Syntax",
+      "url": "https://www.w3.org/TR/rdf11-concepts/",
+      "snippet": "An RDF triple consists of three components: the subject, the predicate, and the object."
+    }
+  },
+  {
+    "id": "q_onto_033",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：物化推理一定比查询时推理更好，因为它让查询更快。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": false,
+        "wrongReason": "物化会带来存储膨胀与更新维护成本，应按查询频率与数据变更频率来取舍，而不是无条件采用。"
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": true
+      }
+    ],
+    "explanation": "物化会带来存储膨胀与更新维护成本，应按查询频率与数据变更频率来取舍，而不是无条件采用。",
+    "extension": "",
+    "difficulty": 3,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "本体",
+      "判断"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "RDF 1.1 Concepts and Abstract Syntax",
+      "url": "https://www.w3.org/TR/rdf11-concepts/",
+      "snippet": "An RDF triple consists of three components: the subject, the predicate, and the object."
+    }
+  },
+  {
+    "id": "q_onto_034",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：复用 FOAF、Dublin Core、schema.org 等成熟词表，有助于跨系统理解数据语义。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": false,
+        "wrongReason": "成熟词表有权威定义与工具支持，复用能避免语义孤岛，也便于外部系统消费数据。"
+      }
+    ],
+    "explanation": "成熟词表有权威定义与工具支持，复用能避免语义孤岛，也便于外部系统消费数据。",
+    "extension": "",
+    "difficulty": 3,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "本体",
+      "判断"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "RDF 1.1 Concepts and Abstract Syntax",
+      "url": "https://www.w3.org/TR/rdf11-concepts/",
+      "snippet": "An RDF triple consists of three components: the subject, the predicate, and the object."
+    }
+  },
+  {
+    "id": "q_onto_035",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：属性图可以用一条路径表达式直接表达多跳关系，RDF 则完全做不到。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": false,
+        "wrongReason": "SPARQL 1.1 的属性路径同样能表达多跳与传递关系，两者在多跳查询上都有能力，只是语法与体验不同。"
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": true
+      }
+    ],
+    "explanation": "SPARQL 1.1 的属性路径同样能表达多跳与传递关系，两者在多跳查询上都有能力，只是语法与体验不同。",
+    "extension": "",
+    "difficulty": 3,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "本体",
+      "判断"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "RDF 1.1 Concepts and Abstract Syntax",
+      "url": "https://www.w3.org/TR/rdf11-concepts/",
+      "snippet": "An RDF triple consists of three components: the subject, the predicate, and the object."
+    }
+  },
+  {
+    "id": "q_onto_036",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：同一实体在知识图谱里出现多个不同 IRI，一定是数据错误。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": false,
+        "wrongReason": "在缺少唯一命名假设的语义下，多个 IRI 可能指同一对象，需要用 sameAs 显式对齐后才能合并。"
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": true
+      }
+    ],
+    "explanation": "在缺少唯一命名假设的语义下，多个 IRI 可能指同一对象，需要用 sameAs 显式对齐后才能合并。",
+    "extension": "",
+    "difficulty": 3,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "本体",
+      "判断"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "RDF 1.1 Concepts and Abstract Syntax",
+      "url": "https://www.w3.org/TR/rdf11-concepts/",
+      "snippet": "An RDF triple consists of three components: the subject, the predicate, and the object."
+    }
+  },
+  {
+    "id": "q_onto_037",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：RDFS 的 domain 与 range 通常被理解为「约束」，违反它们的三元组会被拒绝写入。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": false,
+        "wrongReason": "在 RDF/RDFS 语义下 domain/range 是推理规则而非校验约束：它们会推导出新的类型断言，而不是报错。"
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": true
+      }
+    ],
+    "explanation": "在 RDF/RDFS 语义下 domain/range 是推理规则而非校验约束：它们会推导出新的类型断言，而不是报错。",
+    "extension": "",
+    "difficulty": 3,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "本体",
+      "判断"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "RDF 1.1 Concepts and Abstract Syntax",
+      "url": "https://www.w3.org/TR/rdf11-concepts/",
+      "snippet": "An RDF triple consists of three components: the subject, the predicate, and the object."
+    }
+  },
+  {
+    "id": "q_onto_038",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：从文本构建知识图谱时，指代消解可以忽略，因为关系抽取不受代词影响。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": false,
+        "wrongReason": "跨句事实常以代词出现，不做指代消解会大量漏抽，直接影响图谱覆盖率。"
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": true
+      }
+    ],
+    "explanation": "跨句事实常以代词出现，不做指代消解会大量漏抽，直接影响图谱覆盖率。",
+    "extension": "",
+    "difficulty": 3,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "本体",
+      "判断"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "RDF 1.1 Concepts and Abstract Syntax",
+      "url": "https://www.w3.org/TR/rdf11-concepts/",
+      "snippet": "An RDF triple consists of three components: the subject, the predicate, and the object."
+    }
+  },
+  {
+    "id": "q_onto_039",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：知识图谱嵌入得到的向量可以直接当作事实依据，替代显式的三元组证据。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": false,
+        "wrongReason": "嵌入是相似度与预测的近似表示，无法提供可核验的依据；需要证据时仍要回到显式三元组。"
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": true
+      }
+    ],
+    "explanation": "嵌入是相似度与预测的近似表示，无法提供可核验的依据；需要证据时仍要回到显式三元组。",
+    "extension": "",
+    "difficulty": 3,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "本体",
+      "判断"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "RDF 1.1 Concepts and Abstract Syntax",
+      "url": "https://www.w3.org/TR/rdf11-concepts/",
+      "snippet": "An RDF triple consists of three components: the subject, the predicate, and the object."
+    }
+  },
+  {
+    "id": "q_onto_040",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：本体一旦发布就不应再改动，否则会破坏已有数据。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": false,
+        "wrongReason": "本体需要随业务演化，正确做法是版本化与向后兼容的扩展策略，而不是冻结。"
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": true
+      }
+    ],
+    "explanation": "本体需要随业务演化，正确做法是版本化与向后兼容的扩展策略，而不是冻结。",
+    "extension": "",
+    "difficulty": 3,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "本体",
+      "判断"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "RDF 1.1 Concepts and Abstract Syntax",
+      "url": "https://www.w3.org/TR/rdf11-concepts/",
+      "snippet": "An RDF triple consists of three components: the subject, the predicate, and the object."
+    }
   }
 ]

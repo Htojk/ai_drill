@@ -21,7 +21,7 @@ const EXPECTED_FILES: { prefix: string; count: number }[] = [
   { prefix: "q_prompt_", count: 3 },
   { prefix: "q_rag_", count: 100 },
   { prefix: "q_agent_", count: 100 },
-  { prefix: "q_onto_", count: 20 },
+  { prefix: "q_onto_", count: 40 },
   { prefix: "q_tune_", count: 3 },
   { prefix: "q_eval_", count: 3 },
   { prefix: "q_eng_", count: 3 }
