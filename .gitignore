@@ -8,6 +8,9 @@ app/dist/
 *.log
 *.tmp
 
+# 测试运行器的缓存产物（vitest 每次跑都会改写，不该入库）
+.vite/
+
 # 流水线产物：全部可由 content/sources 或权威开源源重建，不入库
 # （出题草稿人工修订后才用 gen-questions.mjs --merge 进题库）
 content/raw/
