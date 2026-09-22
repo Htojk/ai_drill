@@ -2945,5 +2945,440 @@
       "url": "https://platform.openai.com/docs/guides/function-calling",
       "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
     }
+  },
+  {
+    "id": "q_agent_086",
+    "type": "short",
+    "isPractice": false,
+    "stem": "拿到一个需求，怎么判断它该不该做成 Agent？",
+    "options": [],
+    "referenceAnswer": "三个判断点：第一，流程能否预先画出来——步骤固定、分支可枚举的需求用工作流更稳、更便宜、更好测；第二，是否真的需要运行时判断——很多「智能」需求其实只是把非结构化输入转成结构化参数，那是单次模型调用而非代理；第三，出错代价有多大——涉及资金、对外发布、不可逆操作时，宁可牺牲灵活性换取确定性。三点都指向「要代理」时才值得引入。",
+    "keyPoints": [
+      "步骤与分支能否预先枚举：能，就优先写成工作流而不是代理",
+      "是否需要模型在运行时根据中间结果做开放式判断：不需要，就不必引入代理",
+      "失败代价是否可接受：错误后果严重且不可逆时，应提高确定性约束比重"
+    ],
+    "explanation": "把需求做成代理最容易的过度设计理由就是「听起来更 AI」，代价是稳定性与可测试性显著下降。",
+    "extension": "可以先按工作流实现，把最难的一步留出模型扩展点，按实际瓶颈再升级为代理。",
+    "difficulty": 4,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "选型",
+      "需求判断"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_087",
+    "type": "short",
+    "isPractice": false,
+    "stem": "Agent 功能上线前的验收清单应该包含哪些条目？",
+    "options": [],
+    "referenceAnswer": "清单至少覆盖三类。质量与成本：在固定的回归任务集上比较成功率与过程指标，不允许「总体持平但关键任务变差」；安全：跑通负向用例集，确认危险动作未被触发、越权请求被拒绝；工程可用性：每次运行的轨迹可查、提示与模型版本可追溯、外部依赖失败时有降级路径、发布支持灰度与回滚。三者缺一就不算可上线。",
+    "keyPoints": [
+      "质量：固定任务集上的成功率、过程指标（步数/工具错误率/成本）不劣于基线",
+      "安全：危险动作拦截用例全部通过，越权与注入用例无回归",
+      "工程：轨迹可查、提示与模型版本可追溯、失败可降级、可灰度与回滚"
+    ],
+    "explanation": "验收清单要写进仓库并随任务演进更新，否则它会很快退化成一份没人看的文档。",
+    "extension": "把清单里的每一条都对应到可自动执行的检查，才能真正拦住回归。",
+    "difficulty": 4,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "验收",
+      "发布"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "ToolLLM: Facilitating Large Language Models to Master 16000+ Real-world APIs",
+      "url": "https://arxiv.org/abs/2307.16789",
+      "snippet": "We present ToolBench, an instruction tuning dataset for tool use built from 16,464 real-world REST APIs."
+    }
+  },
+  {
+    "id": "q_agent_088",
+    "type": "short",
+    "isPractice": false,
+    "stem": "Agent 的成本与延迟预算应该怎么分配？",
+    "options": [],
+    "referenceAnswer": "预算应该自上而下定：先明确每类任务可接受的 P95 延迟与单次成本上限，再据此选择模型规格、工具调用次数上限与重排规模。分配上要意识到成本往往集中在工具与检索往返，而不是最终生成；因此限制步数与工具返回体积通常比换小模型更有效。最重要的是为超预算定义行为：降级为部分结果、截断到最近一次确认状态、或转人工，而不是让任务无限跑下去。",
+    "keyPoints": [
+      "先定每类任务的预算上限（步数、token、时长），再倒推模型与工具选型",
+      "把预算按阶段分配：检索/工具调用通常占大头，生成相对可控",
+      "对超预算的任务要有明确行为：降级、截断或转人工，而不是放任继续跑"
+    ],
+    "explanation": "没有预算上限的系统在生产环境不可运维：一个异常任务可以吃掉全部额度。",
+    "extension": "按任务类型分别统计成本分布，能发现少数任务类型贡献了大部分花费。",
+    "difficulty": 4,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "预算",
+      "成本"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_089",
+    "type": "short",
+    "isPractice": false,
+    "stem": "用户不信任 Agent 时，产品上可以做哪些设计来建立信任？",
+    "options": [],
+    "referenceAnswer": "信任来自可验证与可控。可验证方面，界面要展示依据（数据来源、引用链接）并区分「来自工具的事实」与「模型的推断」；可控方面，用户需要能中断执行、撤销结果、调整参数重试，以及一个只提供建议不执行动作的安全模式。对于首次使用或高危场景，默认走「建议模式」，由用户确认后再执行，是建立信任成本最低的路径。",
+    "keyPoints": [
+      "展示依据与过程：调用了哪些工具、依据了哪些数据、哪一步是模型的推断",
+      "给出可控性：可中断、可撤销、可调整参数后重试，以及显式的「仅建议不执行」模式",
+      "提供可核验的引用与来源链接，而不是让用户只能选择相信"
+    ],
+    "explanation": "不要用「AI 很聪明」来建立信任，那会抬高期望并在首次失败时崩塌。",
+    "extension": "把不确定性明确表达出来（引用不足、数据可能过期），反而会提高整体可信度。",
+    "difficulty": 3,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "信任设计",
+      "产品"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_090",
+    "type": "short",
+    "isPractice": false,
+    "stem": "Agent 出错并造成了实际影响，产品上应该怎么处理？",
+    "options": [],
+    "referenceAnswer": "顺序是先止损再解释：可撤销的动作（发出的消息、创建的记录）立即补偿；不可撤销的要说清影响范围与用户可以采取的措施。然后如实说明原因，包括是检索到过期资料、工具返回异常还是模型判断失误，含糊其词会二次伤害信任。最后给出补救路径与反馈入口，并把这次失败转成固定回归用例，否则同类事故一定会重演。",
+    "keyPoints": [
+      "先止损：能撤销的立即撤销，不能的明确告知影响范围与后续步骤",
+      "如实说明发生了什么（哪一步、依据什么、为什么错），不要含糊其词",
+      "提供补救路径与反馈入口，并把该案例纳入回归集防止复发"
+    ],
+    "explanation": "事故复盘的价值在于能否转成可自动执行的回归用例，否则「改进」只是口头承诺。",
+    "extension": "高影响场景应提前准备补偿流程，而不是等事故发生后再临时设计。",
+    "difficulty": 4,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "事故处理",
+      "信任"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_091",
+    "type": "short",
+    "isPractice": false,
+    "stem": "线上失败案例应该怎么记录，才能被有效利用？",
+    "options": [],
+    "referenceAnswer": "有效利用的前提是结构化：只有原始日志是不够的，还要标注失败类型（选错工具/参数错/召回错/被注入/超预算）、发生在哪个环节、影响范围，以及是否已修复。这样才可能做聚合分析，找出贡献最大的失败类型，而不是逐个救火。随后把高频类型转成固定的回归用例，并在修复后跟踪其通过情况，形成闭环。",
+    "keyPoints": [
+      "记录完整轨迹（输入、决策、工具调用与返回、终止原因）并脱敏",
+      "打上结构化标签：失败类型、所在环节、影响范围、是否已修复",
+      "定期把高频失败类型转成回归用例，并跟踪修复后的通过率"
+    ],
+    "explanation": "没有标签的失败日志最终会变成没人看的堆积物。",
+    "extension": "把「失败案例转回归用例」变成固定流程的一部分，才能保证长期质量提升。",
+    "difficulty": 4,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "失败复盘",
+      "回归"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "ToolLLM: Facilitating Large Language Models to Master 16000+ Real-world APIs",
+      "url": "https://arxiv.org/abs/2307.16789",
+      "snippet": "We present ToolBench, an instruction tuning dataset for tool use built from 16,464 real-world REST APIs."
+    }
+  },
+  {
+    "id": "q_agent_092",
+    "type": "short",
+    "isPractice": false,
+    "stem": "「自主性等级」该怎么划分？产品上为什么要分级？",
+    "options": [],
+    "referenceAnswer": "分级的意义是把「自动化的程度」与「错误的代价」对齐。可按四档划分：只给建议、每次执行前确认、在限定范围内自动执行（如只读查询、仅限草稿），以及无人监督自动执行。不同任务类型适合不同档位——信息查询可以高自主，对外发送或资金操作必须低自主。级别还应允许按用户与场景配置，因为同一个人对不同任务的容忍度也不同。",
+    "keyPoints": [
+      "常见分级：仅建议 / 执行前确认 / 限定范围内自动执行 / 无人监督自动执行",
+      "分级让权限与风险匹配：风险越高，自主性越低，人工介入越多",
+      "级别应该可按任务类型与用户配置调整，而不是全局一个档"
+    ],
+    "explanation": "把等级做成显式产品概念，用户才知道系统现在会替你做多少决定。",
+    "extension": "升级自主性应当基于积累的通过率数据逐步放开，而不是一次到位。",
+    "difficulty": 4,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "自主性",
+      "风控"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "Model Context Protocol - Introduction",
+      "url": "https://modelcontextprotocol.io/introduction",
+      "snippet": "MCP is an open protocol that standardizes how applications provide context to LLMs."
+    }
+  },
+  {
+    "id": "q_agent_093",
+    "type": "short",
+    "isPractice": false,
+    "stem": "工具结果的缓存应该怎么做？有哪些坑？",
+    "options": [],
+    "referenceAnswer": "缓存的前提是幂等与时效可接受：汇率、汇率类查询适合，账户余额、消息列表就不适合。缓存键必须包含所有影响结果的参数以及调用者身份，否则会出现跨用户数据串号——这是最严重的一类缓存事故。写操作不缓存；个人化结果要么不缓存、要么严格按用户分区。除了 TTL，还要支持按数据变更主动失效，否则会出现「刚改完还是旧值」。",
+    "keyPoints": [
+      "只缓存幂等且时效性可接受的查询结果，并设置合理的 TTL",
+      "缓存键要包含全部影响结果的参数与身份信息，避免跨用户串数据",
+      "写操作与个人化结果默认不缓存；缓存失效要能按数据变更触发"
+    ],
+    "explanation": "缓存键少考虑一个参数，就会得到看似随机但实际可复现的错误结果，排查成本极高。",
+    "extension": "缓存命中率与陈旧命中率应该分开监控，只看命中率会掩盖数据过期问题。",
+    "difficulty": 4,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "缓存",
+      "多租户"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_094",
+    "type": "short",
+    "isPractice": false,
+    "stem": "让 Agent 处理日程、提醒这类时间敏感任务，要注意什么？",
+    "options": [],
+    "referenceAnswer": "时间敏感任务的主要风险在解释歧义：用户说「明天下午」，需要结合时区与当前时间换算成绝对时间，并且存储时带时区信息，否则跨时区或夏令时切换时会出错。重复规则（每周三、每月最后一个工作日）应由 datetime 库计算，不能交给模型心算。写操作要幂等，避免重试时创建多条日程，并对覆盖或取消已有安排的动作保持保守，必要时先展示变更预览。",
+    "keyPoints": [
+      "时区与夏令时必须显式处理，存绝对时间并标注时区",
+      "重复规则（每周、每月第几个工作日）要用成熟的规则表达，不要靠模型算",
+      "写操作要防重复与冲突，并对修改已有日程保持谨慎"
+    ],
+    "explanation": "「重试创建了两条一样的日程」是这类代理最常见也最让用户恼火的故障。",
+    "extension": "界面上展示解析后的绝对时间让用户确认，能拦住绝大多数时间误解。",
+    "difficulty": 4,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "时间处理",
+      "幂等"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_095",
+    "type": "short",
+    "isPractice": false,
+    "stem": "用户处于弱网或离线环境时，Agent 产品该怎么设计？",
+    "options": [],
+    "referenceAnswer": "弱网下的核心是状态可见与操作可控。能离线的能力应尽量下沉：常用数据本地缓存、简单意图用本地模型处理；对必须联网的动作，界面要明确区分已排队、已发送、已确认三种状态，避免用户误以为成功。网络恢复后，排队操作的重放必须有冲突解决策略——例如同一记录的两次修改谁优先、是否要提示用户确认，否则会出现数据被旧操作覆盖。",
+    "keyPoints": [
+      "把「可离线完成的部分」下沉到本地：本地缓存数据、本地小模型处理简单意图",
+      "明确区分「已发送」与「已确认」状态，避免离线操作被误认为成功",
+      "恢复网络后要有冲突解决策略，而不是简单地重放全部操作"
+    ],
+    "explanation": "把「待同步」做成显式的产品状态，比静默重试更让人放心。",
+    "extension": "幂等键在弱网场景尤其重要：重放是常态，重复副作用必须被消除。",
+    "difficulty": 4,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "弱网",
+      "离线"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_096",
+    "type": "short",
+    "isPractice": false,
+    "stem": "接入第三方 MCP server 时，信任边界该怎么划？",
+    "options": [],
+    "referenceAnswer": "第三方 server 等于把一段外部代码引入你的上下文供给链路，因此要按不可信组件对待：授权时只给最小能力（只读就不要给写），并把已授权的 server 与能力显式展示给用户，允许随时撤销。返回内容与网页一样属于不可信输入，要防止提示注入。同时保留完整审计记录，并限制它能访问的数据范围（例如只允许访问某个目录或某个数据集）。",
+    "keyPoints": [
+      "只授予完成任务所需的最小能力，并让授权可见、可随时撤销",
+      "对 server 返回的内容按不可信输入处理，防止其中夹带指令",
+      "记录调用审计（谁在什么上下文下调用了什么），并限制其可触达的数据范围"
+    ],
+    "explanation": "生态便利与信任成本是同时到来的：接入越多，越需要集中式的授权与审计视图。",
+    "extension": "对企业场景，可以先在测试环境用脱敏数据评估 server 的行为，再决定是否接入生产。",
+    "difficulty": 4,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "MCP",
+      "信任边界"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "Model Context Protocol - Introduction",
+      "url": "https://modelcontextprotocol.io/introduction",
+      "snippet": "MCP is an open protocol that standardizes how applications provide context to LLMs."
+    }
+  },
+  {
+    "id": "q_agent_097",
+    "type": "short",
+    "isPractice": false,
+    "stem": "Agent 的评测集应该怎么构造？",
+    "options": [],
+    "referenceAnswer": "构造原则是「像真实使用一样分布」：按任务类型分层抽样，包含高频简单任务与低频难题，避免只收容易通过的案例。每条用例要固定初始环境状态、可用工具集、期望结果或可接受范围，以及步数与成本预算，否则结果不可比。此外必须包含负向用例（不该执行的动作）与边界用例（空结果、超长输入、权限不足、服务不可用），这些恰恰是线上事故的高发区。",
+    "keyPoints": [
+      "覆盖真实任务分布：按任务类型分层抽样，而不是只挑好演示的案例",
+      "每条用例定义初始状态、可用工具、期望结果（或可接受范围）与预算上限",
+      "包含负向用例（不该做的事）与边界用例（空结果、超长输入、权限不足）"
+    ],
+    "explanation": "评测集是资产：应该像代码一样版本化、评审、定期扩充，而不是一次性写完。",
+    "extension": "线上每一次失败都应转成一条用例，这是评测集最自然的增长方式。",
+    "difficulty": 4,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "评测集",
+      "测试设计"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "ToolLLM: Facilitating Large Language Models to Master 16000+ Real-world APIs",
+      "url": "https://arxiv.org/abs/2307.16789",
+      "snippet": "We present ToolBench, an instruction tuning dataset for tool use built from 16,464 real-world REST APIs."
+    }
+  },
+  {
+    "id": "q_agent_098",
+    "type": "short",
+    "isPractice": false,
+    "stem": "Agent 的停止条件应该怎么设计？",
+    "options": [],
+    "referenceAnswer": "没有清晰停止条件的代理会陷入过度执行或过早收尾。设计上至少要覆盖三类终止：目标达成正常结束；达到步数、时间或成本上限被迫结束；触发安全规则或遇到不可恢复错误而中止。判定「目标达成」最好有可检查的条件（例如期望字段已全部填充、校验通过），而不是依赖模型主观判断。每种终止都要对应明确的用户可见结果，尤其是被迫结束时要说明已经完成了什么、还缺什么。",
+    "keyPoints": [
+      "至少覆盖三类：正常完成、达到步数/预算上限、触发安全或错误中止",
+      "停止条件要能被模型显式判断（例如任务目标已满足的判定），而不是靠它「感觉可以了」",
+      "每种停止都要有明确的用户可见结果，包括未完成时还差什么"
+    ],
+    "explanation": "「超预算」也是一种正常终止路径，应当被设计和测试，而不是当作异常。",
+    "extension": "把终止原因写进轨迹，是后续分析「为什么没做完」的第一手材料。",
+    "difficulty": 4,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "终止条件",
+      "鲁棒性"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_099",
+    "type": "short",
+    "isPractice": false,
+    "stem": "同一个任务效果不好时，怎么判断该换更大的模型还是改工具？",
+    "options": [],
+    "referenceAnswer": "判断依据是失败类型而非主观感受。如果失败集中在工具选择、参数填写、返回值解读这类环节，问题通常在工具描述、schema 或上下文组织上，换更大的模型只能部分缓解且成本更高。如果失败表现为多步推理断裂、计划自相矛盾、无法遵守复杂约束，那更可能是模型能力上限。实践中先做便宜的那一半——改描述、加示例、减少候选工具、压缩上下文——往往就能解决大部分问题。",
+    "keyPoints": [
+      "先看失败类型：选错工具/参数错/返回被误读属于工具与上下文问题，换模型收益小",
+      "推理链断裂、多步规划失败、约束遵守差属于模型能力问题",
+      "多数情况下优化工具描述与上下文组织更便宜，且不会牺牲延迟"
+    ],
+    "explanation": "顺序上建议先优化工具与上下文，再考虑升级模型，最后才考虑微调。",
+    "extension": "用同一评测集对比改动前后的成功率与成本，才能判断这笔投入是否划算。",
+    "difficulty": 4,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "选型",
+      "优化顺序"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "ToolLLM: Facilitating Large Language Models to Master 16000+ Real-world APIs",
+      "url": "https://arxiv.org/abs/2307.16789",
+      "snippet": "We present ToolBench, an instruction tuning dataset for tool use built from 16,464 real-world REST APIs."
+    }
+  },
+  {
+    "id": "q_agent_100",
+    "type": "short",
+    "isPractice": false,
+    "stem": "Agent 系统进入长期维护阶段后，最需要持续投入的是什么？",
+    "options": [],
+    "referenceAnswer": "长期维护的难点在于环境一直在变：模型服务升级、第三方工具改接口、页面结构变更。因此最需要持续投入的是三件事：一是评测集与回归用例随线上失败不断扩充，保证有可比基线；二是可观测性，尤其是轨迹与过程指标，以及提示、模型、工具三者版本的追溯；三是安全复审，权限与负向用例要定期检查，因为攻击手法在演进。这三件事共同决定了系统是「缓慢退化」还是「持续可用」。",
+    "keyPoints": [
+      "评测集与回归用例的持续扩充，让每次改动都有可比基线",
+      "轨迹与过程指标的可观测性，以及提示/模型/工具版本的追溯能力",
+      "安全用例与权限边界的定期复审，以及失败案例的闭环治理"
+    ],
+    "explanation": "维护阶段最容易忽视的是模型版本升级：它可能在没有任何代码改动的情况下改变行为。",
+    "extension": "把质量指标按版本切分监控，是发现「静默退化」的唯一手段。",
+    "difficulty": 4,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "长期维护",
+      "可观测"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "ToolLLM: Facilitating Large Language Models to Master 16000+ Real-world APIs",
+      "url": "https://arxiv.org/abs/2307.16789",
+      "snippet": "We present ToolBench, an instruction tuning dataset for tool use built from 16,464 real-world REST APIs."
+    }
   }
 ]
