@@ -49,11 +49,16 @@ node tools/finish-task.mjs --task T-00N \
 
 | 你要做的事 | 该读的文件 | 大致行数 |
 | --- | --- | --- |
-| 加/改某分类的题 | `data/questions/<分类>.json`（源数据）+ `data/questions/index.ts` | 各 ~145 行 |
+| 加/改某分类的题 | `data/questions/<分类>.json`（源数据）+ `data/questions/index.ts` | 每个 ≤ 100 题 / ~3300 行；只看要改的那一段 |
 | 出题流水线（素材 → 草稿 → 合并） | `tools/gen-questions.mjs` | ~330 行 |
 | 题目获取流水线（抓权威素材 → 切块 → 草稿） | `tools/pipeline/`（先看 `run.mjs`；抓取规则在 `sources.mjs`，清洗规则在 `normalize.mjs`） | 各 ≤ 275 行 |
 | 改每日出题规则 | `lib/recommend.ts` | ~180 行 |
-| 改间隔重复节奏 | `lib/review.ts` | ~31 行 |
+| 改复习节奏（艾宾浩斯） | `lib/ebbinghaus.ts` | ~85 行 |
+| 改熟练度三档 | `lib/mastery.ts` | ~60 行 |
+| 改简答本地评分 | `lib/grading.ts` | ~120 行 |
+| 改模型批阅 / 自带 key 调用 | `lib/agent.ts` + `lib/agent-store.ts` | 各 ~120 / ~50 行 |
+| 改题型判定与文案 | `lib/question-kind.ts` | ~30 行 |
+| 改简答作答 UI / 熟练度选择 | `pages/ShortAnswerBox.tsx` / `MasteryPicker.tsx` | 各 ~80 行 |
 | 改本地存储 / 导出码 | `lib/storage.ts` | ~170 行 |
 | 改掌握度统计 | `lib/stats.ts` | ~48 行 |
 | 改答题交互 | `pages/Quiz.tsx` | ~200 行 |
@@ -92,7 +97,8 @@ node tools/plan.mjs show  T-003             # 去 git 历史里找这个任务�
 
 - 口径：本次提交的 **新增行 + 删除行** 之和。lockfile、二进制/图片、以及 git 判定为纯重命名的文件不计入。
 - 超了就**拆成多个提交**，按功能边界拆，不要按文件个数拆。
-- `.githooks/pre-commit` 已自动拦截。首次克隆后需要启用一次：
+- **题库类改动的经验值**：一次 merge ≤ 10 道单选/判断（约 450 行）或 ≤ 15 道简答（约 440 行）。
+- `.githooks/pre-commit` 会自动拦截：行数预算 + 分层 + 题库校验 + **相关测试**。首次克隆后需要启用一次：
 
 ```bash
 git config core.hooksPath .githooks
@@ -111,7 +117,10 @@ node tools/test-related.mjs          # 依据暂存区改动，自动挑出相�
 node tools/test-related.mjs --all    # 全量：仅发布前或大改动时偶尔用
 ```
 
-选测逻辑：从测试文件出发求传递依赖闭包，只要闭包里出现本次改动的文件就选中它。
+选测逻辑：从测试文件出发求传递依赖闭包，只要闭包里出现本次改动的文件就选中它。题库 JSON 也算改动源，改了题会选中 `all.test.ts`。
+
+> v0.11 起 `pre-commit` 会自动跑一次 `test-related.mjs`：跑相关的、不跑全量。
+> 提交被测试拦下时**不要去 `--no-verify`**，先修好测试。
 
 **写代码时的要求**：
 
@@ -193,7 +202,9 @@ app/src/
   types.ts                    全局类型（最底层）
   data/questions/index.ts      题库组装 + 查询（把 JSON 断言成 Question[]）
   data/questions/<分类>.json   分类题库源数据（加题只动这里）
-  lib/                         纯逻辑，可测
+  lib/                         纯逻辑，可测（storage / task / stats / categories / crypto /
+                               recommend / ebbinghaus / mastery / grading / agent / agent-store /
+                               question-kind / ...）
   pages/                       页面渲染
   App.tsx                      路由与状态编排
 ```
@@ -208,7 +219,22 @@ node tools/gen-questions.mjs --merge content/drafts/<草稿>.json RAG      # 校
 
 - 题库源数据是 `data/questions/*.json`，运行时由 `index.ts` import 进来。
 - 草稿写在 `content/drafts/`（已 gitignore），人工修订来源与解析后再 merge。
-- 合并会改变题目顺序：记得同步 `data/questions/all.test.ts` 里的 `EXPECTED_IDS`。
+- **合并后必须同步 `data/questions/all.test.ts` 里 `EXPECTED_FILES` 中对应前缀的 `count`**（该文件锁的是「每文件题量 + 各文件 id 成块升序」，不再逐条列 id）。
+- 合并会按 id 升序落盘（取号会优先填补删除留下的空号，这是有意的）。
+- **注意 800 行提交上限**：一次 merge 建议 ≤ 10 道单选/判断（约 450 行）或 ≤ 15 道简答（约 440 行）；判断题 20 道约 700 行，属于临界值。
+
+### 题库规模与题型契约（v0.11）
+
+当前 **315 题**：`rag` / `agent` / `ontology` 各 100 题，其余 5 个分类各 3 题。
+
+| 题型 | 契约要点 |
+| --- | --- |
+| `single` / `scenario` | 选项 ≥ 2，恰好 1 个正确；每个错误选项必须写 `wrongReason` |
+| `judge` | **恰好 2 个选项**（A 正确 / B 错误）；错误项必须写 `wrongReason` |
+| `short` | `options: []`；必须有 `referenceAnswer`，建议给 `keyPoints`（评分要点，本地评分按命中率打分） |
+
+- `isPractice: true` 是「工程判断题」标记（UI 标「工程判断」），当日推荐至少要有 3 道；当前共 99 道，不变量要求 ≥60 且跨 ≥3 个分类。
+- 每题必填：`id / type / isPractice / stem / options / explanation / difficulty / categories / tags / source`；`source` 需 `type/title/url(https)/snippet`（snippet 必须是原文逐字片段）。
 
 ### 题目获取流水线（v0.10 新增，与业务解耦）
 

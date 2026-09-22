@@ -15,10 +15,13 @@
 - 路线已定：**纯静态 Web PWA**（Vite + React + TS）+ 腾讯云 CloudBase 静态托管，零服务器、零数据库、¥0。
 - 已上线：<https://test-d2gk9bnf2dc862288-1304936445.tcloudbaseapp.com>
 - 功能闭环已完成：今日 10 题 / 分层解析 / 错题复习 / 分类专项 / 收藏 / 断点续答 / 统计与 streak / 加密码备份 / PWA（含 iOS 图标）。
+- **题型已扩到判断 + 简答**：简答支持用户输入，批阅走「模型（用户在设置里自带 API key，只存本机）+ 本地要点覆盖率」双路，失败自动降级；**查看答案即判为未掌握**。
+- **复习节奏改为艾宾浩斯遗忘曲线**：间隔 1/2/4/7/15/30/60 天 × 熟练度倍率，按记忆保持率 `R = e^(-Δt/S)` 排序；每题可自评「已掌握 / 模糊 / 未掌握」。
 - 唯一卡住的一步：**手机 4G 真实网络实测**（清单见产品说明 10.7）；v0.9 已重新部署，线上与本地产物一致，可直接测。
-- 题库只有 24 题，仅够跑通链路；出题流水线已就绪（`tools/gen-questions.mjs`），扩题按用户要求暂缓。
+- **题库已扩到 315 题**：RAG / Agent / 本体与知识图谱各 100 题（每类 20 单选 + 20 判断 + 60 简答），其余 5 个分类各 3 题；其中工程判断题（`isPractice`）99 道。
+- ⚠️ **线上产物仍是 v0.9**：简答/判断/批阅/艾宾浩斯与新题库都还没部署（见产品说明 0.7 第 1 步）。
 - **题目获取流水线已跑通**（`tools/pipeline/`）：从 6 个权威开源项目（OpenAI Cookbook / DAIR.AI / 微软 / HuggingFace / OWASP / arXiv）抓素材 → 规范化 → 切块 → 出草稿，全程结构化日志与运行报告；与业务解耦，只有 `--merge` 才会进题库。
-- 质量基线：81 个 vitest 用例 + 93 个流水线用例；GitHub Actions CI（题库校验 + 分层 + 构建 + 全量测试）。
+- 质量基线：**420 个 vitest 用例**（11 个文件）+ 93 个流水线用例；GitHub Actions CI（题库校验 + 分层 + 构建 + 全量测试）。
 
 ## 跑起来
 
@@ -65,6 +68,7 @@ node tools/pipeline/run.mjs --stage draft --mode llm     # 调模型出题（需
 
 node tools/gen-questions.mjs --check                     # 校验题库
 node tools/gen-questions.mjs --merge content/drafts/oss-<runId>.json RAG   # 人工审后合并
+# 合并后记得同步 app/src/data/questions/all.test.ts 里 EXPECTED_FILES 的题量计数；单次 merge 建议 ≤10 道单选/判断或 ≤15 道简答（800 行提交上限）
 ```
 
 产物写在 `content/raw`、`corpus`、`chunks`、`drafts`、`logs`、`reports`（全部 gitignore，可重建）。
@@ -79,10 +83,11 @@ node tools/gen-questions.mjs --merge content/drafts/oss-<runId>.json RAG   # 人
 | `AGENTS.md` | **开发约束（harness）**：分层、计划、提交与测试门禁 |
 | `docs/PLAN.md` | 任务计划（脚本维护） |
 | `tools/` | 约束脚本（plan / check-commit-size / check-layers / test-related / finish-task）+ 内容脚本（gen-icons / gen-questions / question-schema / llm） |
+| `app/src/lib/` | 纯逻辑层：推荐（`recommend`）、艾宾浩斯（`ebbinghaus`）、熟练度（`mastery`）、简答评分（`grading`）、模型批阅（`agent`）等 |
 | `tools/pipeline/` | 题目获取流水线：权威源抓取 → 规范化 → 切块 → 出草稿；与业务解耦，只产出草稿 |
 | `content/sources/` | 人工出题素材；流水线产物（raw / corpus / chunks / drafts / logs / reports）已 gitignore |
 | `app/` | 前端源码（Vite + React + TS） |
-| `app/src/data/questions/` | 题库源数据（每个分类一个 JSON）+ `index.ts` 组装 |
+| `app/src/data/questions/` | 题库源数据（每个分类一个 JSON，共 315 题）+ `index.ts` 组装；契约与加题流程见 `AGENTS.md` |
 | `app/dist/` | 构建产物，部署的就是这个目录 |
 
 ## 注意
