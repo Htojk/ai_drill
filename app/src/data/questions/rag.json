@@ -2547,5 +2547,442 @@
       "url": "https://arxiv.org/abs/2005.11401",
       "snippet": "We explore a general-purpose fine-tuning recipe for retrieval-augmented generation (RAG) — models which combine pre-trained parametric and non-parametric memory for language generation."
     }
+  },
+  {
+    "id": "q_rag_071",
+    "type": "short",
+    "isPractice": false,
+    "stem": "知识库既有文本也有图表和表格截图，多模态 RAG 的基本思路是什么？",
+    "options": [],
+    "referenceAnswer": "基本思路是为图像生成嵌入（CLIP 之类的多模态编码器或图片描述模型），与文本嵌入放进同一个索引里做跨模态检索。命中图像后有两种进入生成的方式：一是直接把图片交给多模态模型，二是先用模型把图片转成结构化描述（含表格内容）再拼进上下文。对以图表截图为主的语料，OCR + 表结构还原往往比纯视觉编码更可靠。",
+    "keyPoints": [
+      "用多模态编码器把图像与文本映射到同一向量空间，实现跨模态检索",
+      "检索到图像后要么交给多模态模型理解，要么先转成文字描述再进入文本链路",
+      "图片里的文字可用 OCR 抽出来单独建索引，作为文本检索的补充"
+    ],
+    "explanation": "多模态 RAG 的难点不在检索，而在「图片里的信息如何被准确还原成模型能用的形式」。",
+    "extension": "工程上常见折中是「图片 + 自动生成描述」双写：检索用描述，展示用原图。",
+    "difficulty": 4,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "多模态",
+      "图表"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "Learning Transferable Visual Models From Natural Language Supervision (CLIP)",
+      "url": "https://arxiv.org/abs/2103.00020",
+      "snippet": "CLIP can be applied to any visual classification benchmark by simply providing the names of the visual categories to be predicted."
+    }
+  },
+  {
+    "id": "q_rag_072",
+    "type": "short",
+    "isPractice": false,
+    "stem": "RAG 服务要做缓存的话，有哪几层可以缓存？各自的失效策略是什么？",
+    "options": [],
+    "referenceAnswer": "至少三层：一是嵌入缓存，同一段文本的向量是确定的，可以直接按内容哈希缓存，几乎无风险；二是答案缓存，键是规范化后的查询，收益最高，但知识库更新或文档删除时必须能定向失效，否则会返回过期答案；三是语义缓存，用向量相似度把「意思相近的问题」映射到同一个答案，能显著降低成本，但存在误命中风险，需要设相似度阈值、保留人工审计与快速回滚手段。",
+    "keyPoints": [
+      "查询嵌入缓存：同一问题重复出现时省掉一次编码，通常按文本精确匹配即可",
+      "答案缓存：命中则直接返回，但必须做过期与失效，避免知识更新后仍返回旧答案",
+      "语义缓存：按向量相似度命中近似问题，收益大但误命中风险也大，需要相似度阈值与审计"
+    ],
+    "explanation": "缓存是 RAG 降本的第一手段，也是引入「陈旧答案」的主要途径。",
+    "extension": "语义缓存建议只用于对时效不敏感的知识，或把缓存命中标出来让用户知道这是复用结果。",
+    "difficulty": 4,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "缓存",
+      "成本"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "GPTCache: An Open-Source Semantic Cache for LLM Applications",
+      "url": "https://arxiv.org/abs/2308.02490",
+      "snippet": "GPTCache, a semantic cache for LLM applications, which uses semantic similarity to identify and reuse cached responses."
+    }
+  },
+  {
+    "id": "q_rag_073",
+    "type": "short",
+    "isPractice": false,
+    "stem": "长上下文模型已经能塞进整本书了，为什么还需要 RAG？",
+    "options": [],
+    "referenceAnswer": "长上下文解决的是「一次能读多少」，RAG 解决的是「该读哪一段以及怎么更新」。即便窗口足够大，全量塞入仍然代价高、延迟高，并且存在长上下文中间信息被忽略的问题；同时知识会变化，RAG 可以只更新索引而不动模型。最后，引用粒度也是关键：RAG 能指出答案来自哪个片段，而把整本文档交给模型时，溯源只能靠模型自己复述。",
+    "keyPoints": [
+      "超长上下文成本高、延迟高，且长上下文中间的信息仍容易被忽略",
+      "RAG 提供可更新的外部知识，避免把私域数据塞进权重或用超长提示反复计费",
+      "RAG 的引用能落到具体片段，比「整本书都给了模型」更可核验"
+    ],
+    "explanation": "两者是互补关系：超大窗口适合做一次性深度分析，RAG 适合持续演进的知识服务。",
+    "extension": "常见折中是「RAG 先缩小范围 + 长上下文做精读」。",
+    "difficulty": 4,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "长上下文",
+      "定位"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "Lost in the Middle: How Language Models Use Long Contexts",
+      "url": "https://arxiv.org/abs/2307.03172",
+      "snippet": "models struggle to access and use information in the middle of long contexts."
+    }
+  },
+  {
+    "id": "q_rag_074",
+    "type": "short",
+    "isPractice": false,
+    "stem": "什么情况下应该用 Text-to-SQL，而不是把表格内容喂给向量检索？",
+    "options": [],
+    "referenceAnswer": "当答案依赖聚合、过滤、排序、时间范围等精确运算时（如「上季度销售额前五的产品」），把表格转成文本塞进向量库既不可靠也无法保证算术正确，应该走 Text-to-SQL 由数据库计算结果。反之，问题需要跨文档语义理解、没有固定 schema 可查时，向量检索更合适。工程上常见做法是先做查询路由，把结构化问题分给 SQL 链路，其余交给 RAG。",
+    "keyPoints": [
+      "需要聚合、排序、比较等精确计算时，必须走结构化查询",
+      "数据规模大、更新频繁时，逐行转文本入向量库既贵又易过期",
+      "问题本身模糊、需要跨文档语义理解时，向量检索更合适"
+    ],
+    "explanation": "选错链路会得到「看起来合理但算错」的答案，比直接拒答更危险。",
+    "extension": "可以做混合方案：先用 SQL 取数，再把取数结果作为上下文交给模型组织语言。",
+    "difficulty": 4,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "结构化数据",
+      "Text-to-SQL",
+      "路由"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "Spider: A Large-Scale Human-Labeled Dataset for Complex and Cross-Domain Semantic Parsing and Text-to-SQL Task",
+      "url": "https://arxiv.org/abs/1809.08887",
+      "snippet": "We present Spider, a large-scale, complex and cross-domain semantic parsing and text-to-SQL dataset."
+    }
+  },
+  {
+    "id": "q_rag_075",
+    "type": "short",
+    "isPractice": false,
+    "stem": "什么是「纠正式检索增强」（CRAG）？它想解决普通 RAG 的什么缺陷？",
+    "options": [],
+    "referenceAnswer": "普通 RAG 隐含假设「检索回来的东西一定相关」，一旦召回质量差，模型会基于无关内容硬答。CRAG 的做法是在检索与生成之间插入一个轻量评估器，对检索结果打「正确/模糊/错误」之类的标签：正确就直接用，模糊就做知识精炼，错误就丢弃并改用其他来源（例如联网检索）。本质是把「检索质量」变成链路里一个可判断、可分支的环节。",
+    "keyPoints": [
+      "在检索后增加一个评估器判断检索结果质量，质量差时触发纠正动作",
+      "纠正动作包括改用其他检索源（如网络搜索）或对结果做分解/重写",
+      "它把「检索是可信的」这个隐含假设显式化，避免坏输入直接进入生成"
+    ],
+    "explanation": "CRAG 的意义在于承认检索会失败，并为失败准备分支，而不是祈祷它不出错。",
+    "extension": "评估器可以用小模型或规则实现，不必都用大模型，否则延迟与成本会明显上升。",
+    "difficulty": 4,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "CRAG",
+      "检索评估"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "Corrective Retrieval Augmented Generation",
+      "url": "https://arxiv.org/abs/2401.15884",
+      "snippet": "we propose Corrective Retrieval Augmented Generation (CRAG), which improves the robustness of generation by evaluating the quality of retrieved documents."
+    }
+  },
+  {
+    "id": "q_rag_076",
+    "type": "short",
+    "isPractice": false,
+    "stem": "收到用户问题后，先判断「要不要检索、检索哪个库」，为什么值得做？",
+    "options": [],
+    "referenceAnswer": "并非所有问题都需要检索：寒暄、常识、以及用户已经给出全部信息的问题，硬去检索只会把无关片段塞进上下文，稀释有效信息甚至带偏答案。多知识库场景下，把问题路由到正确的库能避免跨领域文档互相干扰排序。此外，路由本身很便宜，却能省掉一整轮嵌入与检索，对延迟和成本都是净收益。",
+    "keyPoints": [
+      "闲聊或常识问题检索只会引入噪声，还可能被无关文档带偏",
+      "多知识库场景需要先路由，否则会把不同领域的文档混在一起排序",
+      "路由可以省掉不必要的嵌入与检索开销，直接降低延迟和成本"
+    ],
+    "explanation": "路由是「成本优化」和「质量优化」少有的重合点。",
+    "extension": "实现上可以用小模型分类、关键词规则或先做一次廉价召回看置信度。",
+    "difficulty": 3,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "路由",
+      "查询分类"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "Adaptive-RAG: Learning to Adapt Retrieval-Augmented Large Language Models through Question Complexity",
+      "url": "https://arxiv.org/abs/2403.14403",
+      "snippet": "we propose Adaptive-RAG, a novel adaptive retrieval-augmented generation approach that dynamically selects the most appropriate strategy."
+    }
+  },
+  {
+    "id": "q_rag_077",
+    "type": "short",
+    "isPractice": false,
+    "stem": "chunk 的向量到底该用哪段文本算？直接编码原文有什么问题？",
+    "options": [],
+    "referenceAnswer": "直接编码原文片段的问题是「断章取义」：片段里出现「该系统」「上述方法」这类指代时，向量表示无法知道指的是什么，检索时自然难以匹配到完整语义的提问。常见改进是先给 chunk 拼接上下文信息（所属标题路径、文档标题，或由模型生成的简短上下文说明）再做嵌入。嵌入用的文本可以与展示用文本不同，但必须保存映射，引用时仍指向原文片段。",
+    "keyPoints": [
+      "原文片段缺少上下文，孤立看会有指代不明、术语未定义等问题",
+      "常见做法是给 chunk 前置一段说明（标题路径、所属文档、自动生成的上下文）再编码",
+      "嵌入用的文本与展示给用户的文本可以不同，只要保留映射关系"
+    ],
+    "explanation": "这是「上下文检索」的核心思想：让每个片段在脱离原文时也能自解释。",
+    "extension": "拼接上下文会改变向量，所以启用后必须全量重建索引。",
+    "difficulty": 4,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "embedding",
+      "上下文检索"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "Anthropic - Introducing Contextual Retrieval",
+      "url": "https://www.anthropic.com/news/contextual-retrieval",
+      "snippet": "we prepend chunk-specific explanatory context to each chunk before embedding."
+    }
+  },
+  {
+    "id": "q_rag_078",
+    "type": "short",
+    "isPractice": false,
+    "stem": "检索延迟突然变高，你会从哪些方向排查？",
+    "options": [],
+    "referenceAnswer": "第一步一定是分段打点，把「嵌入编码、向量检索、重排序、生成」各自的耗时拆开，否则会在错误的层上优化。索引侧常见原因是参数被调大（efSearch/nprobe 提高召回也提高延迟）、索引未量化导致内存压力、或数据量增长后分片不均。链路侧常见原因是新增了查询改写或多查询（多花一次模型调用）、元数据过滤过于苛刻导致退化成暴力扫描，以及超时重试引发的连锁变慢。",
+    "keyPoints": [
+      "先区分是检索变慢还是生成变慢，用分段耗时定位",
+      "索引侧：向量库负载、索引参数（efSearch/nprobe）、向量维度与量化策略",
+      "链路侧：查询改写/多查询带来的额外模型调用、过滤条件导致的暴力扫描、并发与超时重试"
+    ],
+    "explanation": "延迟问题里最常见的误判是把生成变慢当成检索变慢来优化。",
+    "extension": "基线数据很重要：没有平时的分位耗时曲线，很难判断是「一直慢」还是「最近变慢」。",
+    "difficulty": 4,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "性能",
+      "延迟排查"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "Faiss Wiki - Indexes",
+      "url": "https://github.com/facebookresearch/faiss/wiki/Guidelines-to-choose-an-index",
+      "snippet": "A good rule of thumb is that the index should be as fast as possible."
+    }
+  },
+  {
+    "id": "q_rag_079",
+    "type": "short",
+    "isPractice": false,
+    "stem": "知识库里含个人信息时，RAG 链路有哪些必须处理的合规风险点？",
+    "options": [],
+    "referenceAnswer": "风险点贯穿全链路：入库阶段要识别并脱敏个人信息（或按权限分级存储），因为一旦进入向量库，删除与追踪都很困难；检索阶段必须做权限过滤，否则用户 A 的问题会命中用户 B 的资料——向量相似度不会区分归属；运行阶段要防止答案把敏感信息复述出来；日志与评测集是常被忽视的二次泄漏渠道，需要脱敏或限定访问。",
+    "keyPoints": [
+      "入库前就要做识别与脱敏，而不是等答案生成后再处理",
+      "索引与向量本身也属于数据，权限过滤必须在检索时生效",
+      "日志与评估样本容易成为二次泄漏渠道，需要单独治理"
+    ],
+    "explanation": "在 RAG 里，向量本身也是个人数据，删除权意味着要能按人精确定位并删除向量。",
+    "extension": "多租户系统建议在向量库层用命名空间或强制过滤条件隔离，而不是依赖应用层记得加条件。",
+    "difficulty": 4,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "合规",
+      "隐私",
+      "权限"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "OWASP Top 10 for LLM Applications",
+      "url": "https://owasp.org/www-project-top-10-for-large-language-model-applications/",
+      "snippet": "Sensitive information disclosure occurs when an LLM inadvertently reveals confidential data in its responses."
+    }
+  },
+  {
+    "id": "q_rag_080",
+    "type": "short",
+    "isPractice": false,
+    "stem": "没有标注数据时，怎么给 RAG 建立第一版评估？",
+    "options": [],
+    "referenceAnswer": "起步不需要大规模标注：先从真实用户问题里抽样 30~50 条，覆盖主要意图与难例，人工标出「哪些文档/片段应该被召回」和「参考答案要点」。然后按层计算指标：检索层看 recall@k 与命中排名，生成层用 faithfulness 与 answer relevance 这类不依赖标准答案的指标。每发现一个线上失败案例就补进回归集，让评测集随系统一起长。",
+    "keyPoints": [
+      "先造 30~50 条覆盖真实分布的问答对，作为回归基线，人工标注「期望命中的文档」",
+      "用分层指标（recall@k、faithfulness、answer relevance）替代无法获得的端到端准确率",
+      "把失败样例沉淀成固定回归集，新改动必须跑通它"
+    ],
+    "explanation": "第一版评估的目标不是打分准，而是让「改动有没有变差」这件事可判断。",
+    "extension": "回归集要固定版本并纳入 CI，否则很快会退化成没人跑的脚本。",
+    "difficulty": 4,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "评估",
+      "冷启动"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "Evaluation of Retrieval-Augmented Generation: A Survey",
+      "url": "https://arxiv.org/abs/2405.07437",
+      "snippet": "we provide a systematic review of the evaluation of retrieval-augmented generation."
+    }
+  },
+  {
+    "id": "q_rag_081",
+    "type": "short",
+    "isPractice": false,
+    "stem": "线上 RAG 做 A/B 时，除了「答案好不好」，还应该看哪些指标？",
+    "options": [],
+    "referenceAnswer": "只看答案质量容易得出片面的结论：一个改动可能让答案略好但延迟翻倍，或者答案看起来更流畅但引用点击率下降（说明引用不可信）。所以至少要同时看三类：检索层指标（recall@k、空检索率）判断链路是否按预期改动；成本与性能指标（token、延迟分位、重排调用量）判断是否值得；用户行为指标（引用点击率、追问率、负反馈率）作为业务结果的代理，这些往往比自动评分更能反映真实体验。",
+    "keyPoints": [
+      "检索层：recall@k、命中排名、空检索率、过滤命中率",
+      "成本与性能：每问的 token 消耗、重排调用次数、P95 延迟",
+      "用户行为：引用点击率、追问率、点「没用」的比例"
+    ],
+    "explanation": "A/B 的价值在于把「我觉得更好」变成「数据上更好」，前提是同时观察质量与代价。",
+    "extension": "分流要按用户或会话维度稳定分组，避免同一用户来回切换造成体验抖动。",
+    "difficulty": 4,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "A/B",
+      "可观测"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "Evaluation of Retrieval-Augmented Generation: A Survey",
+      "url": "https://arxiv.org/abs/2405.07437",
+      "snippet": "evaluation of RAG systems should consider both retrieval and generation components."
+    }
+  },
+  {
+    "id": "q_rag_082",
+    "type": "short",
+    "isPractice": false,
+    "stem": "近似重复的检索结果为什么必须做结果级去重？怎么实现？",
+    "options": [],
+    "referenceAnswer": "结果级去重解决的是「top-k 里塞了同一段话的三份拷贝」：上下文预算被浪费，互补信息进不了提示词，模型还可能把这些重复当作多处独立印证。实现上先对候选两两或聚类比较相似度（向量相似度、n-gram 重叠、MinHash 签名都可以），同一簇只保留信息量最大或排名最靠前的代表，同时把被合并的来源记录下来一并展示。",
+    "keyPoints": [
+      "重复片段挤占上下文预算，让真正互补的信息进不来",
+      "按内容相似度（如向量相似度、n-gram 重叠、MinHash）聚类后每簇只留一个代表",
+      "去重时保留来源列表，避免用户误以为只有一个出处"
+    ],
+    "explanation": "去重后的有效信息量通常比单纯提高 top-k 更划算。",
+    "extension": "去重的阈值要调：过松会让不同观点的段落被合并，过紧则起不到作用。",
+    "difficulty": 3,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "去重",
+      "上下文组装"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "RAG: Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks",
+      "url": "https://arxiv.org/abs/2005.11401",
+      "snippet": "We combine pre-trained parametric and non-parametric memory for language generation."
+    }
+  },
+  {
+    "id": "q_rag_083",
+    "type": "short",
+    "isPractice": false,
+    "stem": "为什么应该让模型在信息不足时明确说「不确定／资料不足」？工程上怎么保证？",
+    "options": [],
+    "referenceAnswer": "在知识问答场景，用户往往无法分辨「流畅的错误答案」和「正确但简洁的答案」，编造的代价很高，所以拒答是一项功能而不是失败。做法上先要在提示里明确「只依据下列资料回答，资料不足时说明缺少什么」，再在链路层兜底：检索为空或最高分低于阈值时直接短路返回固定话术，不调用生成。对生成结果还可以做检查，比如答案里出现了资料中不存在的数字或专有名词就触发复核。",
+    "keyPoints": [
+      "RAG 场景下编造答案的代价远高于承认不知道",
+      "要在提示里显式给出「资料不足时的行为」，如只回答已检索到的内容",
+      "仅靠提示不够，还需要输出校验或在检索为空时直接短路返回固定话术"
+    ],
+    "explanation": "拒答率是一个需要监控的指标：突然下降往往意味着检索质量在恶化。",
+    "extension": "提示里给出「资料不足」的示例回答，比只说一句「不要编造」有效得多。",
+    "difficulty": 3,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "拒答",
+      "幻觉抑制"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "Self-RAG: Learning to Retrieve, Generate, and Critique through Self-Reflection",
+      "url": "https://arxiv.org/abs/2310.11511",
+      "snippet": "Self-RAG trains an LM to adaptively retrieve passages on-demand, and generate and reflect on retrieved passages."
+    }
+  },
+  {
+    "id": "q_rag_084",
+    "type": "short",
+    "isPractice": false,
+    "stem": "指数级增长的语料下，怎样控制索引重建的代价？",
+    "options": [],
+    "referenceAnswer": "重建代价主要来自嵌入计算与索引构建两件事，所以关键是把触发条件分清楚：模型、切分策略、元数据结构变更才需要全量重建；单篇文档更新属于增量。工程上要把索引当作有版本的产物来管理：后台构建新版本，校验通过后原子切换，失败可回滚；同时维护每篇文档的处理状态（已嵌入版本、更新时间），防止漏建与重复建。对超大语料还可以按领域分片，让重建范围局部化。",
+    "keyPoints": [
+      "区分全量重建与增量更新，只在 embedding 模型或切分规则变更时才全量重建",
+      "索引版本化：新索引构建完成后再原子切换，避免线上出现半成品",
+      "把「哪些文档需要重建」记成显式状态，避免漏建导致检索结果陈旧"
+    ],
+    "explanation": "原子切换 + 可回滚是索引重建的底线，否则一次重建失败就会导致线上检索不可用。",
+    "extension": "保留旧索引一段时间，便于出问题时快速回退到上一个版本。",
+    "difficulty": 4,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "索引重建",
+      "运维"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "Faiss Wiki - Guidelines to choose an index",
+      "url": "https://github.com/facebookresearch/faiss/wiki/Guidelines-to-choose-an-index",
+      "snippet": "The index should be as accurate as possible, and still be fast enough."
+    }
+  },
+  {
+    "id": "q_rag_085",
+    "type": "short",
+    "isPractice": false,
+    "stem": "用户反馈「同一个问题昨天答得对，今天答错了」，你会怎么定位？",
+    "options": [],
+    "referenceAnswer": "回答不稳定通常来自三类变化。一是链路变化：索引被重建（切分或 embedding 变了）、模型或提示词升级、缓存策略改动；二是数据变化：源文档被改动或删除、新增了内容相似但结论不同的文档，把正确答案挤出 top-k；三是检索漂移：同样的查询在两天的召回结果不同，需要把两次的 top-k 与分数打出来对比。定位办法是先把「当时的检索结果」留痕，否则事后无法复盘。",
+    "keyPoints": [
+      "先看链路是否变更：索引重建、模型升级、提示词改动、缓存命中策略",
+      "再看数据是否变更：相关文档被更新、删除，或新增了误导性文档",
+      "最后看检索结果是否漂移：同查询的 top-k 是否变化，重排分数是否下降"
+    ],
+    "explanation": "把每次回答的检索命中与分数落日志，是排查这类「复现不了」问题的唯一可靠手段。",
+    "extension": "注意多路检索与重排都可能是变量，对比时要逐层锁定差异出现在哪一步。",
+    "difficulty": 4,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "排障",
+      "可观测"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "LlamaIndex - Optimizing Production RAG",
+      "url": "https://docs.llamaindex.ai/en/stable/optimizing/production_rag/",
+      "snippet": "Let's look at how to optimize each of these components."
+    }
   }
 ]
