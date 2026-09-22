@@ -2510,5 +2510,440 @@
       "url": "https://modelcontextprotocol.io/introduction",
       "snippet": "MCP is an open protocol that standardizes how applications provide context to LLMs."
     }
+  },
+  {
+    "id": "q_agent_071",
+    "type": "short",
+    "isPractice": false,
+    "stem": "Agent 边思考边调工具时，前端界面应该怎么呈现状态？",
+    "options": [],
+    "referenceAnswer": "Agent 的执行时长不确定且可能中途失败，如果只给一个加载动画，用户无法判断是卡住了还是在正常工作。合理做法是把过程阶段化呈现：当前在思考还是在调用工具、调用的是哪个工具、用了什么关键参数；同时提供中断入口。工具返回的原始内容通常很长，界面只展示摘要与关键字段，完整数据收进可展开区域，避免把调试信息直接当界面内容。",
+    "keyPoints": [
+      "用阶段化状态（思考中/调用工具/等待结果/完成）而不是一个转圈",
+      "显示正在调用哪个工具与关键参数，让用户知道系统在做什么、能中断",
+      "工具结果只展示摘要，原始数据收进可展开的详情"
+    ],
+    "explanation": "展示工具调用还能建立信任：用户看到系统在查真实数据，而不是凭空编造。",
+    "extension": "把「等待人工确认」显式做成一个状态，而不是让界面看起来还在跑。",
+    "difficulty": 3,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "交互设计",
+      "流式"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_072",
+    "type": "short",
+    "isPractice": false,
+    "stem": "多轮 Agent 会话的状态要怎么持久化与恢复？",
+    "options": [],
+    "referenceAnswer": "正确的持久化对象是结构化的任务状态：当前目标、已完成步骤、已确认的事实、待办项、以及中间产物的引用（文件 ID、草稿 ID）。对话原文可以保留用于展示与追溯，但不应该作为恢复的唯一依据，因为它无法表达「哪一步已经完成」。每次状态变更都应落库并带版本号，避免并发写入互相覆盖；恢复时还要检查依赖的外部数据是否已变化，必要时重新校验，而不是无条件信任旧状态。",
+    "keyPoints": [
+      "持久化「任务状态」而非整段对话：目标、进度、已确认事实、待办、中间产物引用",
+      "每次状态变更后写入，并带版本号以防并发覆盖",
+      "恢复时要能识别状态过期（依赖的外部数据已变化）并重新校验"
+    ],
+    "explanation": "状态可恢复是 Agent 从演示走向可用的分水岭：用户机器重启后任务不该从头再来。",
+    "extension": "长任务建议记录「幂等键 + 已完成步骤」，恢复时跳过已完成的部分而不是重放全部。",
+    "difficulty": 4,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "状态管理",
+      "持久化"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "Model Context Protocol - Introduction",
+      "url": "https://modelcontextprotocol.io/introduction",
+      "snippet": "MCP is an open protocol that standardizes how applications provide context to LLMs."
+    }
+  },
+  {
+    "id": "q_agent_073",
+    "type": "short",
+    "isPractice": false,
+    "stem": "同一个会话里用户突然切换了任务，Agent 应该怎么处理？",
+    "options": [],
+    "referenceAnswer": "任务切换的第一原则是不要悄悄丢弃旧状态：把旧任务标记为「已挂起」并保存状态与产物引用，用户回来时可以继续。其次要明确处理运行中的动作：已经发出的不可逆操作不能撤回，需要如实告知；可中断的调用应尽快取消，避免浪费预算。最后新任务要用干净的上下文开始，否则旧任务的中间结论会污染新任务的推理。",
+    "keyPoints": [
+      "先识别意图变更，把旧任务状态归档保留而不是直接丢弃",
+      "确认是否要中止旧任务：能后台继续的挂起，不能的就明确终止并说明",
+      "新任务使用干净的上下文，不要混入旧任务的过程细节"
+    ],
+    "explanation": "切换检测本身就是难点：可以靠显式按钮，也可以靠模型判断意图是否已偏离当前任务。",
+    "extension": "界面上显式区分「当前任务」与「历史任务」，能显著降低用户的困惑。",
+    "difficulty": 4,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "任务切换",
+      "会话管理"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_074",
+    "type": "short",
+    "isPractice": false,
+    "stem": "让 Agent 输出结构化数据，有哪几种约束方式？怎么取舍？",
+    "options": [],
+    "referenceAnswer": "优先级是：能用厂商原生的结构化输出或工具调用就用，它把格式约束交给模型侧，最稳；其次是提示里给 schema 与示例，并约定「只输出 JSON 不输出解释」，解析失败时带着错误重试；最后是代码侧的解析容错（提取 JSON 片段、修补常见错误），它只能提高成功率，不能保证正确性。无论用哪种，业务字段的语义校验都必须在代码里做。",
+    "keyPoints": [
+      "原生结构化输出/函数调用：约束最强，格式最稳，优先选",
+      "提示词 + JSON 示例：弱约束，需要解析失败后重试",
+      "输出后由代码做校验与修复：兜底层，但不能替代前两者"
+    ],
+    "explanation": "把格式校验与语义校验分开：前者可以靠约束，后者永远要靠代码。",
+    "extension": "重试时要告知模型具体错在哪个字段，否则它大概率重复同样的错误。",
+    "difficulty": 3,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "结构化输出",
+      "约束"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_075",
+    "type": "short",
+    "isPractice": false,
+    "stem": "工具返回的数据量非常大时，工程上怎么处理？",
+    "options": [],
+    "referenceAnswer": "原则是「不要把原始数据搬进上下文」。工具适配层应该做三件事：按字段裁剪，只保留模型决策需要的部分；长列表分页，返回前若干条并附总数与继续获取的参数（游标/偏移）；超长文本先摘要，同时把完整结果的引用（存储位置或查询句柄）交给模型，需要细节时再查。对同一结果被多次使用的场景要加缓存，避免反复拉取既慢又贵。",
+    "keyPoints": [
+      "在工具适配层裁剪：只返回决策需要的字段，长列表分页并给出总数",
+      "超长文本先摘要再回填，同时保留可再查询的引用（ID、游标）",
+      "对同一份大结果的多处使用做缓存，避免重复拉取"
+    ],
+    "explanation": "裁剪规则要写进代码并被测试覆盖，放在提示里让模型自己截断是不可靠的。",
+    "extension": "返回里显式标出「已截断」与总数，能让模型知道自己看到的不是全部。",
+    "difficulty": 4,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "工具输出",
+      "上下文管理"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "ToolLLM: Facilitating Large Language Models to Master 16000+ Real-world APIs",
+      "url": "https://arxiv.org/abs/2307.16789",
+      "snippet": "We present ToolBench, an instruction tuning dataset for tool use built from 16,464 real-world REST APIs."
+    }
+  },
+  {
+    "id": "q_agent_076",
+    "type": "short",
+    "isPractice": false,
+    "stem": "人工确认怎么设计才既安全又不让人疲劳？",
+    "options": [],
+    "referenceAnswer": "确认疲劳是安全机制的隐形杀手：当用户面对大量无关紧要的确认时，会形成盲点习惯，真正高危的确认也被顺手放过。因此要分级——只有不可逆、影响外部或涉及资金的动作才阻塞式确认；其余只记录。确认卡片要给足信息（做什么、对谁、参数是什么），并解释触发原因。批量确认与「同类动作本次不再询问」能明显降低负担，但要限定在同会话、同类型、低风险的范围内。",
+    "keyPoints": [
+      "按风险分级：不可逆/高影响必审，低风险只做留痕",
+      "确认界面给出动作意图、完整参数与「为什么需要确认」",
+      "支持批量确认与「本次会话内同类动作不再询问」，但要限制适用范围"
+    ],
+    "explanation": "把确认设计的有效性当成安全指标来测：否决率过低往往说明确认已经在被盲点通过。",
+    "extension": "确认结果与操作 ID 要关联记录，事后可以复盘「谁批准了什么」。",
+    "difficulty": 4,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "人工确认",
+      "体验"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "Model Context Protocol - Introduction",
+      "url": "https://modelcontextprotocol.io/introduction",
+      "snippet": "MCP is an open protocol that standardizes how applications provide context to LLMs."
+    }
+  },
+  {
+    "id": "q_agent_077",
+    "type": "short",
+    "isPractice": false,
+    "stem": "多租户环境下部署 Agent，隔离要怎么做？",
+    "options": [],
+    "referenceAnswer": "三个层面都要隔离。数据层面，检索与存储必须强制带租户过滤条件（最好在数据访问层硬编码，而不是依赖调用方记得加），日志与轨迹也要按租户分区，避免跨租户泄漏。能力层面，各租户的工具、外部账号与密钥独立，不能共用同一个高权限凭据。运行层面，按租户设置并发与用量配额，防止单个租户的突发流量拖垮全局，也便于计费与限流。",
+    "keyPoints": [
+      "数据隔离：向量库、对象存储、日志按租户分区，查询强制带租户过滤",
+      "能力隔离：工具与凭据按租户配置，不得共用同一高权限账号",
+      "运行隔离：并发与配额按租户限制，防止单租户挤占或触发全局风控"
+    ],
+    "explanation": "跨租户泄漏往往不是模型的问题，而是某处查询忘了加租户条件。",
+    "extension": "隔离设计要在测试里有专门的用例：用租户 A 的身份查询，断言永远查不到租户 B 的数据。",
+    "difficulty": 4,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "多租户",
+      "隔离"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "Model Context Protocol - Introduction",
+      "url": "https://modelcontextprotocol.io/introduction",
+      "snippet": "MCP is an open protocol that standardizes how applications provide context to LLMs."
+    }
+  },
+  {
+    "id": "q_agent_078",
+    "type": "short",
+    "isPractice": false,
+    "stem": "模型服务或关键工具不可用时，Agent 该怎么降级？",
+    "options": [],
+    "referenceAnswer": "合理的降级是分层的：模型不可用时，可以切换到备用模型或较小模型；某个工具不可用时，尝试等价工具或改用只读缓存数据；都不可用时，退化为固定流程或直接返回已完成的中间结果并说明还差什么。关键是要显式告知用户「当前是降级模式」，否则用户会把受限结果当成完整结论。同时要有熔断与恢复探测，否则故障期间所有请求都在重试，会进一步压垮系统。",
+    "keyPoints": [
+      "先区分降级层级：换模型/换工具/退化为固定流程/只返回已完成的中间结果",
+      "降级要显式告知用户当前能力受限，而不是静默给出低质量答案",
+      "设置熔断与恢复探测，避免在故障期间反复重试拖慢所有人"
+    ],
+    "explanation": "降级路径也要被测试，否则真正故障时才发现降级逻辑本身就是坏的。",
+    "extension": "把降级事件纳入监控，它能直接解释短期内的质量与延迟波动。",
+    "difficulty": 4,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "降级",
+      "容错"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_079",
+    "type": "short",
+    "isPractice": false,
+    "stem": "用本地小模型跑 Agent，什么情况下可行？",
+    "options": [],
+    "referenceAnswer": "判断标准是任务复杂度与容错空间。窄任务（固定几类意图、少量工具、1-2 步完成）加上可接受的失败率，本地小模型往往够用，而且隐私与成本优势明显。但一旦涉及长链推理、多工具选择、需要自我纠错，小模型的错误会被逐步放大，最终失败率不可接受。除此之外还要算硬件账：并发能力、上下文长度与推理延迟往往才是真正的瓶颈。",
+    "keyPoints": [
+      "任务窄、工具少、步骤短、允许一定失败率时可行，例如单轮工具调用或格式化",
+      "需要长链推理、复杂规划或大量工具选择时，小模型的能力差距会迅速放大",
+      "还要考虑本地推理的硬件成本、并发能力与上下文长度限制"
+    ],
+    "explanation": "常见做法是大小模型分工：小模型做意图识别与参数抽取，大模型只处理需要推理的部分。",
+    "extension": "本地模型的能力评测必须用自家任务的评测集，公开榜单的排名往往不适用。",
+    "difficulty": 4,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "本地模型",
+      "选型"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "ToolLLM: Facilitating Large Language Models to Master 16000+ Real-world APIs",
+      "url": "https://arxiv.org/abs/2307.16789",
+      "snippet": "We present ToolBench, an instruction tuning dataset for tool use built from 16,464 real-world REST APIs."
+    }
+  },
+  {
+    "id": "q_agent_080",
+    "type": "short",
+    "isPractice": false,
+    "stem": "怎么评测 Agent「不该做的动作」？",
+    "options": [],
+    "referenceAnswer": "这类评测的目标是「负向断言」：给定一段诱导性输入或含注入内容的工具返回，系统不应该调用转账、删除、外发等危险工具。用例要覆盖三类来源——用户输入的诱导、工具/网页返回的注入、以及越权请求（低权限用户尝试高权限动作）。断言要落在工具调用层，检查调用序列里是否出现了禁止项；只断言最终回复内容是不够的，因为动作可能已经执行。",
+    "keyPoints": [
+      "构造对抗性用例：诱导性输入、工具返回里的注入内容、越权请求",
+      "断言「危险动作未被触发」而不是只断言最终答案",
+      "覆盖高危工具的全集，并定期用新出现的手法更新用例"
+    ],
+    "explanation": "安全用例应该像回归测试一样常驻，并在每次提示词或工具集变更后重跑。",
+    "extension": "记录「拦截率」与「误拦截率」，避免为了安全把正常功能一起卡死。",
+    "difficulty": 4,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "安全评测",
+      "越权"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "Model Context Protocol - Introduction",
+      "url": "https://modelcontextprotocol.io/introduction",
+      "snippet": "MCP is an open protocol that standardizes how applications provide context to LLMs."
+    }
+  },
+  {
+    "id": "q_agent_081",
+    "type": "short",
+    "isPractice": false,
+    "stem": "Agent 的提示词为什么要做版本管理？怎么管？",
+    "options": [],
+    "referenceAnswer": "提示词在 Agent 里等价于代码：它决定工具选择、终止条件与安全约束。不做版本管理就无法回答「昨天还好今天为什么变差」。管理方式是把提示词纳入仓库、每次改动带版本号与变更理由，并在发布前跑评测集记录结果；发布要支持灰度与一键回滚；轨迹里记录本次使用的提示版本，这样行为退化时能直接定位到具体变更。",
+    "keyPoints": [
+      "提示词是行为的一部分，改动会直接影响成功率、成本与安全性，必须可追溯",
+      "每次变更要有版本号、变更说明、以及对应的评测结果",
+      "发布要能灰度与回滚，并与轨迹里的提示版本关联以便归因"
+    ],
+    "explanation": "提示词改动的评测不能只看成功率，还要看步数、成本与危险动作拦截率。",
+    "extension": "把提示词拆成稳定的系统部分与可实验的业务部分，能让 A/B 实验更有针对性。",
+    "difficulty": 3,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "提示词管理",
+      "版本控制"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_082",
+    "type": "short",
+    "isPractice": false,
+    "stem": "给 Agent 做 A/B 实验时，怎么设计才不容易得出错误结论？",
+    "options": [],
+    "referenceAnswer": "Agent 的输出方差很大，实验设计的核心是控制混杂因素：分流按用户或会话说稳定，同一用户始终落在同一组；指标同时覆盖结果与过程，因为一次改动可能提升成功率但让成本翻倍；还要按任务类型分层统计，整体均值容易被高频简单任务主导。最后是样本量：任务成功率方差大意味着需要更多样本，短周期的实验很容易把随机波动当成改进。",
+    "keyPoints": [
+      "按用户或会话稳定分流，避免同一用户来回切换影响体验与归因",
+      "指标要同时覆盖结果（成功率）与过程（步数、工具错误率、成本、延迟）",
+      "样本量与实验周期要按任务的方差估算，不要用几天的数据下结论"
+    ],
+    "explanation": "同时要监控「失败代价」类指标（危险动作触发率、人工接管率），避免为了成功率牺牲安全性。",
+    "extension": "把实验结论与新版本的风险控制一起评审，比单纯看胜负更有价值。",
+    "difficulty": 4,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "A/B 实验",
+      "评测"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "ToolLLM: Facilitating Large Language Models to Master 16000+ Real-world APIs",
+      "url": "https://arxiv.org/abs/2307.16789",
+      "snippet": "We present ToolBench, an instruction tuning dataset for tool use built from 16,464 real-world REST APIs."
+    }
+  },
+  {
+    "id": "q_agent_083",
+    "type": "short",
+    "isPractice": false,
+    "stem": "Agent 与工作流引擎（状态机）结合时，职责怎么划分？",
+    "options": [],
+    "referenceAnswer": "划分原则是「确定性的事交给引擎，不确定的事交给模型」：流程编排、状态持久化、超时与重试、并发控制、审计由工作流引擎负责；模型只在某个节点内部完成开放任务，例如从非结构化文本中抽取字段、生成候选动作。节点间用明确的输入输出契约连接，模型不能自行决定跳到哪一步。需要判断的分支应显式建模为节点，模型输出判断依据或建议，由引擎决定走向。",
+    "keyPoints": [
+      "工作流引擎负责流程、状态、重试、超时与可观测，模型只负责开放性的子步骤",
+      "每个节点定义清晰的输入输出契约，模型不能改变流程走向",
+      "把需要判断的分支显式建模为节点，由模型提供判断依据或候选而不是直接跳转"
+    ],
+    "explanation": "这种结构最大的收益是可测试性：每个节点都能单独测，流程本身也能被重放。",
+    "extension": "与纯自由代理相比，代价是灵活性下降，所以只应把开放式子任务交给模型。",
+    "difficulty": 4,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "工作流",
+      "架构"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "Model Context Protocol - Introduction",
+      "url": "https://modelcontextprotocol.io/introduction",
+      "snippet": "MCP is an open protocol that standardizes how applications provide context to LLMs."
+    }
+  },
+  {
+    "id": "q_agent_084",
+    "type": "short",
+    "isPractice": false,
+    "stem": "在纯前端（浏览器）里编排 Agent，可行吗？有哪些限制？",
+    "options": [],
+    "referenceAnswer": "技术上可行：编排循环、状态管理、工具调用都可以在浏览器里完成，甚至可以直连模型接口。但有两个硬限制：一是密钥，任何放在前端的密钥都等同于公开，只有「用户自己填自己的 key，只存在本机」这一种模式是可接受的；二是能力，浏览器受同源策略与沙箱限制，无法直接访问内网、无法稳定执行长任务、也无法在用户关闭页面后继续运行。因此纯前端适合个人工具与只读场景，涉及共享凭据、后台长任务或合规审计时必须有服务端。",
+    "keyPoints": [
+      "可行性取决于是否必须持有密钥：把密钥放在浏览器等于公开，通常不可接受",
+      "纯前端可以完成编排逻辑，但工具调用仍受 CORS 与浏览器沙箱限制",
+      "适合的场景是「用户自带密钥」或「只读、无敏感凭据」的个人工具"
+    ],
+    "explanation": "判断依据是「有没有需要保密的东西」和「任务是否需要在浏览器之外持续运行」。",
+    "extension": "把编排逻辑写成与运行环境无关的纯函数，可以在前端跑、也可以几乎无改动地搬到服务端。",
+    "difficulty": 4,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "前端",
+      "架构限制"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_085",
+    "type": "short",
+    "isPractice": false,
+    "stem": "Agent 的输出格式经常不稳定，怎么系统地解决？",
+    "options": [],
+    "referenceAnswer": "先要区分不稳定来源：模型生成的自由文本、工具返回的格式变化、还是我们把两者拼装成最终结果时的逻辑问题。定位后对症处理：模型侧尽量用原生结构化输出或工具调用把格式约束交给模型厂商；工具侧在适配层做归一化，保证返回结构稳定；拼装侧用代码而不是模型来完成。再叠加一层校验与修复，失败时把具体错误回传重试，并统计失败率作为质量指标。",
+    "keyPoints": [
+      "先定位不稳定发生在哪一层：是模型输出、工具返回，还是拼装后的结构",
+      "用原生结构化输出或 schema 约束替代「请按格式输出」的口头要求",
+      "加一层确定性校验与修复，并要求模型在失败时带错误重试"
+    ],
+    "explanation": "格式问题里最常见的误判是把它当成「模型不听话」，实际上多数是缺少 schema 约束或缺少归一化层。",
+    "extension": "失败率突增往往与提示或模型版本变更同时发生，因此格式失败率要按版本切分监控。",
+    "difficulty": 4,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "输出稳定性",
+      "工程"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
   }
 ]
