@@ -1079,5 +1079,705 @@
       "url": "https://arxiv.org/abs/2307.16789",
       "snippet": "We present ToolBench, an instruction tuning dataset for tool use built from 16,464 real-world REST APIs."
     }
+  },
+  {
+    "id": "q_agent_024",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：ReAct 之所以把推理与行动交替，是为了让工具返回的真实观测结果能纠正模型下一步的推理。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": false,
+        "wrongReason": "工具返回的观测写回上下文后，模型会基于真实结果继续推理，而不是停留在猜测上，这正是交替结构的意义。"
+      }
+    ],
+    "explanation": "工具返回的观测写回上下文后，模型会基于真实结果继续推理，而不是停留在猜测上，这正是交替结构的意义。",
+    "extension": "",
+    "difficulty": 2,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "Agent",
+      "判断"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_025",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：只要把工具的参数定义写清楚，模型就不会选错工具。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": false,
+        "wrongReason": "参数 schema 只约束「怎么调用」，工具选择取决于名称、描述与使用场景说明；工具数量过多或职责重叠时仍然会选错。"
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": true
+      }
+    ],
+    "explanation": "参数 schema 只约束「怎么调用」，工具选择取决于名称、描述与使用场景说明；工具数量过多或职责重叠时仍然会选错。",
+    "extension": "",
+    "difficulty": 2,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "Agent",
+      "判断"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_026",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：给模型暴露的工具越多，它的能力上限就越高，完成任务的质量也越好。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": false,
+        "wrongReason": "候选工具越多，选择准确率越低，误用与无效调用也会增加；关键是把工具集收敛到职责清晰、数量可控。"
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": true
+      }
+    ],
+    "explanation": "候选工具越多，选择准确率越低，误用与无效调用也会增加；关键是把工具集收敛到职责清晰、数量可控。",
+    "extension": "",
+    "difficulty": 2,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "Agent",
+      "判断"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_027",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：Agent 的最大步数限制主要作用是提高任务成功率。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": false,
+        "wrongReason": "步数上限的作用是限制失败时的代价并给出明确终止行为，它本身不提升成功率。"
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": true
+      }
+    ],
+    "explanation": "步数上限的作用是限制失败时的代价并给出明确终止行为，它本身不提升成功率。",
+    "extension": "",
+    "difficulty": 2,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "Agent",
+      "判断"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_028",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：工具调用失败时，把结构化的错误信息写回上下文让模型决策，比直接终止任务更合理。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": false,
+        "wrongReason": "超时、参数错、服务不可用等失败很多是可恢复的，把错误码与可重试信息写回上下文，模型才能判断重试、换工具还是降级。"
+      }
+    ],
+    "explanation": "超时、参数错、服务不可用等失败很多是可恢复的，把错误码与可重试信息写回上下文，模型才能判断重试、换工具还是降级。",
+    "extension": "",
+    "difficulty": 2,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "Agent",
+      "判断"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_029",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：在纯静态的前端应用里，Agent 必须依赖自建后端才能调用大模型工具。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": false,
+        "wrongReason": "前端可以直接调用模型厂商或兼容接口（自带 key），也可以只在前端做编排；是否需要后端取决于密钥保管与合规要求，而不是必然条件。"
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": true
+      }
+    ],
+    "explanation": "前端可以直接调用模型厂商或兼容接口（自带 key），也可以只在前端做编排；是否需要后端取决于密钥保管与合规要求，而不是必然条件。",
+    "extension": "",
+    "difficulty": 2,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "Agent",
+      "判断"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_030",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：MCP 的作用是统一「工具与数据源如何接入模型应用」的协议，从而减少重复的对接开发。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": false,
+        "wrongReason": "MCP 把能力描述与调用方式标准化，工具与数据源一次实现、多端复用，解决的是集成成本问题。"
+      }
+    ],
+    "explanation": "MCP 把能力描述与调用方式标准化，工具与数据源一次实现、多端复用，解决的是集成成本问题。",
+    "extension": "",
+    "difficulty": 2,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "Agent",
+      "判断"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_031",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：因为模型已经能自我反思，所以 Agent 不需要外部日志和链路追踪。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": false,
+        "wrongReason": "反思只是把经验写回上下文，不产生可审计记录；没有完整轨迹，出问题后无法复盘模型当时为什么这么决定。"
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": true
+      }
+    ],
+    "explanation": "反思只是把经验写回上下文，不产生可审计记录；没有完整轨迹，出问题后无法复盘模型当时为什么这么决定。",
+    "extension": "",
+    "difficulty": 2,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "Agent",
+      "判断"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_032",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：并行工具调用适合用在多个互不依赖的只读查询上，能显著降低整体延迟。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": false,
+        "wrongReason": "相互独立的只读调用可以同时发起，总耗时接近最慢的一个，而不是各自耗时之和。"
+      }
+    ],
+    "explanation": "相互独立的只读调用可以同时发起，总耗时接近最慢的一个，而不是各自耗时之和。",
+    "extension": "",
+    "difficulty": 2,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "Agent",
+      "判断"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_033",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：并行工具调用同样适合有先后依赖的写操作，可以节省时间。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": false,
+        "wrongReason": "写操作往往有顺序与一致性要求，并行执行会造成顺序错乱或重复副作用。"
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": true
+      }
+    ],
+    "explanation": "写操作往往有顺序与一致性要求，并行执行会造成顺序错乱或重复副作用。",
+    "extension": "",
+    "difficulty": 2,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "Agent",
+      "判断"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_034",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：把工具返回的完整 JSON 原样塞回上下文，是保留信息最完整的做法，因此总是最佳选择。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": false,
+        "wrongReason": "原文回填会挤占上下文并稀释关键字段，应该在工具层抽取必要字段、截断长列表并保留按需再查的入口。"
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": true
+      }
+    ],
+    "explanation": "原文回填会挤占上下文并稀释关键字段，应该在工具层抽取必要字段、截断长列表并保留按需再查的入口。",
+    "extension": "",
+    "difficulty": 2,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "Agent",
+      "判断"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_035",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：Agent 的高危动作（转账、删除、外发）应该在程序层做权限校验与二次确认，而不是只靠提示词约束。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": false,
+        "wrongReason": "提示词可以被绕过，安全和权限必须落在可信代码层，配合最小权限与人工确认。"
+      }
+    ],
+    "explanation": "提示词可以被绕过，安全和权限必须落在可信代码层，配合最小权限与人工确认。",
+    "extension": "",
+    "difficulty": 2,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "Agent",
+      "判断"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_036",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：工具返回的文本属于可信数据，可以当作指令直接执行。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": false,
+        "wrongReason": "工具返回、网页、检索内容都属于不可信输入，可能携带提示注入，必须与指令分离并校验。"
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": true
+      }
+    ],
+    "explanation": "工具返回、网页、检索内容都属于不可信输入，可能携带提示注入，必须与指令分离并校验。",
+    "extension": "",
+    "difficulty": 2,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "Agent",
+      "判断"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_037",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：给每个外部动作带上稳定且幂等的操作 ID，可以在重试时避免产生重复副作用。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": false,
+        "wrongReason": "重试与并发是常态，幂等键让下游能把重复请求识别为同一动作，避免重复下单或重复发送。"
+      }
+    ],
+    "explanation": "重试与并发是常态，幂等键让下游能把重复请求识别为同一动作，避免重复下单或重复发送。",
+    "extension": "",
+    "difficulty": 2,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "Agent",
+      "判断"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_038",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：只要模型足够强，Agent 就应该对任务路径保持完全自由，不需要任何确定性约束。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": false,
+        "wrongReason": "把可靠性寄托在模型能力上风险很高；步骤可枚举、合规要求高的场景应该用状态机或工作流约束流程。"
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": true
+      }
+    ],
+    "explanation": "把可靠性寄托在模型能力上风险很高；步骤可枚举、合规要求高的场景应该用状态机或工作流约束流程。",
+    "extension": "",
+    "difficulty": 2,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "Agent",
+      "判断"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_039",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：多智能体拆分会带来上下文传递与结果汇总的协调成本，因此不一定比单智能体更好。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": false,
+        "wrongReason": "拆分的收益来自并行与上下文隔离，代价是协调；只有当子任务边界清晰且确有隔离必要时才划算。"
+      }
+    ],
+    "explanation": "拆分的收益来自并行与上下文隔离，代价是协调；只有当子任务边界清晰且确有隔离必要时才划算。",
+    "extension": "",
+    "difficulty": 2,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "Agent",
+      "判断"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_040",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：Agent 的评测只需统计最终任务成功率，过程指标可以忽略。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": false,
+        "wrongReason": "成功率会掩盖过程差异，步数、无效调用占比、成本与危险动作拦截率才能说明系统是否可靠可运行。"
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": true
+      }
+    ],
+    "explanation": "成功率会掩盖过程差异，步数、无效调用占比、成本与危险动作拦截率才能说明系统是否可靠可运行。",
+    "extension": "",
+    "difficulty": 2,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "Agent",
+      "判断"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_041",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：模型参数不更新、只把失败经验写回上下文，也能让 Agent 在同一任务的后续尝试中表现更好。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": false,
+        "wrongReason": "这正是 Reflexion 的思路：用语言化的经验约束后续尝试，相当于用上下文做在线学习。"
+      }
+    ],
+    "explanation": "这正是 Reflexion 的思路：用语言化的经验约束后续尝试，相当于用上下文做在线学习。",
+    "extension": "",
+    "difficulty": 2,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "Agent",
+      "判断"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_042",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：Agent 的记忆应该全部持久化到向量库，会话内状态也一并落库以免丢失。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": false,
+        "wrongReason": "记忆应分层：会话内的短期上下文与任务状态用结构化对象维护即可，全部落库既昂贵又会污染长期检索。"
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": true
+      }
+    ],
+    "explanation": "记忆应分层：会话内的短期上下文与任务状态用结构化对象维护即可，全部落库既昂贵又会污染长期检索。",
+    "extension": "",
+    "difficulty": 2,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "Agent",
+      "判断"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_043",
+    "type": "judge",
+    "isPractice": false,
+    "stem": "判断：按任务类型监控步数分布与工具错误率，可以在用户投诉之前发现 Agent 行为退化。",
+    "options": [
+      {
+        "key": "A",
+        "content": "正确",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "错误",
+        "isCorrect": false,
+        "wrongReason": "模型或提示词变更后，过程指标往往先于用户反馈出现异常，是最有效的退化预警手段。"
+      }
+    ],
+    "explanation": "模型或提示词变更后，过程指标往往先于用户反馈出现异常，是最有效的退化预警手段。",
+    "extension": "",
+    "difficulty": 2,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "Agent",
+      "判断"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
   }
 ]
