@@ -7,6 +7,8 @@ import QuizExplanation from "./QuizExplanation";
 interface Props {
   ids: string[];
   mode: AnswerMode;
+  /** 断点续答：从第几题开始（0 基） */
+  initialIndex?: number;
   bookmarkIds: string[];
   onAnswer: (record: AnswerRecord) => void;
   onFinish: () => void;
@@ -14,8 +16,17 @@ interface Props {
   onToggleBookmark: (questionId: string) => void;
 }
 
-export default function Quiz({ ids, mode, bookmarkIds, onAnswer, onFinish, onExit, onToggleBookmark }: Props) {
-  const [index, setIndex] = useState(0);
+export default function Quiz({
+  ids,
+  mode,
+  initialIndex = 0,
+  bookmarkIds,
+  onAnswer,
+  onFinish,
+  onExit,
+  onToggleBookmark
+}: Props) {
+  const [index, setIndex] = useState(initialIndex);
   const [selected, setSelected] = useState<string[]>([]);
   const [submitted, setSubmitted] = useState(false);
   const [reports, setReports] = useState<Record<string, ReportReason | "open">>({});

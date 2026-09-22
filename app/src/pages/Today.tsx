@@ -5,12 +5,16 @@ interface Props {
   profile: Profile;
   task: DailyTask;
   completed: number;
+  /** 还剩几题没答 */
+  remaining: number;
+  /** 继续答题时的起始题号（1 基），用于文案 */
+  resumeAt: number;
   records: AnswerRecord[];
   wrongCount: number;
   onStart: () => void;
 }
 
-export default function Today({ profile, task, completed, records, wrongCount, onStart }: Props) {
+export default function Today({ profile, task, completed, remaining, resumeAt, records, wrongCount, onStart }: Props) {
   const total = task.questionIds.length;
   const pct = total ? Math.round((completed / total) * 100) : 0;
   const practiceCount = task.questionIds.filter((id) => QUESTIONS.find((q) => q.id === id)?.isPractice).length;
@@ -43,9 +47,18 @@ export default function Today({ profile, task, completed, records, wrongCount, o
         </div>
         <div style={{ marginTop: 16 }}>
           <button className="btn" onClick={onStart}>
-            {completed === 0 ? "开始今天的 10 题" : `继续答题（还剩 ${total - completed} 题）`}
+            {remaining === 0
+              ? "今天的题都答完了，再来一遍"
+              : completed === 0
+                ? `开始今天的 ${total} 题`
+                : `继续答题（从第 ${resumeAt} 题起，还剩 ${remaining} 题）`}
           </button>
         </div>
+        {completed > 0 && remaining > 0 && (
+          <div className="muted" style={{ marginTop: 8 }}>
+            接着上次中断的题往下答，已答过的 {completed} 题不会重复出现。
+          </div>
+        )}
       </div>
 
       <div className="card">

@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from "react";
 import { QUESTIONS } from "./data/questions";
 import { buildDailyTask, DAILY_SIZE } from "./lib/recommend";
 import { applyAnswer } from "./lib/review";
+import { firstPendingIndex, markCompleted, pendingCount } from "./lib/task";
 import * as store from "./lib/storage";
 import type { AnswerMode, AnswerRecord, DailyTask, Profile, ReviewState } from "./types";
 import Today from "./pages/Today";
@@ -17,6 +18,8 @@ interface Session {
   ids: string[];
   mode: AnswerMode;
   results: AnswerRecord[];
+  /** 断点续答的起始下标 */
+  startIndex: number;
 }
 
 export default function App() {
@@ -29,16 +32,19 @@ export default function App() {
 
   const today = store.todayStr();
 
-  const task: DailyTask = useMemo(() => {
+  const [task, setTask] = useState<DailyTask>(() => {
     const existing = store.loadTask(today);
     if (existing && existing.questionIds.length > 0) return existing;
-    const ids = buildDailyTask({ questions: QUESTIONS, records, reviews, profile });
+    const ids = buildDailyTask({
+      questions: QUESTIONS,
+      records: store.loadRecords(),
+      reviews: store.loadReviews(),
+      profile: store.loadProfile()
+    });
     const built: DailyTask = { date: today, questionIds: ids, completed: [] };
     store.saveTask(built);
     return built;
-    // 只在当天首次进入时计算；records/reviews 变化不会重算（当天任务固定）
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [today]);
+  });
 
   const wrongIds = useMemo(() => {
     const last = new Map<string, AnswerRecord>();
@@ -49,8 +55,8 @@ export default function App() {
     return [...last.values()].filter((r) => !r.isCorrect).map((r) => r.questionId);
   }, [records]);
 
-  const startSession = useCallback((ids: string[], mode: AnswerMode) => {
-    setSession({ ids, mode, results: [] });
+  const startSession = useCallback((ids: string[], mode: AnswerMode, startIndex = 0) => {
+    setSession({ ids, mode, results: [], startIndex });
     setRoute("quiz");
   }, []);
 
@@ -82,21 +88,30 @@ export default function App() {
       });
 
       setSession((prev) => (prev ? { ...prev, results: [...prev.results, record] } : prev));
+
+      // 答完立刻记进当天任务，这样中途退出后能接着最后一题继续
+      setTask((prev) => {
+        const next = markCompleted(prev, record.questionId);
+        if (next !== prev) store.saveTask(next);
+        return next;
+      });
     },
     [reviews, today]
   );
 
   const finishSession = useCallback(() => {
     if (session) {
-      const done = new Set(task.completed);
-      session.results.forEach((r) => done.add(r.questionId));
-      const nextTask: DailyTask = { ...task, completed: [...done] };
-      store.saveTask(nextTask);
+      setTask((prev) => {
+        const next = session.results.reduce((acc, r) => markCompleted(acc, r.questionId), prev);
+        if (next !== prev) store.saveTask(next);
+        return next;
+      });
     }
     setRoute("result");
-  }, [session, task]);
+  }, [session]);
 
   const completedToday = task.completed.filter((id) => task.questionIds.includes(id)).length;
+  const remaining = pendingCount(task);
 
   return (
     <div className="app">
@@ -105,9 +120,11 @@ export default function App() {
           profile={profile}
           task={task}
           completed={completedToday}
+          remaining={remaining}
+          resumeAt={firstPendingIndex(task) + 1}
           records={records}
           wrongCount={wrongIds.length}
-          onStart={() => startSession(task.questionIds, "daily")}
+          onStart={() => startSession(task.questionIds, "daily", firstPendingIndex(task))}
         />
       )}
 
@@ -115,6 +132,7 @@ export default function App() {
         <Quiz
           ids={session.ids}
           mode={session.mode}
+          initialIndex={session.startIndex}
           bookmarkIds={bookmarks}
           onAnswer={handleAnswer}
           onFinish={finishSession}
