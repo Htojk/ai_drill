@@ -2073,5 +2073,442 @@
       "url": "https://platform.openai.com/docs/guides/function-calling",
       "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
     }
+  },
+  {
+    "id": "q_agent_056",
+    "type": "short",
+    "isPractice": false,
+    "stem": "多智能体常见的几种拓扑结构是什么？各自的适用场景？",
+    "options": [],
+    "referenceAnswer": "最常用的三类：主管式由一个协调者拆解任务、分发、汇总与裁决，适合子任务相对独立但结果需要统一口径的场景；流水线式把任务按阶段串起来，每段有明确输入输出契约，稳定性最好但灵活性最低；辩论式让多个实例独立给出答案再互相审阅修正，适合事实性判断或开放推理，但成本显著更高。选型应先看任务是否有清晰的分解结构，而不是先决定要几个代理。",
+    "keyPoints": [
+      "主管式（supervisor）：一个统筹者分发子任务并汇总，适合子任务边界清晰但需要统一裁决的场景",
+      "流水线式：按固定阶段串行传递，适合流程稳定、每段职责明确的场景",
+      "辩论式：多个实例独立作答后互相批评，适合没有唯一判定标准、需要提高事实性的场景"
+    ],
+    "explanation": "拓扑越复杂，越需要明确的「交接契约」，否则协调成本会吞掉拆分收益。",
+    "extension": "多数生产系统实际是「主管式 + 固定子任务」的组合，而不是全自由协作。",
+    "difficulty": 4,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "多智能体",
+      "拓扑"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "Improving Factuality and Reasoning in Language Models through Multiagent Debate",
+      "url": "https://arxiv.org/abs/2305.14325",
+      "snippet": "We propose a complementary approach that uses multiple instances of large language models to debate and reach a final answer."
+    }
+  },
+  {
+    "id": "q_agent_057",
+    "type": "short",
+    "isPractice": false,
+    "stem": "多智能体辩论真的能提升正确率吗？需要注意什么？",
+    "options": [],
+    "referenceAnswer": "辩论能提升表现的前提是「独立采样 + 交叉检查」：不同实例独立作答，才可能覆盖不同的推理路径，再通过互相审阅暴露错误。它的收益不是简单投票——如果所有实例共享同一模型与同一提示，很可能犯相同的错误并互相确认，形成错误共识。此外辩论轮次越多成本越高，批评质量也参差不齐，需要有「判定胜负」的机制（外部验证器、事实检索或人工）。",
+    "keyPoints": [
+      "在多解空间、需要事实核查的任务上，互相批评可以发现单模型的疏漏",
+      "收益来源是独立采样 + 交叉检查，而不是「人多势众」式的投票",
+      "风险包括成本翻倍、错误共识（多个实例犯了同一个错）、以及批评带有说服性偏差"
+    ],
+    "explanation": "没有外部验证器的辩论，本质上是在用模型判断模型，收益不稳定。",
+    "extension": "把辩论用在「可被外部事实校验」的环节（如数字、引用、代码能否运行），性价比最高。",
+    "difficulty": 4,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "多智能体",
+      "辩论",
+      "事实性"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "Improving Factuality and Reasoning in Language Models through Multiagent Debate",
+      "url": "https://arxiv.org/abs/2305.14325",
+      "snippet": "We propose a complementary approach that uses multiple instances of large language models to debate and reach a final answer."
+    }
+  },
+  {
+    "id": "q_agent_058",
+    "type": "short",
+    "isPractice": false,
+    "stem": "Agent 的长期记忆应该写入什么内容？写入策略怎么定？",
+    "options": [],
+    "referenceAnswer": "长期记忆的写入标准应该比工作记忆严格得多：只有跨会话依然成立、未来大概率会再用到的信息才值得写，比如用户的稳定偏好（语言、格式要求）、已确认的实体关系（这个项目对应哪个代码库）。一次性过程细节、模型的推测、以及可能变化的事实都不该写入，否则会随时间不断污染检索结果。每条记忆要带来源与时间戳，并允许用户查看与删除，否则既无法追溯也难以满足合规要求。",
+    "keyPoints": [
+      "只写「跨会话仍然有效且未来会用到」的信息，如用户偏好、已确认的稳定事实",
+      "避免把一次性过程细节和未经验证的推测写进长期记忆",
+      "写入要有来源与时间戳，并支持用户查看与删除"
+    ],
+    "explanation": "记忆写入是最容易失控的环节：写得越多，检索到的噪声越多，系统看起来「记住一切」但实际更不准。",
+    "extension": "可以加一道「记忆评审」：写入前用规则或小模型判断这条信息是否满足可复用标准。",
+    "difficulty": 4,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "长期记忆",
+      "写入策略"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "Reflexion: Language Agents with Verbal Reinforcement Learning",
+      "url": "https://arxiv.org/abs/2303.11366",
+      "snippet": "Reflexion agents verbally reflect on task feedback signals, then maintain their own reflective text in an episodic memory buffer."
+    }
+  },
+  {
+    "id": "q_agent_059",
+    "type": "short",
+    "isPractice": false,
+    "stem": "长期记忆的检索与遗忘应该怎么设计？",
+    "options": [],
+    "referenceAnswer": "记忆检索与文档检索类似：按与当前任务的相关性取少量最相关的记忆注入，而不是全量加载。遗忘同样重要——按时间衰减旧记忆的权重、在新信息与旧信息冲突时用新的覆盖旧的、对长期未被使用的记忆做淘汰，都能避免陈旧信息持续影响判断。覆盖时要保留历史版本，否则出现「系统突然改了说法」时无法复盘。",
+    "keyPoints": [
+      "检索记忆应按当前任务相关性排序，而不是把所有记忆都注入上下文",
+      "遗忘策略包括按时间衰减、按冲突覆盖、按使用频率淘汰",
+      "冲突时以更新的、来源更可靠的记忆为准，并保留被覆盖记录"
+    ],
+    "explanation": "没有遗忘机制的记忆库会变成噪声源：信息越多，正确信息越难被排到前面。",
+    "extension": "记忆的冲突处理最好显式记录（谁覆盖了谁、为什么），它直接影响用户对系统的信任。",
+    "difficulty": 4,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "记忆检索",
+      "遗忘"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "Reflexion: Language Agents with Verbal Reinforcement Learning",
+      "url": "https://arxiv.org/abs/2303.11366",
+      "snippet": "Reflexion agents verbally reflect on task feedback signals, then maintain their own reflective text in an episodic memory buffer."
+    }
+  },
+  {
+    "id": "q_agent_060",
+    "type": "short",
+    "isPractice": false,
+    "stem": "让 Agent 处理超长文档时，有哪些常见策略？",
+    "options": [],
+    "referenceAnswer": "三种主流策略：一是 map-reduce，把文档分块分别摘要，再对摘要汇总，简单可并行，但多跳或需要全局结构的任务容易丢信息；二是迭代阅读，按顺序或按结构逐步读入并维护「当前理解状态」，适合需要跨章节推理的任务，慢但连贯；三是先检索定位再精读，成本最低，前提是检索能把相关段落捞出来。实际系统常把三者组合：先检索定位章节，再在该章节内迭代精读，最后汇总成结论。",
+    "keyPoints": [
+      "分块摘要再汇总（map-reduce），适合可并行、对细节要求不高的任务",
+      "迭代阅读：按章节逐步读取并维护状态，适合需要跨章节推理的任务",
+      "检索式定位：先用检索缩小到相关段落再精读，成本最低但依赖检索质量"
+    ],
+    "explanation": "判断该用哪种的关键是：任务是否需要「全局一致性」，需要就避免纯 map-reduce。",
+    "extension": "无论哪种策略，都要保留读过的原文引用，否则结论无法核验。",
+    "difficulty": 4,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "长文档",
+      "策略"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_061",
+    "type": "short",
+    "isPractice": false,
+    "stem": "给 Agent 开放代码执行能力时，安全上必须注意什么？",
+    "options": [],
+    "referenceAnswer": "代码执行是最高危的能力之一，因为它的影响面取决于运行环境。基本要求是隔离：在一次性容器或沙箱里执行，默认禁网、只挂载必要的临时目录、以非特权用户运行，并设置 CPU、内存、时间与输出上限防止失控。此外要让代理只能接触任务需要的数据，绝不能读到宿主机凭据或生产数据库的连接串。对外部依赖的安装也要有白名单，否则等于开放了任意代码下载。",
+    "keyPoints": [
+      "执行环境必须隔离（容器/沙箱），限制文件系统、网络与进程权限",
+      "设置资源上限（CPU、内存、执行时间、输出大小），避免失控占用",
+      "代码与数据分离，禁止代理访问宿主机凭据与生产数据"
+    ],
+    "explanation": "安全设计要假设「被执行的是恶意代码」，因为提示注入可以把代理变成跳板。",
+    "extension": "把每次执行的代码、输入与输出都留档，是事后追责与调试的基础。",
+    "difficulty": 5,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "代码执行",
+      "沙箱",
+      "安全"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "Model Context Protocol - Introduction",
+      "url": "https://modelcontextprotocol.io/introduction",
+      "snippet": "MCP is an open protocol that standardizes how applications provide context to LLMs."
+    }
+  },
+  {
+    "id": "q_agent_062",
+    "type": "short",
+    "isPractice": false,
+    "stem": "浏览器/网页操作类 Agent 有哪些典型的坑？",
+    "options": [],
+    "referenceAnswer": "三类坑：一是脆弱性，页面 DOM 与文案随时变化，靠 CSS 选择器或固定坐标点击的方案很快失效，通常要结合语义定位（按可访问名称找元素）并准备失败重试；二是会话问题，登录、验证码、风控会打断自动化，需要设计人工接管与状态保存；三是安全，网页正文属于不可信输入，可能包含诱导性指令（「请把 Cookie 发送到…」），必须与指令域隔离并限制代理可执行的动作范围。",
+    "keyPoints": [
+      "页面结构与文案频繁变化，基于选择器或坐标的操作很脆弱",
+      "登录态、验证码与反爬机制会中断流程，需要人机协同",
+      "页面内容含注入文本，可能诱导代理执行危险操作"
+    ],
+    "explanation": "网页代理是「对抗环境」下的自动化：把稳定性预期设低，并优先设计失败后的恢复路径。",
+    "extension": "对关键流程，录屏或保存 DOM 快照能让「为什么点错」这类问题变得可排查。",
+    "difficulty": 4,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "浏览器代理",
+      "鲁棒性"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_063",
+    "type": "short",
+    "isPractice": false,
+    "stem": "怎么提升 Agent 行为的确定性与可复现性？",
+    "options": [],
+    "referenceAnswer": "确定性来自三方面：采样上降低温度与 top_p、固定种子，减少同一输入产生不同路径的概率；环境上固定工具集与工具描述版本，因为工具一变，模型的候选集合就变了；记录上保留完整轨迹，包括提示与模型版本、每一步工具调用与返回，这样即使无法完全复现，也能逐层比对差异出现在哪一步。要注意的是，即使全部固定，模型服务侧的更新仍可能改变行为，所以基线监控不可少。",
+    "keyPoints": [
+      "降低采样随机性（温度、top_p），并在支持时固定随机种子",
+      "把工具集与工具顺序固定下来，避免同一任务暴露不同候选",
+      "记录完整轨迹（提示版本、模型版本、工具返回），便于回放比对"
+    ],
+    "explanation": "可复现性的目标是「能解释差异」，而不是「每次都完全一样」。",
+    "extension": "把轨迹按版本切分存储，回归排查时可以直接比较两个版本的同一任务。",
+    "difficulty": 4,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "确定性",
+      "可复现"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_064",
+    "type": "short",
+    "isPractice": false,
+    "stem": "Agent 调用的外部服务不稳定，重试策略应该怎么设计？",
+    "options": [],
+    "referenceAnswer": "重试的前提是「重复执行无副作用」：读操作可以直接重试，写操作必须靠幂等键保证重复请求不会产生第二笔副作用。退避策略用指数退避加随机抖动，避免大量请求同时重试造成雪崩，并设定次数与总时长上限。更重要的是错误分流：超时、限流、5xx 属于可重试；参数错误、权限不足、资源不存在属于不可重试，应该把信息回传给模型让它修正而不是重试。",
+    "keyPoints": [
+      "只对幂等或可安全重复的操作重试，非幂等操作要靠幂等键保护",
+      "使用指数退避加抖动，并设置次数与总时长上限",
+      "区分可重试错误（超时、限流）与不可重试错误（参数错、权限不足），后者应交给模型修正"
+    ],
+    "explanation": "重试是放大故障的常见原因：上游已经过载时，无节制重试会把小故障变成大故障。",
+    "extension": "配合熔断：连续失败达到阈值就暂时停止调用并降级，而不是继续堆请求。",
+    "difficulty": 4,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "重试",
+      "容错"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_065",
+    "type": "short",
+    "isPractice": false,
+    "stem": "模型「幻觉」出一个不存在的工具名或工具参数时，怎么兜底？",
+    "options": [],
+    "referenceAnswer": "兜底分两层：调用前校验工具名是否在注册表中，不在就直接拒绝并回传「可用工具清单」，让模型重新选择；参数则按 schema 校验类型、必填项与取值范围。这两类错误都要能被度量，因为高频出现通常说明模型在工具描述里找不到明确指引，或候选工具太多，应该从描述与路由层面解决，而不是靠反复重试。",
+    "keyPoints": [
+      "工具层做白名单校验，未知工具名直接拒绝并把可用工具列表回传",
+      "参数做 schema 校验，失败时返回具体错误让模型修正",
+      "统计这类错误的频率，据此改进工具描述或减少候选数量"
+    ],
+    "explanation": "把「未知工具名」当成可观测指标：它的突增往往预示着提示或工具集发生了变更。",
+    "extension": "对模型给出但语义正确的近似名称，可以做受控的别名映射，但不要做模糊匹配自动兜底。",
+    "difficulty": 3,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "幻觉",
+      "工具校验"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_066",
+    "type": "short",
+    "isPractice": false,
+    "stem": "Agent 与 RAG 应该怎么结合？",
+    "options": [],
+    "referenceAnswer": "结合方式是把检索从固定前置步骤变成代理可调用的工具：代理根据当前缺什么信息决定是否检索、用什么查询、是否需要多轮补充。这样在简单问题上能省掉检索，在复杂问题上能主动多轮查证。代价是检索次数不可预测，所以必须限制轮次与预算，并对检索结果做去重与质量判断，避免代理反复查同一件事。",
+    "keyPoints": [
+      "RAG 负责提供事实依据，Agent 负责决定「什么时候检索、检索什么、要不要再检索」",
+      "把检索作为工具暴露给代理，而不是写死在流程最前面",
+      "要限制检索轮次与查询次数，否则容易陷入反复检索"
+    ],
+    "explanation": "判断该用哪种结合方式的依据是：任务路径是否可枚举——可枚举就用固定流水线，不可枚举才交给代理决定。",
+    "extension": "代理式检索要特别关注「检索为空」的处理，否则容易出现无意义的循环。",
+    "difficulty": 4,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "Agentic RAG",
+      "检索工具化"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_067",
+    "type": "short",
+    "isPractice": false,
+    "stem": "Agentic RAG 相比固定 RAG 流水线，什么情况下更划算？",
+    "options": [],
+    "referenceAnswer": "代理式检索的优势在「不确定性」：当问题可能需要多跳、需要先看一轮结果再决定下一轮查什么、或者简单问题根本不需要检索时，让代理自己决定能显著提升质量或降低成本。反之，如果任务路径固定、问题类型单一、对延迟与成本敏感，固定流水线在可测试性与可预测性上都更好。判断标准仍然是路径能否预先枚举。",
+    "keyPoints": [
+      "问题需要多跳、需要判断「信息是否足够」并决定是否继续检索时",
+      "查询类型差异大，简单问题不需要检索、复杂问题需要多轮时",
+      "对延迟与成本敏感且路径固定的场景，固定流水线更划算"
+    ],
+    "explanation": "代理式检索的隐性成本在于它对每次请求的资源消耗差异很大，容量规划更难。",
+    "extension": "常见折中是「固定流水线 + 一个可选的补充检索步骤」，兼顾可预测与灵活性。",
+    "difficulty": 4,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "Agentic RAG",
+      "选型"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_068",
+    "type": "short",
+    "isPractice": false,
+    "stem": "一条理想的 Agent 轨迹（trace）应该包含哪些信息？",
+    "options": [],
+    "referenceAnswer": "可用的轨迹要能回答「它当时为什么这么做」：因此至少要包含本次运行的输入与使用的提示、模型及参数版本；每一步的决策内容与调用意图；每次工具调用的名称、完整参数、返回结果（截断或脱敏后）、耗时与错误信息；最终的输出；以及终止原因——是正常完成、超步数、超预算还是被人工中断。缺少终止原因时，很难区分「做完了」和「放弃了」。",
+    "keyPoints": [
+      "输入与提示版本、模型与参数版本、每一步的思考与决策",
+      "每次工具调用的名称、完整参数与结构化返回（含耗时与错误）",
+      "最终输出、终止原因（完成/超步数/超预算/人工中断）与总体耗时成本"
+    ],
+    "explanation": "轨迹里通常含个人信息与密钥，落库前要脱敏并做访问控制，否则可观测性会变成泄漏风险。",
+    "extension": "轨迹是回归测试的原料：把失败轨迹转成固定用例，是提升稳定性最直接的方式。",
+    "difficulty": 4,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "可观测",
+      "Trace"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_069",
+    "type": "short",
+    "isPractice": false,
+    "stem": "怎么做 Agent 的回归测试？录制-回放为什么有效？",
+    "options": [],
+    "referenceAnswer": "回归集的构造是「固定任务 + 固定初始状态 + 期望结果或可接受范围」。由于工具的返回会随环境变化，录制-回放很有效：录制时把真实的工具调用与返回存下来，回放时用录制数据替换真实调用，测试就变得稳定、可重复、也不需要真实凭据。断言应分两层：结果层判断是否正确，过程层判断工具序列、步数、成本是否在预算内——只断言结果会漏掉「结果对但路径危险」的退化。",
+    "keyPoints": [
+      "把固定的任务、初始环境、期望结果（或可接受范围）做成回归集",
+      "录制模式下保存真实工具返回，回放时用录制数据替代真实调用，使测试稳定可重复",
+      "断言要覆盖过程（工具序列、步数上限）与结果两层"
+    ],
+    "explanation": "回放的局限是它无法覆盖环境变化，所以还需要少量真实环境的端到端冒烟测试。",
+    "extension": "每次线上事故都应该产出一条回归用例，否则同类问题一定会再来一次。",
+    "difficulty": 4,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "回归测试",
+      "录制回放"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_070",
+    "type": "short",
+    "isPractice": false,
+    "stem": "当 Agent 的动作需要人工审核时，审核队列应该怎么设计？",
+    "options": [],
+    "referenceAnswer": "设计的核心是让审核既安全又不疲惫。做法上先做风险分级：发消息、下单、删除这类不可逆或高影响动作必须人工确认；低风险动作只需留痕并可事后追查。审核界面要展示模型的动作意图、参数详情与触发原因，让审核者能在几秒内判断，而不是面对一句「是否批准」。同时支持批量和快捷键，降低疲劳；把否决原因统计起来，能直接反哺提示与工具描述的改进。",
+    "keyPoints": [
+      "先按风险分级：不可逆或高影响动作为必审，低风险动作只记录不阻塞",
+      "审核卡片要给出「为什么需要审」与完整参数，而不是只问是否通过",
+      "提供批量与快速操作，并统计否决原因反哺提示与工具描述"
+    ],
+    "explanation": "全量必审会导致「确认疲劳」，审核者逐渐盲点确认，安全收益反而下降。",
+    "extension": "审核记录要关联具体轨迹 ID，便于回溯「当时为什么放行」。",
+    "difficulty": 4,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "人工审核",
+      "风控"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "Model Context Protocol - Introduction",
+      "url": "https://modelcontextprotocol.io/introduction",
+      "snippet": "MCP is an open protocol that standardizes how applications provide context to LLMs."
+    }
   }
 ]
