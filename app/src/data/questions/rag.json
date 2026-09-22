@@ -1651,5 +1651,462 @@
       "url": "https://python.langchain.com/docs/how_to/parent_document_retriever/",
       "snippet": "The parent document retriever splits documents into small child chunks for retrieval while returning the larger parent documents for generation."
     }
+  },
+  {
+    "id": "q_rag_041",
+    "type": "short",
+    "isPractice": false,
+    "stem": "请解释 RAG 里「召回」与「重排序」各自的目标，以及为什么需要分成两步。",
+    "options": [],
+    "referenceAnswer": "召回用便宜的向量或关键词检索取回大量候选，保证相关文档不被漏掉（保量）；重排序只在少量候选上跑强模型精算相关性，把最相关的提到前面（保质）。分开做是因为对全库做精算代价过高，而对候选集精算成本可接受。",
+    "keyPoints": [
+      "召回阶段追求高覆盖，用较便宜的检索把候选尽量捞全，允许含噪声",
+      "重排序用更强的模型对少量候选精算相关性，把真正相关的排到前面",
+      "分成两步是为了兼顾效率与精度：全量精算太贵，只粗排又不够准"
+    ],
+    "explanation": "这是 RAG 检索环节最基础的分工，也是线上排查时区分「没捞到」与「捞到但排后面」的依据。",
+    "extension": "两者指标不同：召回看 recall@k，重排看 NDCG/MRR。",
+    "difficulty": 2,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "召回",
+      "重排序",
+      "简答"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "LlamaIndex - Optimizing Production RAG",
+      "url": "https://docs.llamaindex.ai/en/stable/optimizing/production_rag/",
+      "snippet": "Reranking improves retrieval quality by re-scoring the retrieved nodes with a more accurate model."
+    }
+  },
+  {
+    "id": "q_rag_042",
+    "type": "short",
+    "isPractice": true,
+    "stem": "chunk 切分时，「切得太小」和「切得太大」分别会带来什么问题？",
+    "options": [],
+    "referenceAnswer": "切太小会让每块语义残缺、指代不清，检索时匹配不上真正指向的内容；切太大会把多个主题混在一块里，向量被无关内容稀释，既难精确命中，也浪费上下文预算。折中是按标题/段落等自然边界切分，保留 10%–20% 重叠，或用父子文档策略。",
+    "keyPoints": [
+      "太小：语义不完整，指代与前提被切断，匹配不准",
+      "太大：噪声多、主题混杂，向量被稀释，定位不精确",
+      "实践折中是按结构切分并保留少量重叠，或用小块检索、大块生成"
+    ],
+    "explanation": "chunk 尺寸是定位精度与语义完整性的权衡，不存在单调更优的方向。",
+    "extension": "评估切分方案要看端到端答案质量与 recall@k，而不是只看块大小是否「标准」。",
+    "difficulty": 3,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "切分",
+      "工程判断",
+      "简答"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "LangChain - Text Splitters",
+      "url": "https://python.langchain.com/docs/concepts/text_splitters/",
+      "snippet": "Recursive splitting tries to keep together semantically related pieces of text by splitting on natural boundaries first."
+    }
+  },
+  {
+    "id": "q_rag_043",
+    "type": "short",
+    "isPractice": false,
+    "stem": "什么是混合检索？它为什么能提升效果？",
+    "options": [],
+    "referenceAnswer": "混合检索同时跑稀疏检索（BM25，基于词项统计）和稠密向量检索，再把两路结果融合。稀疏检索对编号、专有名词等精确 token 敏感，稠密检索能处理同义改写，二者互补；融合常用 RRF，只依赖名次所以不需要分数归一化。",
+    "keyPoints": [
+      "同时使用稀疏检索（如 BM25）与稠密向量检索",
+      "两者失败模式互补：稀疏擅长精确词匹配，稠密擅长语义泛化",
+      "用 RRF 等基于名次的方式融合，避免分数尺度不可比"
+    ],
+    "explanation": "单一检索器的失败模式是系统性的，混合检索是用两条正交信号互相兜底。",
+    "extension": "融合后仍建议加重排序，因为融合只解决「捞到」，不解决「排准」。",
+    "difficulty": 3,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "混合检索",
+      "BM25",
+      "简答"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "Reciprocal Rank Fusion outperforms Condorcet and individual Rank Learning Methods",
+      "url": "https://dl.acm.org/doi/10.1145/1571941.1572114",
+      "snippet": "Reciprocal Rank Fusion combines the ranks of documents from multiple retrieval systems into a single fused ranking."
+    }
+  },
+  {
+    "id": "q_rag_044",
+    "type": "short",
+    "isPractice": true,
+    "stem": "为什么更换 embedding 模型后必须重建索引？",
+    "options": [],
+    "referenceAnswer": "向量索引里存的是用旧模型编码出的文档向量。换模型后，查询是用新模型编码的，两者落在不同的向量空间里，计算出的相似度不再反映语义接近程度，因此必须把全部文档用新模型重新编码。",
+    "keyPoints": [
+      "向量索引是用某个模型编码出来的",
+      "不同模型的向量空间不可比，跨模型算相似度没有意义",
+      "换模型后查询向量与文档向量不在同一空间，相似度失效"
+    ],
+    "explanation": "这条是线上切换 embedding 时最容易踩的坑：不重建索引通常不会报错，只会静默变差。",
+    "extension": "稳妥做法是新旧索引双写并行，用同一套评测集对比后再切换。",
+    "difficulty": 3,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "embedding",
+      "索引重建",
+      "工程判断",
+      "简答"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI Cookbook - Question answering using embeddings",
+      "url": "https://github.com/openai/openai-cookbook/blob/main/examples/Question_answering_using_embeddings.ipynb",
+      "snippet": "Embeddings from different models are not comparable; the document index must be rebuilt with the same model used to embed the query."
+    }
+  },
+  {
+    "id": "q_rag_045",
+    "type": "short",
+    "isPractice": false,
+    "stem": "RAG 的检索质量该用哪些指标评估？它们各自回答什么问题？",
+    "options": [],
+    "referenceAnswer": "recall@k 衡量覆盖度，回答「前 k 个结果里有没有包含相关文档」；MRR 与 NDCG 衡量排序质量，回答「相关文档排在第几位、整体排序好不好」。必须两个维度一起看：recall 高但排序差，重排序就能救；recall 本身就低，说明索引或切分有问题。",
+    "keyPoints": [
+      "recall@k：前 k 个结果里有没有包含相关文档（有没有捞到）",
+      "MRR / NDCG：相关文档排得靠不靠前（排得准不准）",
+      "两者要一起看，只看一个会漏掉一类失败模式"
+    ],
+    "explanation": "区分「没捞到」与「捞到但排后面」直接决定了优化方向。",
+    "extension": "端到端还要配上生成侧指标（忠实度、答案相关性），否则无法判断问题出在检索还是生成。",
+    "difficulty": 3,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "评估指标",
+      "recall@k",
+      "NDCG",
+      "简答"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "RAGAS: Automated Evaluation of Retrieval Augmented Generation",
+      "url": "https://arxiv.org/abs/2309.15217",
+      "snippet": "RAG evaluation separates context relevance and context recall from answer faithfulness and answer relevance."
+    }
+  },
+  {
+    "id": "q_rag_046",
+    "type": "short",
+    "isPractice": true,
+    "stem": "用户抱怨 AI 回答「看起来很流畅但事实是错的」，你会按什么顺序排查？",
+    "options": [],
+    "referenceAnswer": "按链路从上游往下查：先确认召回是否包含正确文档（召回率），再看重排序/截断后上下文里是否还留着它，然后看上下文组装顺序与压缩是否丢掉了关键句，最后检查提示词有没有要求「无依据就明确说明不知道」并复核生成参数。不要一上来就换模型或调温度。",
+    "keyPoints": [
+      "先查检索是否拿到了支撑该事实的内容",
+      "再查重排序与上下文组装是否把正确文档挤出去了",
+      "最后查提示词是否给了「无依据就说不知道」的出口，以及生成参数"
+    ],
+    "explanation": "RAG 的上限由检索决定，先定位是「没拿到」还是「拿到没用上」。",
+    "extension": "如果检索全对而答案仍编造，才轮到提示词与模型选型。",
+    "difficulty": 3,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "幻觉",
+      "排查方法",
+      "工程判断",
+      "简答"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks",
+      "url": "https://arxiv.org/abs/2005.11401",
+      "snippet": "RAG conditions generation on retrieved passages, so faithfulness is bounded by what retrieval supplies."
+    }
+  },
+  {
+    "id": "q_rag_047",
+    "type": "short",
+    "isPractice": false,
+    "stem": "什么是 HyDE？它解决什么问题、代价是什么？",
+    "options": [],
+    "referenceAnswer": "HyDE 让模型先针对问题写一段假设性答案，再用这段答案的嵌入去检索真实文档。它解决的是「用户问题很短、口语化，与文档段落的向量分布差异大」的问题，相当于把查询映射到文档风格的表达空间。代价是每次查询多一次模型调用，且假设答案若跑偏会把检索一起带偏。",
+    "keyPoints": [
+      "先让模型根据问题生成一段假设答案",
+      "用假设答案的向量去检索，而不是用原始问题",
+      "解决短查询与长文档表达分布差异大的问题；代价是多一次生成调用且可能被带偏"
+    ],
+    "explanation": "本质是把「问题→文档」的检索转成「文档→文档」的检索，缩小表达鸿沟。",
+    "extension": "适合模型对领域有基本常识的场景；对事实性极强、模型容易瞎编的领域要谨慎。",
+    "difficulty": 3,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "HyDE",
+      "查询改写",
+      "简答"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "Precise Zero-Shot Dense Retrieval without Relevance Labels (HyDE)",
+      "url": "https://arxiv.org/abs/2212.10496",
+      "snippet": "HyDE generates a hypothetical document in response to the query and then embeds it to retrieve real documents."
+    }
+  },
+  {
+    "id": "q_rag_048",
+    "type": "short",
+    "isPractice": false,
+    "stem": "MMR 是什么？它在 RAG 里解决什么具体问题？",
+    "options": [],
+    "referenceAnswer": "MMR 在每一步选择「与查询相关性高、且与已选文档差异大」的文档，用一个 λ 参数平衡相关性收益与冗余惩罚。在 RAG 里它解决的是 top-k 结果大量重复（尤其是设置了 chunk 重叠之后）导致上下文被浪费的问题。",
+    "keyPoints": [
+      "最大边际相关性：同时考虑与查询的相关性和与已选结果的差异度",
+      "用来在候选文档中做多样性挑选，避免选进互相重复的内容",
+      "解决 top-k 结果高度冗余、白占上下文预算的问题"
+    ],
+    "explanation": "重复内容不仅浪费 token，还会挤掉其他本可以补充信息的段落。",
+    "extension": "λ=1 时退化为纯相关性排序；内容高度重复的场景可先用指纹去重再上 MMR 省算力。",
+    "difficulty": 3,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "MMR",
+      "去冗余",
+      "简答"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "The Use of MMR, Diversity-Based Reranking for Reordering Documents",
+      "url": "https://dl.acm.org/doi/10.1145/290941.291025",
+      "snippet": "Maximal Marginal Relevance selects documents that are relevant to the query while being dissimilar to already selected documents."
+    }
+  },
+  {
+    "id": "q_rag_049",
+    "type": "short",
+    "isPractice": true,
+    "stem": "「小块检索、大块生成」（父文档检索）是怎么工作的？为什么有效？",
+    "options": [],
+    "referenceAnswer": "索引里存的是细粒度的子块，检索时用子块算相似度，定位更准；命中后不直接把子块给模型，而是回溯取出包含它的更大父块（或前后若干句）作为上下文。这样既避免了「大块匹配发散」，也避免了「小块语义残缺」。",
+    "keyPoints": [
+      "把文档切成小的子块放进索引，只用于相似度检索",
+      "命中子块后回溯取出它所属的父块，送给模型生成",
+      "小块匹配更精确，大块提供完整语境，同时拿到精度与完整性"
+    ],
+    "explanation": "核心洞察是「检索粒度」与「生成粒度」不必相同。",
+    "extension": "实现时要对父块去重，否则同一个父块会被多个子块重复命中。",
+    "difficulty": 3,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "父子文档",
+      "切分",
+      "工程判断",
+      "简答"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "LangChain - Parent Document Retriever",
+      "url": "https://python.langchain.com/docs/how_to/parent_document_retriever/",
+      "snippet": "The parent document retriever splits documents into small child chunks for retrieval while returning the larger parent documents for generation."
+    }
+  },
+  {
+    "id": "q_rag_050",
+    "type": "short",
+    "isPractice": false,
+    "stem": "「Lost in the Middle」说的是什么现象？工程上怎么应对？",
+    "options": [],
+    "referenceAnswer": "它指模型在长上下文里对开头和结尾的信息利用得最好，关键信息落在中间时容易被忽略。工程上的应对包括：把最相关的文档排在上下文首位、控制文档数量避免中段过长、用上下文压缩删掉无关内容，以及把长上下文改造成多次短查询。",
+    "keyPoints": [
+      "模型对长上下文首尾位置的利用明显好于中间位置",
+      "应对方式是把最相关的文档放在上下文开头或结尾",
+      "另一条路是减少无关文档、缩短中间段，或做上下文压缩"
+    ],
+    "explanation": "这说明「上下文拼装顺序」本身就是一个可优化的变量，不只是把文档塞进去了事。",
+    "extension": "该现象也解释了为什么单纯加大 top-k 常常不涨反跌。",
+    "difficulty": 3,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "上下文",
+      "Lost in the Middle",
+      "简答"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "Lost in the Middle: How Language Models Use Long Contexts",
+      "url": "https://arxiv.org/abs/2307.03172",
+      "snippet": "Performance is often highest when relevant information occurs at the beginning or end of the input context, and significantly degrades when models must access relevant information in the middle."
+    }
+  },
+  {
+    "id": "q_rag_051",
+    "type": "short",
+    "isPractice": false,
+    "stem": "「上下文压缩」在 RAG 里指什么？它会带来什么收益与成本？",
+    "options": [],
+    "referenceAnswer": "上下文压缩是在把文档送进生成模型之前做一次后处理，删掉与问题无关的句子或把长段落提炼成要点。收益是 token 更省、信噪比更高；成本是每次查询多一次推理（LLM 抽取或嵌入过滤），带来额外延迟，且压缩环节本身可能误删关键信息。",
+    "keyPoints": [
+      "在拼装上下文前，把召回的文档裁剪/提炼，只保留与问题相关的部分",
+      "收益：节省 token、减少无关内容干扰、缓解中段遗忘",
+      "成本：多一次模型或过滤模型调用，增加延迟与出错面"
+    ],
+    "explanation": "它是「提高上下文信噪比」的手段，与重排序的目标一致但作用在不同层面（顺序 vs 内容）。",
+    "extension": "压缩要有评测兜底，避免把回答所必需的那句话删掉。",
+    "difficulty": 3,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "上下文压缩",
+      "成本",
+      "简答"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "LangChain - Contextual Compression",
+      "url": "https://python.langchain.com/docs/how_to/contextual_compression/",
+      "snippet": "Contextual compression post-processes retrieved documents to keep only the parts relevant to the query before passing them to the model."
+    }
+  },
+  {
+    "id": "q_rag_052",
+    "type": "short",
+    "isPractice": true,
+    "stem": "多轮对话里 RAG 效果变差，你会怎么修？",
+    "options": [],
+    "referenceAnswer": "做法是先做查询改写：结合对话历史把「它/这个」替换成具体实体，补全被省略的主语与限定条件，得到一条脱离上下文也能读懂的独立查询，再去检索。实现上把改写与检索拆成两个可分别评估的步骤，便于定位是改写错还是检索错。",
+    "keyPoints": [
+      "先把最新一句里的指代、省略补全成自洽的独立查询",
+      "必要时把上一轮的主题、实体一并并入查询",
+      "把「改写查询」与「检索」分成两步，便于分别评估"
+    ],
+    "explanation": "「它怎么配置」这类句子单独检索几乎必然失败，根因在查询构造而不在索引。",
+    "extension": "改写会增加一次模型调用的延迟，简单场景可用规则（指代替换）先顶住。",
+    "difficulty": 3,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "多轮对话",
+      "查询改写",
+      "工程判断",
+      "简答"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "LangChain - Query Transformation",
+      "url": "https://python.langchain.com/docs/concepts/retrieval/",
+      "snippet": "In conversational settings the retrieval query must be rewritten to resolve references from the conversation history before searching."
+    }
+  },
+  {
+    "id": "q_rag_053",
+    "type": "short",
+    "isPractice": false,
+    "stem": "给 chunk 附加元数据（标题路径、来源、时间）有什么实际用途？",
+    "options": [],
+    "referenceAnswer": "两个主要用途：一是过滤，比如只在某个版本或某个产品线的文档里检索，避免召回过期或越权内容；二是溯源，命中后能告诉用户这句话出自哪份文档的哪一节。此外把标题路径拼进被编码的文本，能让脱离上下文的块也带上主题信息，提升匹配率。",
+    "keyPoints": [
+      "检索前作为过滤条件（按来源、时间、权限缩小范围）",
+      "命中后用于溯源，让答案能对应到具体文档与章节",
+      "把标题路径拼进被编码的文本也能提升块的独立可匹配性"
+    ],
+    "explanation": "元数据是把「一段孤立文本」重新接回文档结构的关键。",
+    "extension": "元数据也会增加索引体积，字段要克制，避免把整段摘要塞进去。",
+    "difficulty": 2,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "元数据",
+      "溯源",
+      "简答"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "LlamaIndex - Documents and Nodes",
+      "url": "https://docs.llamaindex.ai/en/stable/module_guides/loading/documents_and_nodes/",
+      "snippet": "Metadata attached to nodes can be used for filtering during retrieval and for citing the source of an answer."
+    }
+  },
+  {
+    "id": "q_rag_054",
+    "type": "short",
+    "isPractice": true,
+    "stem": "向量库的召回率与延迟怎么权衡？以 HNSW 为例说明可调的旋钮。",
+    "options": [],
+    "referenceAnswer": "HNSW 是图结构的近似最近邻索引，本身就不保证返回真正的最近邻。查询期用 efSearch 控制候选队列大小：调大探索更充分、召回更高但更慢。构建期用 M 与 efConstruction 控制图的连接度与构建深度，影响索引质量、构建时间与内存占用。调参要盯 recall 与 P99 延迟的拐点，而不是只看平均 QPS。",
+    "keyPoints": [
+      "HNSW 是近似最近邻索引，用少量召回损失换查询速度",
+      "efSearch 是查询期旋钮：调大则召回升、延迟升",
+      "efConstruction / M 影响构建质量与内存，属于离线期权衡"
+    ],
+    "explanation": "ANN 索引的本质是「用可控的召回损失换数量级的速度提升」，参数就是这两者的旋钮。",
+    "extension": "评测索引参数必须固定查询集与 ground truth，否则 recall 的变化无法归因。",
+    "difficulty": 4,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "HNSW",
+      "向量数据库",
+      "调参",
+      "工程判断",
+      "简答"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "Efficient and Robust Approximate Nearest Neighbor Search Using Hierarchical Navigable Small World Graphs",
+      "url": "https://arxiv.org/abs/1603.09320",
+      "snippet": "The quality of the approximate search and the query time can be tuned at query time by the size of the dynamic candidate list."
+    }
+  },
+  {
+    "id": "q_rag_055",
+    "type": "short",
+    "isPractice": false,
+    "stem": "Self-RAG 的核心思想是什么？它相比「每次提问都固定检索」有什么好处？",
+    "options": [],
+    "referenceAnswer": "Self-RAG 训练模型在生成时产出反思标记，用于判断是否需要检索、检索到的内容是否相关、自己生成的论断是否被上下文支持。相比固定检索，它避免了对常识问题做无意义的检索，也能在缺少依据时主动收敛，提升忠实度并让决策过程可解释。",
+    "keyPoints": [
+      "让模型在生成过程中输出反思标记，自行决定是否需要检索",
+      "并对「检索内容是否相关」「生成是否被上下文支持」做自我核查",
+      "好处：减少无谓检索、提升忠实度与可解释性"
+    ],
+    "explanation": "它把「检索」从一个固定步骤变成模型可控的自适应动作。",
+    "extension": "代价是提示词或训练流程更复杂，且自评本身也会出错，需要评测兜底。",
+    "difficulty": 4,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "Self-RAG",
+      "自适应检索",
+      "简答"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "Self-RAG: Learning to Retrieve, Generate, and Critique through Self-Reflection",
+      "url": "https://arxiv.org/abs/2310.11511",
+      "snippet": "Self-RAG trains a model to adaptively retrieve passages on demand and to critique its own generation with reflection tokens."
+    }
   }
 ]
