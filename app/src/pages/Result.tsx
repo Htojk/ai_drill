@@ -1,4 +1,5 @@
 import { QUESTIONS_BY_ID } from "../data/questions";
+import { correctAnswerLabel } from "../lib/question-kind";
 import type { AnswerRecord, AnswerMode } from "../types";
 
 interface Props {
@@ -36,10 +37,11 @@ export default function Result({ session, onBack }: Props) {
           {wrong.map((r) => {
             const q = QUESTIONS_BY_ID.get(r.questionId);
             if (!q) return null;
+            const correct = correctAnswerLabel(q);
             return (
               <div key={r.questionId} style={{ padding: "10px 0", borderTop: "1px solid var(--line)" }}>
                 <div style={{ fontSize: 14, marginBottom: 4 }}>{q.stem}</div>
-                <div className="muted">正确答案：{q.options.filter((o) => o.isCorrect).map((o) => o.key).join("、")}</div>
+                {correct && <div className="muted">{correct}</div>}
               </div>
             );
           })}

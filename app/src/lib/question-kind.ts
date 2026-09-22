@@ -11,6 +11,20 @@ export function isMultiChoice(question: Question): boolean {
   return question.options.filter((o) => o.isCorrect).length > 1;
 }
 
+/** 选择题的正确选项 key；简答题没有选项，自然得到空数组。 */
+export function correctKeysOf(question: Question): string[] {
+  return question.options.filter((o) => o.isCorrect).map((o) => o.key);
+}
+
+/**
+ * 列表里显示的「正确答案」文案。
+ * 简答题没有选项，硬拼会渲染出一个空的「正确答案：」，所以返回 null 表示不显示。
+ */
+export function correctAnswerLabel(question: Question): string | null {
+  const keys = correctKeysOf(question);
+  return keys.length ? `正确答案：${keys.join("、")}` : null;
+}
+
 export const TYPE_LABELS: Record<QuestionType, string> = {
   single: "单选",
   judge: "判断",

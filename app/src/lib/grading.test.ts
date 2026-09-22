@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { coverage, gradeLocally, tokens } from "./grading";
+import { QUESTIONS } from "../data/questions";
+import { correctAnswerLabel } from "./question-kind";
 import type { Question } from "../types";
 
 const SHORT: Question = {
@@ -78,5 +80,51 @@ describe("gradeLocally", () => {
   it("没有 keyPoints 时退回按参考答案评分", () => {
     const noPoints: Question = { ...SHORT, keyPoints: undefined };
     expect(gradeLocally(noPoints, SHORT.referenceAnswer!).verdict).toBe("correct");
+  });
+});
+
+// 这组是「内容质量」的回归测试，不是纯逻辑测试。
+//
+// 背景：HIT_COVERAGE 曾经是 0.5，那是按上面那个近乎逐字抄写的小夹具调出来的。
+// 换成题库里真实写法的 180 道简答题，参考答案原文自评只有 21% 能到 partial 线 ——
+// 标准答案自己都判不及格，用户写对也拿不到分。阈值按真实语料重新标定后，
+// 这里把标定结果钉住：以后再调阈值，先跑这组。
+describe("本地评分与真实题库的自洽性", () => {
+  const short = QUESTIONS.filter((q) => q.type === "short" && (q.keyPoints?.length ?? 0) > 0);
+
+  it("题库里简答题数量足够，避免空集合让断言恒真", () => {
+    expect(short.length).toBeGreaterThan(100);
+  });
+
+  it("绝大多数简答题，参考答案原文至少能判为 partial", () => {
+    const partial = short.filter((q) => gradeLocally(q, q.referenceAnswer ?? "").score >= 40);
+    expect(partial.length / short.length).toBeGreaterThanOrEqual(0.85);
+  });
+
+  it("跑题答案拿不到分（区分度没有被放宽阈值吃掉）", () => {
+    const offTopic = "这个问题我了解一些，主要是和实际工程场景相关，需要结合具体情况来分析。";
+    const scored = short.map((q) => gradeLocally(q, offTopic).score);
+    const mean = scored.reduce((a, b) => a + b, 0) / scored.length;
+    expect(mean).toBeLessThan(10);
+  });
+});
+
+describe("correctAnswerLabel", () => {
+  it("选择题给出「正确答案：A」这样的文案", () => {
+    const choice: Question = {
+      ...SHORT,
+      type: "single",
+      referenceAnswer: undefined,
+      keyPoints: undefined,
+      options: [
+        { key: "A", content: "对", isCorrect: true },
+        { key: "B", content: "错", isCorrect: false, wrongReason: "反了" }
+      ]
+    };
+    expect(correctAnswerLabel(choice)).toBe("正确答案：A");
+  });
+
+  it("简答题没有选项，返回 null，避免渲染出空的「正确答案：」", () => {
+    expect(correctAnswerLabel(SHORT)).toBeNull();
   });
 });

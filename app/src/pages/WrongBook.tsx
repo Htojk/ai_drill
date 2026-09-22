@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { QUESTIONS_BY_ID } from "../data/questions";
+import { correctAnswerLabel } from "../lib/question-kind";
 
 interface Props {
   wrongIds: string[];
@@ -56,6 +57,7 @@ export default function WrongBook({ wrongIds, bookmarkIds, onPractice, onToggleB
           {visible.map((id) => {
             const q = QUESTIONS_BY_ID.get(id);
             if (!q) return null;
+            const correct = correctAnswerLabel(q);
             return (
               <div className="card" key={id}>
                 <div style={{ marginBottom: 8 }}>
@@ -68,7 +70,7 @@ export default function WrongBook({ wrongIds, bookmarkIds, onPractice, onToggleB
                   )}
                 </div>
                 <div style={{ fontSize: 14.5, fontWeight: 600, marginBottom: 8 }}>{q.stem}</div>
-                <div className="muted">正确答案：{q.options.filter((o) => o.isCorrect).map((o) => o.key).join("、")}</div>
+                {correct && <div className="muted">{correct}</div>}
                 <div className="exp" style={{ marginTop: 10 }}>
                   <p>{q.explanation}</p>
                   <a className="src" href={q.source.url} target="_blank" rel="noreferrer">

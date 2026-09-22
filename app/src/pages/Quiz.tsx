@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { QUESTIONS_BY_ID } from "../data/questions";
 import { gradeShortAnswer } from "../lib/agent";
 import * as agentStore from "../lib/agent-store";
-import { isMultiChoice, isTextAnswer } from "../lib/question-kind";
+import { correctKeysOf, isMultiChoice, isTextAnswer } from "../lib/question-kind";
 import * as store from "../lib/storage";
 import type { AnswerMode, AnswerRecord, MasteryLevel, MasteryState, Question, ReportReason, ShortAnswerGrade } from "../types";
 import MasteryPicker from "./MasteryPicker";
@@ -62,9 +62,11 @@ export default function Quiz({
   }
 
   const reportState = reports[question.id];
-  const correctKeys = question.options.filter((o) => o.isCorrect).map((o) => o.key);
+  const correctKeys = correctKeysOf(question);
   const choiceCorrect = selected.length === correctKeys.length && selected.every((k) => correctKeys.includes(k));
-  const isCorrect = grade ? grade.verdict === "correct" : choiceCorrect;
+  // 简答题没有选项、correctKeys 为空，choiceCorrect 会恒真 —— 所以「直接查看答案」
+  // 必须单独判错，否则界面会显示「✅ 答对了」，而记录里写的却是未掌握。
+  const isCorrect = viewedAnswer ? false : grade ? grade.verdict === "correct" : choiceCorrect;
 
   /** 收尾当前题：写记录、推进复习、刷新熟练度。 */
   function record(over: Partial<AnswerRecord>) {

@@ -47,14 +47,22 @@ export default function QuizExplanation({
   onNext,
   footer
 }: Props) {
-  const banner = grade ? VERDICT_TEXT[grade.verdict] : isCorrect ? "✅ 答对了" : "❌ 答错了";
+  // 「直接查看答案」既不是答对也不是答错，单独给个中性的说法，避免误导。
+  const banner = viewedAnswer
+    ? "👀 已查看答案"
+    : grade
+      ? VERDICT_TEXT[grade.verdict]
+      : isCorrect
+        ? "✅ 答对了"
+        : "❌ 答错了";
+  const cardTone = viewedAnswer ? "warn" : isCorrect ? "ok" : "bad";
   return (
     <>
       <div
         className="card"
         style={{
-          background: isCorrect ? "rgba(34,197,94,.1)" : grade?.verdict === "partial" ? "rgba(245,158,11,.1)" : "rgba(239,68,68,.1)",
-          borderColor: isCorrect ? "var(--ok)" : grade?.verdict === "partial" ? "var(--warn)" : "var(--bad)",
+          background: cardTone === "ok" ? "rgba(34,197,94,.1)" : cardTone === "warn" ? "rgba(245,158,11,.1)" : "rgba(239,68,68,.1)",
+          borderColor: cardTone === "ok" ? "var(--ok)" : cardTone === "warn" ? "var(--warn)" : "var(--bad)",
           marginTop: 12,
           marginBottom: 0
         }}
@@ -74,8 +82,11 @@ export default function QuizExplanation({
               <div className="muted" style={{ marginTop: 4 }}>✗ 遗漏：{grade.missedPoints.join("；")}</div>
             )}
           </>
-        ) : (
+        ) : correctKeys.length > 0 ? (
           <div className="muted">正确答案：{correctKeys.join("、")}</div>
+        ) : (
+          // 简答题没有选项，这里本来会渲染出一个空的「正确答案：」。
+          <div className="muted">参考答案见下方</div>
         )}
         {viewedAnswer && <div className="muted" style={{ marginTop: 6 }}>已查看答案，本题按「未掌握」计入复习。</div>}
       </div>
