@@ -52,6 +52,7 @@ node tools/finish-task.mjs --task T-00N \
 | 加/改某分类的题 | `data/questions/<分类>.json`（源数据）+ `data/questions/index.ts` | 每个 ≤ 100 题 / ~3300 行；只看要改的那一段 |
 | 出题流水线（素材 → 草稿 → 合并） | `tools/gen-questions.mjs` | ~330 行 |
 | 题目获取流水线（抓权威素材 → 切块 → 草稿） | `tools/pipeline/`（先看 `run.mjs`；抓取规则在 `sources.mjs`，清洗规则在 `normalize.mjs`） | 各 ≤ 275 行 |
+| 笔记型仓库抽题（标题即问题 → 简答草稿） | `tools/extract-notes.mjs`（CLI）+ `tools/pipeline/notes.mjs`（纯函数） | 各 ≤ 320 行 |
 | 改每日出题规则 | `lib/recommend.ts` | ~180 行 |
 | 改复习节奏（艾宾浩斯） | `lib/ebbinghaus.ts` | ~85 行 |
 | 改熟练度三档 | `lib/mastery.ts` | ~60 行 |
@@ -183,6 +184,7 @@ tools/                        约束与流程脚本
   gen-questions.mjs           出题流水线：--check 校验题库 / --draft 生成草稿 / --merge 合并
   question-schema.mjs         题目契约（pipeline 与 gen-questions 共用的**唯一**契约）
   llm.mjs                     出题 prompt + 模型调用
+  extract-notes.mjs           笔记型仓库抽题 CLI：--repo（联网）/ --local（离线）/ --cache-only
   pipeline/                   题目获取流水线（与业务解耦，只产出草稿，不认识题库）
     run.mjs                   编排 CLI：--list / --all / --stage / --source / --limit / --mode
     sources.mjs               权威源注册表（含 license / authority）+ GitHub / arXiv 抓取
@@ -192,6 +194,7 @@ tools/                        约束与流程脚本
     normalize.mjs             原始素材 → CorpusDoc（text 供出题 / verbatim 保逐字引用）
     chunk.mjs                 切块 + 跨源去重
     stages.mjs                normalize / chunk / draft 三个 stage 的落盘与统计
+    notes.mjs                 笔记 Markdown → 问答候选（标题即问题、正文即答案；纯函数）
     paths.mjs                 content/ 下各产物目录的统一约定
 content/
   sources/                    人工素材（入库）
@@ -258,9 +261,46 @@ logs/<runId>.jsonl / reports/latest.json         结构化日志与运行报告
 改这条流水线时必须守住的三条：
 
 1. **不许反向依赖业务**：`tools/pipeline/*` 不能 import `tools/gen-questions.mjs`，也不能认识「题库 / 分类白名单」；两者只共用 `tools/question-schema.mjs`。
+   - 唯一的例外是 `notes.mjs` 里的「笔记目录 → 题库分类」映射表（`DIR_CATEGORY`）。它是覆盖面所需的**数据**，不是契约：
+     合并时 `gen-questions.mjs --merge` 仍会按分类白名单重新校验，写错分类只会在那一步被拦下。
 2. **出处必须逐字**：题目 `source.snippet` 只能取自 `chunk.verbatim`（原文切片）。normalize 的清洗规则只允许「删除」字符，加了插入类变换就会被 `checkBlocksVerbatim()` 记为 `corpus.nonverbatim` —— 这不是可以放宽的告警。
 3. **失败要留痕**：新增/修改流程时同步补日志与计数（`logger.count` / `logger.timer`），单个源失败只记 error 不中断；错误最后要能在 `content/reports/latest.json` 里复盘。
 
-测试只跑本目录（`node --test "tools/pipeline/*.test.mjs"`，共 93 个用例）；这些测试不联网，改 `sources.mjs` / `run.mjs` 时用注入假 `httpGetText` / `httpGetJson` 的方式验证编排。
+测试只跑本目录（`node --test "tools/pipeline/*.test.mjs"`，共 127 个用例）；这些测试不联网，改 `sources.mjs` / `run.mjs` 时用注入假 `httpGetText` / `httpGetJson` 的方式验证编排。
+
+### 笔记型仓库抽题（v0.11 新增）
+
+```bash
+node tools/extract-notes.mjs --local <已下载的笔记目录>          # 离线：只解析本地 Markdown
+node tools/extract-notes.mjs --repo wdndev/llm_interview_note --ref main   # 联网：走 raw.githubusercontent.com
+node tools/extract-notes.mjs --repo <owner/repo> --cache-only    # 只拉仓库树做调研，不抽题
+```
+
+与 `pipeline/run.mjs` 的分工：那条流水线处理「连续叙述型权威素材」（论文/文档），按长度切块；
+这条处理「标题即问题、正文即答案」的面试笔记，按标题层级切分才能保住问答对应关系。
+
+两个必须知道的坑：
+
+1. **版权**：`llm_interview_note` 之类的社区笔记仓库**没有 LICENSE**，默认版权保留。
+   草稿标签统一是 `["面试笔记", "待复核"]`、`source.type` 是 `community`，**入库前必须确认使用方式**；
+   不要因为「技术上能抽出来」就默认合并。详见第 8 节。
+2. **别整仓 clone**：这类仓库正文只有 ~1 MB，图片却上百 MB，直连 clone 极慢。
+   用 `raw.githubusercontent.com` 按文件拉取即可（`http.mjs` 已带重试与日志）。
+
+---
+
+## 8. 素材版权（铁律 6）
+
+题库里每一道题都要能说清「这段文字是谁的」。素材分两类：
+
+| 类型 | 例子 | 入库条件 |
+| --- | --- | --- |
+| 许可明确 | arXiv 论文、官方文档、规范 | 可直接入库，`source.type` 填 `paper` / `doc` / `spec` |
+| 许可不明 | 社区整理的个人笔记仓库（无 LICENSE = 默认版权保留） | **先问用户**，不要默认合并 |
+
+- 不要因为「技术上已经抽出来了」就顺势并入题库；无 LICENSE 的仓库整段复制进公开站点有侵权风险。
+- 社区素材来的草稿一律带 `待复核` 标签、`source.type: "community"`，`explanation` 里写明是二手资料。
+- 抽取报告里的 `licenseNote` 记录了本次的许可判定，见 `content/reports/notes-latest.json`。
 
 （v0.2 · 2026-09-22 更新：新增题目获取流水线）
+（v0.3 · 2026-09-22 更新：新增笔记型仓库抽题流水线；补版权口径）

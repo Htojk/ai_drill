@@ -21,7 +21,8 @@
 - **题库已扩到 315 题**：RAG / Agent / 本体与知识图谱各 100 题（每类 20 单选 + 20 判断 + 60 简答），其余 5 个分类各 3 题；其中工程判断题（`isPractice`）99 道。
 - ⚠️ **线上产物仍是 v0.9**：简答/判断/批阅/艾宾浩斯与新题库都还没部署（见产品说明 0.7 第 1 步）。
 - **题目获取流水线已跑通**（`tools/pipeline/`）：从 6 个权威开源项目（OpenAI Cookbook / DAIR.AI / 微软 / HuggingFace / OWASP / arXiv）抓素材 → 规范化 → 切块 → 出草稿，全程结构化日志与运行报告；与业务解耦，只有 `--merge` 才会进题库。
-- 质量基线：**420 个 vitest 用例**（11 个文件）+ 93 个流水线用例；GitHub Actions CI（题库校验 + 分层 + 构建 + 全量测试）。
+- **面试笔记抽题已跑通**（`tools/extract-notes.mjs`）：解析 `wdndev/llm_interview_note` 的「标题即问题、正文即答案」结构，抽出 203 道简答草稿（已过题库契约校验，**尚未入库**——该仓库无 LICENSE，待确认使用口径，见 `AGENTS.md` 第 8 节）。
+- 质量基线：**420 个 vitest 用例**（11 个文件）+ 127 个流水线用例；GitHub Actions CI（题库校验 + 分层 + 构建 + 全量测试）。
 
 ## 跑起来
 
@@ -66,6 +67,9 @@ node tools/pipeline/run.mjs --list                       # 看权威源与许可
 node tools/pipeline/run.mjs --all                        # 抓取 → 规范化 → 切块 → 出草稿（离线可跑）
 node tools/pipeline/run.mjs --stage draft --mode llm     # 调模型出题（需 OPENAI_API_KEY）
 
+node tools/extract-notes.mjs --local <笔记目录>            # 解析面试笔记仓库（标题即问题）→ 简答草稿
+node tools/extract-notes.mjs --repo wdndev/llm_interview_note --ref main   # 联网按文件抓取
+
 node tools/gen-questions.mjs --check                     # 校验题库
 node tools/gen-questions.mjs --merge content/drafts/oss-<runId>.json RAG   # 人工审后合并
 # 合并后记得同步 app/src/data/questions/all.test.ts 里 EXPECTED_FILES 的题量计数；单次 merge 建议 ≤10 道单选/判断或 ≤15 道简答（800 行提交上限）
@@ -82,9 +86,9 @@ node tools/gen-questions.mjs --merge content/drafts/oss-<runId>.json RAG   # 人
 | `docs/research/` | 调研笔记：竞品（2 篇）、否决小程序、CloudBase 默认域名风控 |
 | `AGENTS.md` | **开发约束（harness）**：分层、计划、提交与测试门禁 |
 | `docs/PLAN.md` | 任务计划（脚本维护） |
-| `tools/` | 约束脚本（plan / check-commit-size / check-layers / test-related / finish-task）+ 内容脚本（gen-icons / gen-questions / question-schema / llm） |
+| `tools/` | 约束脚本（plan / check-commit-size / check-layers / test-related / finish-task）+ 内容脚本（gen-icons / gen-questions / question-schema / llm / extract-notes） |
 | `app/src/lib/` | 纯逻辑层：推荐（`recommend`）、艾宾浩斯（`ebbinghaus`）、熟练度（`mastery`）、简答评分（`grading`）、模型批阅（`agent`）等 |
-| `tools/pipeline/` | 题目获取流水线：权威源抓取 → 规范化 → 切块 → 出草稿；与业务解耦，只产出草稿 |
+| `tools/pipeline/` | 内容流水线：`run.mjs` 抓权威源 → 规范化 → 切块 → 出草稿；`notes.mjs` 解析笔记型仓库。与业务解耦，只产出草稿 |
 | `content/sources/` | 人工出题素材；流水线产物（raw / corpus / chunks / drafts / logs / reports）已 gitignore |
 | `app/` | 前端源码（Vite + React + TS） |
 | `app/src/data/questions/` | 题库源数据（每个分类一个 JSON，共 315 题）+ `index.ts` 组装；契约与加题流程见 `AGENTS.md` |
