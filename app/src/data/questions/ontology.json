@@ -1639,5 +1639,447 @@
       "url": "https://www.w3.org/TR/rdf11-concepts/",
       "snippet": "An RDF triple consists of three components: the subject, the predicate, and the object."
     }
+  },
+  {
+    "id": "q_onto_041",
+    "type": "short",
+    "isPractice": false,
+    "stem": "本体、知识图谱、数据库 schema 三者的区别是什么？",
+    "options": [],
+    "referenceAnswer": "三者处在不同层次：数据库 schema 关心「数据怎么存、有什么约束」，含义由开发者在文档和人脑里维护；本体关心「概念之间是什么关系、能推出什么结论」，用 OWL/RDFS 这类形式化语言表达，可被机器推理；知识图谱则是遵循本体组织的实例数据集合。类比一下：schema 是表结构，本体是领域模型与推理规则，知识图谱是这些模型下的具体事实。",
+    "keyPoints": [
+      "数据库 schema 描述表与字段，是存储与约束层面的约定，不表达语义",
+      "本体用形式化语言描述领域概念、关系与推理规则，是语义层",
+      "知识图谱是按本体（或轻量 schema）组织的实例数据，是数据层"
+    ],
+    "explanation": "很多「知识图谱」项目其实只做到图结构的存储，缺少可推理的本体层，因此在跨源融合时才暴露出语义不一致。",
+    "extension": "轻量做法可以只维护一个受控词表代替完整本体，代价是无法自动推理。",
+    "difficulty": 3,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "本体",
+      "知识图谱",
+      "概念区分"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "OWL 2 Primer",
+      "url": "https://www.w3.org/TR/owl2-primer/",
+      "snippet": "OWL 2 is an ontology language for the Semantic Web with formally defined meaning."
+    }
+  },
+  {
+    "id": "q_onto_042",
+    "type": "short",
+    "isPractice": false,
+    "stem": "subClassOf 与 subPropertyOf 分别在表达什么？推理时会带来什么效果？",
+    "options": [],
+    "referenceAnswer": "subClassOf 建立类之间的包含：若 A 是 B 的子类，则每个 A 的实例也都是 B 的实例，因此查询「所有 B」会包含 A 的实例。subPropertyOf 建立属性之间的包含：若 hasParent 是 hasRelative 的子属性，那么任何 hasParent 断言都能推出对应的 hasRelative 断言。两者共同构成了 RDFS 的核心推理能力，也让数据可以在更抽象的层次上被查询与复用。",
+    "keyPoints": [
+      "subClassOf 表示类包含关系：子类的所有实例都是父类的实例，形成类层次",
+      "subPropertyOf 表示属性包含关系：子属性是父属性的特化，适用于同一对主语宾语",
+      "推理效果是类型与断言的向上传播，即子类实例可被当作父类实例回答查询"
+    ],
+    "explanation": "层次不要建得过深过细：层次越细推理产生的推断三元组越多，存储与查询成本都会上升。",
+    "extension": "多继承在 RDFS/OWL 中是被允许的，这也意味着分类不是树而是有向无环图。",
+    "difficulty": 3,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "RDFS",
+      "类层次"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "RDF Schema 1.1",
+      "url": "https://www.w3.org/TR/rdf-schema/",
+      "snippet": "RDF Schema provides a data-modelling vocabulary for RDF data."
+    }
+  },
+  {
+    "id": "q_onto_043",
+    "type": "short",
+    "isPractice": false,
+    "stem": "为什么说 RDFS 的 domain/range 是推理规则而不是校验约束？举例说明。",
+    "options": [],
+    "referenceAnswer": "以 hasAuthor 的 domain 为 Document、range 为 Person 为例：如果数据里有 hasAuthor(book1, alice)，推理机会得出 book1 是 Document、alice 是 Person，而不会因为 book1 不是 Document 就报错。这与关系数据库里外键约束的行为完全不同。因此在 OWA 下想「拒绝不符合定义域的数据」，必须借助 SHACL 之类的约束语言在入库或质检环节显式校验。",
+    "keyPoints": [
+      "domain/range 的作用是反推类型：若 x 通过 p 连到 y 且 p 的 domain 是 C，则推出 x 是 C 的实例",
+      "它不会拒绝不符合定义域值域的数据写入，也不会报错",
+      "要真正校验必须用 SHACL 或应用层规则"
+    ],
+    "explanation": "把 domain/range 当成约束是本体建模最常见的误解之一，它会导致数据质量问题被静默忽略。",
+    "extension": "SHACL 的 sh:targetClass + sh:path + sh:class 可以直接表达「这类节点的这个属性必须指向某类实体」。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "RDFS",
+      "约束",
+      "SHACL"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "RDF Schema 1.1",
+      "url": "https://www.w3.org/TR/rdf-schema/",
+      "snippet": "RDF Schema provides a data-modelling vocabulary for RDF data."
+    }
+  },
+  {
+    "id": "q_onto_044",
+    "type": "short",
+    "isPractice": false,
+    "stem": "OWL 2 的三个 profile（EL、QL、RL）分别适合什么场景？",
+    "options": [],
+    "referenceAnswer": "三个 profile 是表达力与计算复杂度的折中：EL 保留了对大规模分类最有用的构造（合取、存在量词），推理复杂度可控，是 SNOMED 等医学本体的选择；QL 的设计目标是让查询可以被重写成 SQL，因此不要求把数据搬进三元组库；RL 对应可以用规则引擎实现的部分，便于与业务规则系统集成。选型的依据是「你需要哪类推理」和「数据放在哪里」。",
+    "keyPoints": [
+      "EL 面向「大本体 + 大量实例」，支持合取与存在量词，适合医学/生物类大规模分类推理",
+      "QL 面向「本体作为查询重写」，可在关系数据库上用 SQL 实现，适合数据留在原库的场景",
+      "RL 面向规则引擎实现，可用 Datalog 风格规则表达，适合与现有规则系统集成"
+    ],
+    "explanation": "选错 profile 的典型症状是：推理器跑不动，或者发现需要表达的约束根本不在该 profile 内。",
+    "extension": "如果只需要简单的类层次与传递属性，RDFS 加几条自定义规则可能比上完整 OWL 更划算。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "OWL",
+      "Profile",
+      "选型"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "OWL 2 Primer",
+      "url": "https://www.w3.org/TR/owl2-primer/",
+      "snippet": "OWL 2 is an ontology language for the Semantic Web with formally defined meaning."
+    }
+  },
+  {
+    "id": "q_onto_045",
+    "type": "short",
+    "isPractice": false,
+    "stem": "描述逻辑（Description Logic）与 OWL 是什么关系？",
+    "options": [],
+    "referenceAnswer": "描述逻辑是一类以概念（类）、角色（属性）和个体为基本要素的形式化知识表示语言，有明确的模型论语义和可判定的推理算法（如 tableau 算法）。OWL 把 DL 搬到 Web 上：用 RDF 语法与 IRI 命名机制表达同样的语义，并规定推理的标准任务（一致性检查、分类、实例化）。OWL 2 划分 profile，本质就是在选择不同的 DL 片段，用可判定性与复杂度换取表达力。",
+    "keyPoints": [
+      "OWL 是描述逻辑在 Web 上的具体语法与语义实现，可视为 DL 的一种工程化表达",
+      "DL 提供形式化语义与可判定的推理算法，决定了 OWL 推理的可行性边界",
+      "OWL 的不同 profile 对应不同的 DL 片段，表达力与推理复杂度互相制约"
+    ],
+    "explanation": "理解这层关系能解释为什么 OWL 里有些「显然合理」的表达会导致推理不可判定或极慢。",
+    "extension": "在 OWL 2 DL 里混用非 DL 构造（如把类当作实例）会退化成 OWL Full，推理不再有保证。",
+    "difficulty": 5,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "描述逻辑",
+      "OWL",
+      "推理"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "OWL 2 Primer",
+      "url": "https://www.w3.org/TR/owl2-primer/",
+      "snippet": "OWL 2 is an ontology language for the Semantic Web with formally defined meaning."
+    }
+  },
+  {
+    "id": "q_onto_046",
+    "type": "short",
+    "isPractice": false,
+    "stem": "开放世界假设给数据校验带来什么麻烦？工程上怎么解决？",
+    "options": [],
+    "referenceAnswer": "在 OWA 下，如果某人的出生日期没有声明，推理器不会得出「他没有出生日期」的结论，只会认为未知。因此「必填字段校验」「唯一性校验」这类需求无法用 OWL 表达。工程上的解法是显式切换语义：用 SHACL 形状声明必填与基数，用 SPARQL 的 NOT EXISTS 找出缺失，或在入库前用应用层规则校验。这样「推理」与「校验」各司其职，互不干扰。",
+    "keyPoints": [
+      "OWA 下「没声明」等于未知而非为假，因此无法靠推理判断必填项缺失",
+      "一致性检查只能发现逻辑矛盾（例如同一实体既属于不相交类），不能发现信息缺失",
+      "解决办法是在校验环节引入封闭世界语义：SHACL、SPARQL 的 NOT EXISTS 或应用层规则"
+    ],
+    "explanation": "把数据质量校验交给推理器是常见的架构错误：它既做不到，又会带来不必要的复杂度。",
+    "extension": "对关键字段可以同时做 SHACL 校验与 OWL 一致性检查，覆盖「不合规」与「自相矛盾」两类问题。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "OWA",
+      "数据校验",
+      "SHACL"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "Shapes Constraint Language (SHACL)",
+      "url": "https://www.w3.org/TR/shacl/",
+      "snippet": "SHACL is a language for validating RDF graphs against a set of conditions."
+    }
+  },
+  {
+    "id": "q_onto_047",
+    "type": "short",
+    "isPractice": false,
+    "stem": "OWL 属性特性（transitive、symmetric、inverse、functional、inverseFunctional）各自的用途是什么？",
+    "options": [],
+    "referenceAnswer": "这几个特性把领域里常见的性质变成可推理的规则：transitive 让「部分的部分还是部分」「祖先的祖先还是祖先」能被自动推出；symmetric 声明关系双向成立；inverse 声明两个属性互为逆向，声明一侧即可推出另一侧；functional 限制每个主语最多一个取值，inverseFunctional 则意味着该属性的值可以唯一确定主语，是识别同一实体的重要依据（例如身份证号）。",
+    "keyPoints": [
+      "transitive 用于传递关系（祖先、包含），可推出多跳结论",
+      "symmetric 与 inverse 分别表达对称关系与互逆关系（配偶、父子），用于补全反向断言",
+      "functional 与 inverseFunctional 限制取值唯一性或用于标识实体，常用于数据去重"
+    ],
+    "explanation": "把 inverseFunctional 属性用在实体对齐上，可以自动发现「两个 IRI 其实是同一对象」的候选。",
+    "extension": "特性声明越多，推理产生的隐式三元组越多，需要评估存储与查询成本。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "OWL",
+      "属性特性"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "OWL 2 Primer",
+      "url": "https://www.w3.org/TR/owl2-primer/",
+      "snippet": "OWL 2 is an ontology language for the Semantic Web with formally defined meaning."
+    }
+  },
+  {
+    "id": "q_onto_048",
+    "type": "short",
+    "isPractice": false,
+    "stem": "在本体里使用 owl:sameAs 和 owl:equivalentClass 有什么风险？",
+    "options": [],
+    "referenceAnswer": "sameAs 表达的是「这两个 IRI 指同一个对象」，推理后两个个体的所有属性会互相可见。一旦错误对齐（两个人被判定为同一人），数据会被永久污染，而且影响会沿图扩散。equivalentClass 同理，会让两个类的实例集合等价，分类结果可能整体改变。因此实践中应对 sameAs 做严格审核与来源标注，并在应用层优先使用「弱等价」（例如「很可能是同一实体」的专用属性），把强合并限制在人工确认之后。",
+    "keyPoints": [
+      "sameAs 会合并两个个体的全部属性，一次误用就会把两份数据混在一起且难以分离",
+      "equivalentClass 会让两个类的实例集合被推理为相同，可能导致分类结果大范围变化",
+      "因为二者都会触发大量推理，通常需要限制使用范围并配合审计"
+    ],
+    "explanation": "sameAs 是知识融合里最危险的一条断言：它的后果是把两份数据永久绑定在一起。",
+    "extension": "如果要支持撤回，可以保留对齐记录与来源，而不是直接写入 sameAs 并在推理层物化。",
+    "difficulty": 5,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "sameAs",
+      "知识融合",
+      "风险"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "OWL 2 Primer",
+      "url": "https://www.w3.org/TR/owl2-primer/",
+      "snippet": "OWL 2 is an ontology language for the Semantic Web with formally defined meaning."
+    }
+  },
+  {
+    "id": "q_onto_049",
+    "type": "short",
+    "isPractice": false,
+    "stem": "本体建模中最常见的建模错误有哪些？",
+    "options": [],
+    "referenceAnswer": "三类高发问题：一是把「付款」「发布」这类事件或操作建成类，但事件往往有时间、参与者等结构化属性，更适合建成带属性的个体或使用事件本体模式；二是层次过度细分，出现大量「只有一个实例、且从不被复用」的类，这会让维护成本远超收益；三是类与实例的混用（metamodeling），例如把某个类直接当作另一个类的实例来处理，会让模型退出 OWL DL 的可推理范围。",
+    "keyPoints": [
+      "把操作、事件或状态当成类来建模，导致实例语义混乱",
+      "层次过深过细，出现大量只有一个实例的类",
+      "混用类与实例（把类当作个体），使模型退化为不可推理的形式"
+    ],
+    "explanation": "判断标准是「这个类未来会不会被复用、会不会有多个实例」，而不是「现实里这个概念听起来是否独立」。",
+    "extension": "建模评审时优先检查「单实例类」与「类被当个体使用」这两类问题，收益最高。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "本体建模",
+      "常见错误"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "OWL 2 Primer",
+      "url": "https://www.w3.org/TR/owl2-primer/",
+      "snippet": "OWL 2 is an ontology language for the Semantic Web with formally defined meaning."
+    }
+  },
+  {
+    "id": "q_onto_050",
+    "type": "short",
+    "isPractice": false,
+    "stem": "受控词表（controlled vocabulary）与本体的区别与联系是什么？",
+    "options": [],
+    "referenceAnswer": "受控词表解决的是「大家用同一个叫法」：例如规定状态只能取 draft/published/archived 三个值。它本身不含推理能力，但已经把最混乱的命名问题解决了。本体进一步描述概念之间的关系与约束，使机器能推出新结论、能验证一致性。多数团队从词表起步更务实：先用枚举与命名规范统一数据，等出现「需要自动推理」的真实需求时再升级。",
+    "keyPoints": [
+      "受控词表是术语与取值的约定清单，保证命名与取值一致，但不表达形式化语义",
+      "本体在词表之上增加了类层次、属性约束与推理规则，可被机器推理",
+      "实践中可以先从词表起步，按需逐步升级为轻量本体"
+    ],
+    "explanation": "很多项目误以为必须一步到位建完整本体，结果投入巨大却没人维护。",
+    "extension": "词表升级为本体时，最重要的是把值域约束与类层次显式化，这是推理收益最直接的部分。",
+    "difficulty": 3,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "受控词表",
+      "本体"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "RDF Schema 1.1",
+      "url": "https://www.w3.org/TR/rdf-schema/",
+      "snippet": "RDF Schema provides a data-modelling vocabulary for RDF data."
+    }
+  },
+  {
+    "id": "q_onto_051",
+    "type": "short",
+    "isPractice": false,
+    "stem": "知识图谱的 schema 设计，应该自顶向下还是自底向上？",
+    "options": [],
+    "referenceAnswer": "自顶向下的好处是语义一致、可推理，风险是闭门造车：定义的概念与实际数据对不上，或者太抽象而无法落地。自底向上从现有数据与真实查询出发，能快速产生价值，但容易形成同义异名与结构不一致。常见折中是先从真实问答需求出发，抽出必要的概念与关系形成最小词汇集，随着使用逐步收敛并补上层次与约束，避免一开始就追求形式完备。",
+    "keyPoints": [
+      "自顶向下：先定义领域本体与规范词汇，再按规范抽取数据，语义一致但推进慢",
+      "自底向上：先从已有数据与查询需求出发聚类出常用概念，见效快但容易命名混乱",
+      "务实做法是「自底向上发现 + 自顶向下收敛」，即从真实问题出发逐步固化词汇"
+    ],
+    "explanation": "判断标准是「能否回答预期的查询」，而不是「模型是否优雅」。",
+    "extension": "把「每个新增词汇必须附带一个真实查询用例」作为规范，能有效防止过度建模。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "建模方法",
+      "schema"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "RDF Schema 1.1",
+      "url": "https://www.w3.org/TR/rdf-schema/",
+      "snippet": "RDF Schema provides a data-modelling vocabulary for RDF data."
+    }
+  },
+  {
+    "id": "q_onto_052",
+    "type": "short",
+    "isPractice": false,
+    "stem": "选择三元组存储（triple store）时，要考虑哪些因素？",
+    "options": [],
+    "referenceAnswer": "选型要围绕真实负载：如果查询以固定模式的多跳与聚合为主，需要关注 SPARQL 引擎的查询优化与索引；如果需要本体推理，要确认引擎支持的 profile 以及是否支持增量物化；如果写入量大（例如持续从流中入图），写入吞吐与事务支持会成为首要约束。此外还要看运维成熟度（备份、监控、扩容）、许可与生态工具链。",
+    "keyPoints": [
+      "数据规模与查询模式：多跳遍历、聚合、全文检索的占比决定引擎选型",
+      "是否需要推理支持，以及推理是物化还是查询时计算",
+      "写入吞吐、事务与并发能力，以及运维成熟度与许可成本"
+    ],
+    "explanation": "先跑通基于真实数据的查询基准，再决定存储；只看厂商的数字很容易选错。",
+    "extension": "不要忽略「查询计划是否可解释」这一点，它在排查慢查询时非常关键。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "三元组存储",
+      "选型"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "RDF 1.1 Concepts and Abstract Syntax",
+      "url": "https://www.w3.org/TR/rdf11-concepts/",
+      "snippet": "An RDF triple consists of three components: the subject, the predicate, and the object."
+    }
+  },
+  {
+    "id": "q_onto_053",
+    "type": "short",
+    "isPractice": false,
+    "stem": "SPARQL 查询变慢时，通常有哪些优化手段？",
+    "options": [],
+    "referenceAnswer": "优化顺序是「先测量后调整」：看查询计划，找出产生最大中间结果的那一步。常见手段包括：把选择性强、能快速缩小结果集的模式提前；用 FILTER 尽早剪枝而不是最后过滤；把反复使用的子结果物化或缓存；对属性路径显式限制深度，避免全图遍历；以及为大图的数据做合适的索引与分区。若经常需要复杂的多跳聚合，考虑把结果预计算成物化视图。",
+    "keyPoints": [
+      "先用查询计划定位是哪个 join 或路径展开耗时代价最大",
+      "把高选择性的模式（能快速缩小范围的过滤或精确匹配）放在前面，减少中间结果",
+      "对高频子查询做物化或缓存，必要时限制属性路径的深度"
+    ],
+    "explanation": "全图扫的元凶往往是某个不带限制的路径表达式或全类扫描。",
+    "extension": "把慢查询与对应查询计划一起记录，是长期优化的基础材料。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "SPARQL",
+      "性能优化"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "RDF 1.1 Concepts and Abstract Syntax",
+      "url": "https://www.w3.org/TR/rdf11-concepts/",
+      "snippet": "An RDF triple consists of three components: the subject, the predicate, and the object."
+    }
+  },
+  {
+    "id": "q_onto_054",
+    "type": "short",
+    "isPractice": false,
+    "stem": "图数据库的索引策略与关系数据库有什么不同？",
+    "options": [],
+    "referenceAnswer": "关系数据库用 B 树索引加速行定位，多跳查询靠 join，深度增加时代价迅速上升。图库为遍历做了专门优化：邻居通常以邻接结构物理相邻存储，遍历是沿指针前进，因此「从已知顶点出发」的多跳查询很快。索引在图库里的主要作用是「找到起点」（按 ID 或属性定位顶点），以及为特定属性查询提供过滤；一旦进入遍历阶段，性能更取决于存储布局与内存缓存。",
+    "keyPoints": [
+      "图库通常以「顶点/边的标识」与「属性」为索引对象，核心是高效的邻接遍历",
+      "多跳遍历靠指针跳转而非 join，因此深度查询的性能对索引设计依赖方式不同",
+      "属性索引用于定位起点，遍历过程中主要依赖存储布局与缓存"
+    ],
+    "explanation": "这也意味着图查询优化的重点常常是「减少起点数量」和「限制遍历深度」。",
+    "extension": "全图扫描在两类数据库中都很慢，但图库上更容易因为一条无界路径表达式而触发。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "图数据库",
+      "索引"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "RDF 1.1 Concepts and Abstract Syntax",
+      "url": "https://www.w3.org/TR/rdf11-concepts/",
+      "snippet": "An RDF triple consists of three components: the subject, the predicate, and the object."
+    }
+  },
+  {
+    "id": "q_onto_055",
+    "type": "short",
+    "isPractice": false,
+    "stem": "为什么纯向量 RAG 在「多跳问答」上表现很差？知识图谱能补足什么？",
+    "options": [],
+    "referenceAnswer": "多跳问题的证据分散在多个文档，且需要「先确定实体 A、再找 A 的某关系指向 B、再查 B 的属性」这样的链式推理。向量检索按语义相似度一次性取回片段，既无法保证链上每一跳都被取到，也不表达片段之间的关系。知识图谱把实体与关系显式化，可以按路径查询（属性路径、子图检索）拿到完整链路，并把中间实体作为证据展示，从而补上「链」这一环。",
+    "keyPoints": [
+      "多跳问题的答案需要沿关系链把多个片段串起来，而向量检索只做一次性相似度匹配",
+      "片段之间缺少显式关系，模型只能靠语义猜测关联，容易断链",
+      "知识图谱提供显式实体与关系，可以按路径检索并给出可验证的推理链"
+    ],
+    "explanation": "实际系统常做混合：用 KG 处理结构化、多跳类问题，用向量检索处理描述性、非结构化问题。",
+    "extension": "KG 查询的短板是覆盖度：图谱里没有的事实仍然需要回到文本检索。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "多跳问答",
+      "知识图谱",
+      "RAG"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "OWL 2 Primer",
+      "url": "https://www.w3.org/TR/owl2-primer/",
+      "snippet": "OWL 2 is an ontology language for the Semantic Web with formally defined meaning."
+    }
   }
 ]
