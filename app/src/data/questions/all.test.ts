@@ -69,20 +69,31 @@ describe("每道题的字段完整性", () => {
   it.each(QUESTIONS.map((q) => [q.id, q] as const))("%s", (_id, q) => {
     expect(q.stem.trim().length).toBeGreaterThan(0);
     expect(q.explanation.trim().length).toBeGreaterThan(0);
-    expect(q.options.length).toBeGreaterThanOrEqual(2);
 
-    // 选项 key 唯一
-    const keys = q.options.map((o) => o.key);
-    expect(new Set(keys).size).toBe(keys.length);
+    if (q.type === "short") {
+      // 简答题没有选项：靠 referenceAnswer + keyPoints 批阅，而不是判对错
+      expect(q.options).toEqual([]);
+      expect(q.referenceAnswer?.trim().length ?? 0).toBeGreaterThan(0);
+      expect(q.keyPoints?.length ?? 0).toBeGreaterThan(0);
+    } else {
+      expect(q.options.length).toBeGreaterThanOrEqual(2);
 
-    // 至少一个正确答案，且不能全是正确答案
-    const correct = q.options.filter((o) => o.isCorrect);
-    expect(correct.length).toBeGreaterThanOrEqual(1);
-    expect(correct.length).toBeLessThan(q.options.length);
+      // 判断题只有「正确 / 错误」两个选项
+      if (q.type === "judge") expect(q.options.length).toBe(2);
 
-    // 错误选项必须写明错因（这是产品的核心差异化，不是可选项）
-    for (const o of q.options.filter((x) => !x.isCorrect)) {
-      expect(o.wrongReason?.trim().length ?? 0).toBeGreaterThan(0);
+      // 选项 key 唯一
+      const keys = q.options.map((o) => o.key);
+      expect(new Set(keys).size).toBe(keys.length);
+
+      // 至少一个正确答案，且不能全是正确答案
+      const correct = q.options.filter((o) => o.isCorrect);
+      expect(correct.length).toBeGreaterThanOrEqual(1);
+      expect(correct.length).toBeLessThan(q.options.length);
+
+      // 错误选项必须写明错因（这是产品的核心差异化，不是可选项）
+      for (const o of q.options.filter((x) => !x.isCorrect)) {
+        expect(o.wrongReason?.trim().length ?? 0).toBeGreaterThan(0);
+      }
     }
 
     // 分类必须有效
