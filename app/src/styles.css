@@ -64,7 +64,7 @@ button { font-family: inherit; }
 .stem { font-size: 16px; font-weight: 600; line-height: 1.6; margin: 0 0 14px; }
 .exp { background: #111827; border-radius: 12px; padding: 14px; font-size: 13.5px; color: #cbd5e1; margin-top: 12px; }
 .exp h4 { margin: 0 0 6px; font-size: 13px; color: var(--fg); }
-.exp p { margin: 0 0 10px; }
+.exp p { margin: 0 0 10px; white-space: pre-wrap; }
 .exp p:last-child { margin-bottom: 0; }
 .src { display: block; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); font-size: 12.5px; color: var(--sub); text-decoration: none; }
 .src:hover { color: var(--pri); }
