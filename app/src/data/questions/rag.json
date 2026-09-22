@@ -1319,5 +1319,337 @@
       "url": "https://dl.acm.org/doi/10.1145/1571941.1572114",
       "snippet": "Reciprocal Rank Fusion combines the ranks of documents from multiple retrieval systems into a single fused ranking."
     }
+  },
+  {
+    "id": "q_rag_034",
+    "type": "single",
+    "isPractice": false,
+    "stem": "给每个 chunk 附带「所属标题路径 / 来源文件 / 更新时间」，最有价值的用途是？",
+    "options": [
+      {
+        "key": "A",
+        "content": "作为元数据过滤条件，并在生成时给出可核对的引用",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "让 embedding 编码得更准确",
+        "isCorrect": false,
+        "wrongReason": "元数据不参与向量编码，除非显式拼进被编码的文本。"
+      },
+      {
+        "key": "C",
+        "content": "显著减小索引体积",
+        "isCorrect": false,
+        "wrongReason": "附元数据会增加存储，不会减小。"
+      },
+      {
+        "key": "D",
+        "content": "提升向量检索的 QPS",
+        "isCorrect": false,
+        "wrongReason": "QPS 由索引结构与硬件决定，与元数据无关。"
+      }
+    ],
+    "explanation": "元数据的真正价值有两点：一是检索前可按来源/时间/权限做过滤，二是命中后能追溯到具体文档与章节，让答案可被人工核对。",
+    "extension": "把标题路径拼进被编码的文本也是一种常见做法，它能让脱离上下文的块更容易被匹配到。",
+    "difficulty": 3,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "元数据",
+      "溯源"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "LlamaIndex - Metadata Extraction",
+      "url": "https://docs.llamaindex.ai/en/stable/module_guides/loading/documents_and_nodes/",
+      "snippet": "Metadata attached to nodes can be used for filtering during retrieval and for citing the source of an answer."
+    }
+  },
+  {
+    "id": "q_rag_035",
+    "type": "single",
+    "isPractice": false,
+    "stem": "「上下文压缩」（contextual compression）要解决的问题是？",
+    "options": [
+      {
+        "key": "A",
+        "content": "召回内容里无关部分太多，稀释了真正有用的信息",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "向量维度太高导致索引过大",
+        "isCorrect": false,
+        "wrongReason": "降维是另一类优化，上下文压缩作用在文本层而非向量层。"
+      },
+      {
+        "key": "C",
+        "content": "索引太大放不进内存",
+        "isCorrect": false,
+        "wrongReason": "这与在线上下文组装无关。"
+      },
+      {
+        "key": "D",
+        "content": "模型最大输出长度受限",
+        "isCorrect": false,
+        "wrongReason": "压缩针对的是输入上下文，不是输出长度。"
+      }
+    ],
+    "explanation": "召回块里往往只有一两句真正相关。上下文压缩在拼装上下文前把无关句子删掉或提炼，既节省 token 又减少干扰。",
+    "extension": "常见实现有 LLM 抽取式压缩与嵌入过滤，代价是每次查询多一次推理开销。",
+    "difficulty": 3,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "上下文压缩",
+      "上下文"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "LangChain - Contextual Compression",
+      "url": "https://python.langchain.com/docs/how_to/contextual_compression/",
+      "snippet": "Contextual compression post-processes retrieved documents to keep only the parts relevant to the query before passing them to the model."
+    }
+  },
+  {
+    "id": "q_rag_036",
+    "type": "single",
+    "isPractice": true,
+    "stem": "多轮对话里 RAG 效果突然变差，最常见的原因是？",
+    "options": [
+      {
+        "key": "A",
+        "content": "最新一句里的指代（它／这个／上面那个）没有被替换成具体实体就去检索了",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "向量数据库负载升高",
+        "isCorrect": false,
+        "wrongReason": "负载问题通常表现为延迟上升或报错，而不是「答非所问」。"
+      },
+      {
+        "key": "C",
+        "content": "embedding 模型随时间退化",
+        "isCorrect": false,
+        "wrongReason": "模型是固定的，不存在随时间退化。"
+      },
+      {
+        "key": "D",
+        "content": "温度参数自己漂移了",
+        "isCorrect": false,
+        "wrongReason": "参数不会自行漂移。"
+      }
+    ],
+    "explanation": "「它怎么配置？」这类句子单独拿去做检索是没有信息量的。必须先结合对话历史把指代替换成具体实体，再检索才能命中正确文档。",
+    "extension": "这就是「查询改写」在多轮场景下的主要职责，通常还要顺带补全被省略的主语与限定条件。",
+    "difficulty": 3,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "多轮对话",
+      "查询改写",
+      "工程判断"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "LangChain - Query Transformation",
+      "url": "https://python.langchain.com/docs/concepts/retrieval/",
+      "snippet": "In conversational settings the retrieval query must be rewritten to resolve references from the conversation history before searching."
+    }
+  },
+  {
+    "id": "q_rag_037",
+    "type": "single",
+    "isPractice": true,
+    "stem": "把 HNSW 的 efSearch 参数调大，通常会带来什么变化？",
+    "options": [
+      {
+        "key": "A",
+        "content": "召回率上升，查询延迟也上升",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "召回率上升，查询延迟下降",
+        "isCorrect": false,
+        "wrongReason": "两者是同向的：搜索越充分，越准也越慢。"
+      },
+      {
+        "key": "C",
+        "content": "召回率与延迟都下降",
+        "isCorrect": false,
+        "wrongReason": "不存在「更准又更快」的免费午餐，否则不需要这个参数。"
+      },
+      {
+        "key": "D",
+        "content": "只影响离线索引构建时间",
+        "isCorrect": false,
+        "wrongReason": "efSearch 是查询期参数，efConstruction 才影响构建。"
+      }
+    ],
+    "explanation": "efSearch 控制查询时候选队列的大小。调大意味着在图上探索更充分，近似解更接近真解，但计算量随之增加。",
+    "extension": "调参时要盯住 recall 与 P99 延迟的曲线拐点，而不是只看平均 QPS。",
+    "difficulty": 4,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "HNSW",
+      "向量数据库",
+      "调参"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "Efficient and Robust Approximate Nearest Neighbor Search Using Hierarchical Navigable Small World Graphs",
+      "url": "https://arxiv.org/abs/1603.09320",
+      "snippet": "The quality of the approximate search and the query time can be tuned at query time by the size of the dynamic candidate list."
+    }
+  },
+  {
+    "id": "q_rag_038",
+    "type": "single",
+    "isPractice": false,
+    "stem": "要判断「生成的答案是否真的被检索到的内容支持」，应该看哪一类指标？",
+    "options": [
+      {
+        "key": "A",
+        "content": "忠实度 / groundedness",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "检索延迟",
+        "isCorrect": false,
+        "wrongReason": "延迟是性能指标，与内容是否有依据无关。"
+      },
+      {
+        "key": "C",
+        "content": "索引大小",
+        "isCorrect": false,
+        "wrongReason": "索引大小属于成本指标。"
+      },
+      {
+        "key": "D",
+        "content": "token 成本",
+        "isCorrect": false,
+        "wrongReason": "成本指标不能反映答案是否有依据。"
+      }
+    ],
+    "explanation": "忠实度衡量答案中的论断能否由给定上下文推出，是 RAG 生成侧的核心质量指标，与检索侧的 recall@k 一一对应。",
+    "extension": "RAGAS 把评估拆成上下文相关性、上下文召回、答案忠实度、答案相关性几个维度，便于分别定位问题。",
+    "difficulty": 3,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "评估指标",
+      "忠实度"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "RAGAS: Automated Evaluation of Retrieval Augmented Generation",
+      "url": "https://arxiv.org/abs/2309.15217",
+      "snippet": "Faithfulness measures whether the claims in the generated answer can be inferred from the retrieved context."
+    }
+  },
+  {
+    "id": "q_rag_039",
+    "type": "single",
+    "isPractice": true,
+    "stem": "在 RAG 链路里加入重排序，通常的收益与代价分别是？",
+    "options": [
+      {
+        "key": "A",
+        "content": "上下文相关性更好，但增加一次模型推理带来的延迟",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "检索更快，但精度会下降",
+        "isCorrect": false,
+        "wrongReason": "重排序是加算力换精度，方向相反。"
+      },
+      {
+        "key": "C",
+        "content": "索引更小，但召回下降",
+        "isCorrect": false,
+        "wrongReason": "重排序作用在查询期的候选集上，与原索引大小无关。"
+      },
+      {
+        "key": "D",
+        "content": "整体成本降低，但需要更多存储",
+        "isCorrect": false,
+        "wrongReason": "重排序通常增加计算成本，也不增加存储。"
+      }
+    ],
+    "explanation": "交叉编码器精度高但无法预计算，必须对每个候选在线打分，因此以延迟和算力换取上下文质量的提升。",
+    "extension": "常见折中是先粗排把候选压到几十条，再用交叉编码器精排，控制延迟。",
+    "difficulty": 3,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "重排序",
+      "延迟",
+      "工程判断"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "LlamaIndex - Reranking",
+      "url": "https://docs.llamaindex.ai/en/stable/optimizing/production_rag/",
+      "snippet": "Reranking improves retrieval quality by re-scoring the retrieved nodes with a more accurate model, at the cost of additional inference."
+    }
+  },
+  {
+    "id": "q_rag_040",
+    "type": "single",
+    "isPractice": false,
+    "stem": "关于「小块检索 + 大块生成」，下列说法正确的是？",
+    "options": [
+      {
+        "key": "A",
+        "content": "索引里放子块用于相似度计算，命中后回溯取其父块送入模型",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "父块与子块都参与相似度计算，取两者平均分",
+        "isCorrect": false,
+        "wrongReason": "通常只有子块参与检索，父块仅用于生成。"
+      },
+      {
+        "key": "C",
+        "content": "大块用于检索，小块用于生成",
+        "isCorrect": false,
+        "wrongReason": "方向正好相反。"
+      },
+      {
+        "key": "D",
+        "content": "父块与子块的 token 数必须完全相同",
+        "isCorrect": false,
+        "wrongReason": "父块本来就比子块大，不可能相同。"
+      }
+    ],
+    "explanation": "子块小 → 匹配准；父块大 → 语义完整。两者分工，才能同时拿到定位精度与生成质量。",
+    "extension": "实现上需要维护子块到父块的映射，命中后去重父块，避免同一父块被重复送进上下文。",
+    "difficulty": 3,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "父子文档",
+      "切分"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "LangChain - Parent Document Retriever",
+      "url": "https://python.langchain.com/docs/how_to/parent_document_retriever/",
+      "snippet": "The parent document retriever splits documents into small child chunks for retrieval while returning the larger parent documents for generation."
+    }
   }
 ]
