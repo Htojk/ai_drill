@@ -4,6 +4,7 @@ import { checkPassphrase, decryptProgressCode, encryptProgressCode, isEncrypted 
 import { computeOverview, accuracyLevel } from "../lib/stats";
 import * as store from "../lib/storage";
 import type { AnswerRecord, Profile } from "../types";
+import AgentSettings from "./AgentSettings";
 
 interface Props {
   profile: Profile;
@@ -121,6 +122,8 @@ export default function Stats({ profile, records, onProfileChange }: Props) {
           })
         )}
       </div>
+
+      <AgentSettings />
 
       <div className="card">
         <div className="card-title">进度备份</div>

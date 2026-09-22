@@ -12,8 +12,8 @@ import Result from "./pages/Result";
 import WrongBook from "./pages/WrongBook";
 import Stats from "./pages/Stats";
 import Categories from "./pages/Categories";
-
-type Route = "today" | "quiz" | "result" | "wrong" | "categories" | "stats";
+import NavBar from "./pages/NavBar";
+import type { Route } from "./pages/NavBar";
 
 interface Session {
   ids: string[];
@@ -167,10 +167,12 @@ export default function App() {
           mode={session.mode}
           initialIndex={session.startIndex}
           bookmarkIds={bookmarks}
+          mastery={mastery}
           onAnswer={handleAnswer}
           onFinish={finishSession}
           onExit={() => setRoute("today")}
           onToggleBookmark={toggleBookmark}
+          onMastery={(id, level) => writeMastery(id, level, true)}
         />
       )}
 
@@ -191,24 +193,7 @@ export default function App() {
 
       {route === "stats" && <Stats profile={profile} records={records} onProfileChange={setProfile} />}
 
-      <nav className="nav">
-        <button className={route === "today" || route === "quiz" || route === "result" ? "on" : ""} onClick={() => setRoute("today")}>
-          <span className="ico">📅</span>
-          今日
-        </button>
-        <button className={route === "wrong" ? "on" : ""} onClick={() => setRoute("wrong")}>
-          <span className="ico">📕</span>
-          复习
-        </button>
-        <button className={route === "categories" ? "on" : ""} onClick={() => setRoute("categories")}>
-          <span className="ico">📚</span>
-          分类
-        </button>
-        <button className={route === "stats" ? "on" : ""} onClick={() => setRoute("stats")}>
-          <span className="ico">📊</span>
-          我的数据
-        </button>
-      </nav>
+      <NavBar route={route} onNavigate={setRoute} />
     </div>
   );
 }
