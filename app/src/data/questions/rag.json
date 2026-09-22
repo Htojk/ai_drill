@@ -2984,5 +2984,440 @@
       "url": "https://docs.llamaindex.ai/en/stable/optimizing/production_rag/",
       "snippet": "Let's look at how to optimize each of these components."
     }
+  },
+  {
+    "id": "q_rag_086",
+    "type": "short",
+    "isPractice": false,
+    "stem": "怎么判断当前的切分粒度是否合适？",
+    "options": [],
+    "referenceAnswer": "判断标准不是「chunk 多大」，而是「命中后能不能直接回答」。两个可观测信号：切得太碎时 recall@k 看起来还行，但模型经常答不全、缺前提；切得太大时命中片段里真正有用的部分占比很低，上下文被浪费。更直接的做法是抽样看失败案例对应的 chunk 原文，如果经常出现半截句子或一段里塞了多个主题，说明切分有问题。改进方向通常是按文档结构切，再对超长段落二次切分。",
+    "keyPoints": [
+      "用检索评测回答：切得太碎时 recall@k 尚可但答案常缺前提，切得太大时命中片段里有用信息占比低",
+      "抽查失败案例的 chunk 内容，看是否为半截句子或混杂多个主题",
+      "切分要对齐文档结构（标题、段落、代码块、表格），而不是只看字符数"
+    ],
+    "explanation": "切分是最容易被当成参数调优的一步，实际上它应该由文档结构决定。",
+    "extension": "保留标题路径作为元数据，能显著缓解「切碎后失去上下文」的问题。",
+    "difficulty": 3,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "切分",
+      "调参"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "LangChain - Text Splitters",
+      "url": "https://python.langchain.com/docs/concepts/text_splitters/",
+      "snippet": "Text splitters split documents into smaller chunks, which is often necessary for retrieval."
+    }
+  },
+  {
+    "id": "q_rag_087",
+    "type": "short",
+    "isPractice": false,
+    "stem": "向量库里应该存原文还是只存 ID？各有什么代价？",
+    "options": [],
+    "referenceAnswer": "直接存原文的优点是链路简单、少一次查询，缺点是原文在对象存储与向量库里各存一份，文档更新时容易不一致，且存储成本翻倍。只存 ID（外加少量必要元数据）能保持原文单一副本，更新只改源头，代价是检索后要多一次批量取回，需要处理「文档已被删除」的悬挂 ID。无论选哪种，chunk 与源文档的映射必须保留，否则无法做定向更新与删除。",
+    "keyPoints": [
+      "存原文省一次回源查询、实现简单，但放大存储并可能造成数据不一致",
+      "只存 ID 可以让原文保持单一副本，但检索后需要一次数据库批量取回",
+      "无论哪种，都要保存「chunk ↔ 源文档」的映射以便更新与删除"
+    ],
+    "explanation": "做选择的关键问题是：原文会不会频繁更新？会，就倾向于只存 ID 与元数据。",
+    "extension": "常见折中是存 ID + 用于展示的短片段 + 过滤用元数据，全文回源取。",
+    "difficulty": 3,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "存储设计",
+      "索引"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "LangChain - Vector stores",
+      "url": "https://python.langchain.com/docs/concepts/vectorstores/",
+      "snippet": "Vector stores are the most commonly used type of retriever."
+    }
+  },
+  {
+    "id": "q_rag_088",
+    "type": "short",
+    "isPractice": false,
+    "stem": "什么情况下应该考虑微调模型，而不是继续加检索？",
+    "options": [],
+    "referenceAnswer": "选型的判断维度是「要补的是能力还是知识」。如果问题在于模型不会按特定格式输出、不懂领域术语的用法、或需要固定的语气与流程，微调更直接，因为这些是稳定的行为模式。如果问题在于模型缺少最新或私域事实，或者答案必须能溯源到出处、知识还会持续更新，那就应该用 RAG，因为微调注入的知识既难以更新也难以引用。",
+    "keyPoints": [
+      "需要改变输出风格、格式或领域术语用法时，微调比检索更直接",
+      "需要注入的是「稳定能力」而非「易变知识」时，适合微调",
+      "知识频繁更新、要求可溯源时，应优先 RAG 而不是把知识烧进权重"
+    ],
+    "explanation": "两者不互斥：常见组合是先微调让模型学会用好上下文，再用 RAG 提供事实。",
+    "extension": "微调不会自动带来新知识，也不会自动解决幻觉，这一点在选型时最容易被误解。",
+    "difficulty": 4,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "微调",
+      "选型"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "RAG vs Fine-tuning: Pipelines, Tradeoffs, and a Case Study on Agriculture",
+      "url": "https://arxiv.org/abs/2401.08406",
+      "snippet": "We present a pipeline for comparing retrieval augmented generation and fine-tuning for domain-specific tasks."
+    }
+  },
+  {
+    "id": "q_rag_089",
+    "type": "short",
+    "isPractice": false,
+    "stem": "面对「需要连接多个文档才能回答」的问题，普通单轮 RAG 会怎么失败？怎么改进？",
+    "options": [],
+    "referenceAnswer": "多跳问题的答案分散在多个文档里，而单轮 RAG 只做一次检索并截断，往往只拿到其中一跳的证据，模型只能凭一半信息拼一个看似合理的答案。改进方向有两条：一是查询分解，先把问题拆成若干可独立检索的子问题，分别检索后合并证据再作答；二是迭代检索，先检一轮、根据已有信息再生成下一轮查询并继续补证，直到信息足够或达到轮次上限。",
+    "keyPoints": [
+      "单轮检索只取一次 top-k，通常只覆盖问题的一部分，缺另一半证据",
+      "改进思路是迭代检索：用已获信息生成下一轮查询，逐步补齐",
+      "也可以用查询分解：把多跳问题拆成子问题分别检索后再综合"
+    ],
+    "explanation": "多跳失败常常表现为「答案里有一个数字对不上」，因此要能看出一部分证据是缺的。",
+    "extension": "迭代检索要设轮次与预算上限，否则容易陷入反复检索却不收敛。",
+    "difficulty": 4,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "多跳",
+      "迭代检索"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "HotpotQA: A Dataset for Diverse, Explainable Multi-hop Question Answering",
+      "url": "https://arxiv.org/abs/1809.08820",
+      "snippet": "We present HotpotQA, a new dataset of 113k Wikipedia-based question-answer pairs requiring multi-hop reasoning."
+    }
+  },
+  {
+    "id": "q_rag_090",
+    "type": "short",
+    "isPractice": false,
+    "stem": "把用户画像或历史对话引入检索，能带来什么收益？风险是什么？",
+    "options": [],
+    "referenceAnswer": "收益在于消解模糊：用户说「那个方案的风险」，结合历史才能定位到具体项目与文档，命中率明显提升。风险有三层：一是偏好漂移被固化，历史里的过时或错误信息会持续影响后续检索；二是回音室效应，系统总在用户既有认知范围内找证据，削弱了发现新信息的能力；三是隐私与合规，画像属于个人数据，必须可控、可查看、可清除，并且不能跨用户泄漏。",
+    "keyPoints": [
+      "能把「太宽泛」的提问收敛到用户真正关心的范围，提升命中率",
+      "历史里的过时或错误偏好会被持续放大，形成回音室",
+      "引入个人信息会带来隐私与合规问题，必须可控、可清除"
+    ],
+    "explanation": "个性化检索要留「不个性化」的出口，否则很难诊断问题是不是画像带来的。",
+    "extension": "工程上建议把画像作为可选的检索过滤/加权项，而不是硬编码进查询改写提示。",
+    "difficulty": 4,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "个性化",
+      "隐私"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "LlamaIndex - Optimizing Production RAG",
+      "url": "https://docs.llamaindex.ai/en/stable/optimizing/production_rag/",
+      "snippet": "We look at how to optimize retrieval for production use cases."
+    }
+  },
+  {
+    "id": "q_rag_091",
+    "type": "short",
+    "isPractice": false,
+    "stem": "重排序模型的效果该怎么评估？为什么不能只看准确率？",
+    "options": [],
+    "referenceAnswer": "重排序的任务是把相关文档排到前面，所以度量的是排序质量：NDCG 考虑位置与多级相关性，MRR 看第一个相关结果的位置，MAP 兼顾精度与召回。只算 top-1 命中率会掩盖「本该排第 1 的排到第 5」这类退化。评估时还必须固定同一个候选集，否则召回的改动会污染重排指标，无法判断是谁的功劳。",
+    "keyPoints": [
+      "重排序关心的是排序质量，应该用 NDCG、MRR、MAP 这类排序指标",
+      "只看 top-1 准确率会忽略「相关文档是否被排到前面」的差别",
+      "评估要固定候选集，否则召回变化会混进重排指标里"
+    ],
+    "explanation": "分层评估的意义就在这里：重排必须在固定候选集上单独打分。",
+    "extension": "人工标注的相关性等级（0/1/2）比二值标注更能体现 NDCG 的优势。",
+    "difficulty": 4,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "重排序",
+      "评估指标"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "Cumulated Gain-based Evaluation of IR Techniques",
+      "url": "https://dl.acm.org/doi/10.1145/582415.582418",
+      "snippet": "We propose a novel evaluation metric, discounted cumulative gain, for graded relevance judgments."
+    }
+  },
+  {
+    "id": "q_rag_092",
+    "type": "short",
+    "isPractice": false,
+    "stem": "RAG 功能上线前，最小验收清单应该包含哪些项？",
+    "options": [],
+    "referenceAnswer": "清单至少要覆盖三类。质量：在固定的回归问题集上跑分层指标，与上一版基线对比，不允许「总体持平但难例明显变差」。退化行为：检索为空、问题超出知识范围、输入超长、语种混杂时要给出明确行为而不是硬答。工程：延迟与成本的分位数据、每次回答可追溯检索命中与分数、引用可点击核验、以及随时回滚到上一版索引与提示的能力。",
+    "keyPoints": [
+      "离线评测：固定问题集上的 recall@k 与答案质量不低于基线",
+      "退化行为：检索为空、问题超纲、多语言、超长输入都有明确表现",
+      "工程项：延迟分位、成本、引用可点、日志可复盘、可回滚"
+    ],
+    "explanation": "验收清单的价值在于把「感觉还行」变成一组必须逐项确认的勾。",
+    "extension": "线上灰度比一次全量上线安全得多，验收清单也应包含灰度期间要盯的指标。",
+    "difficulty": 4,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "验收",
+      "发布"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "LlamaIndex - Optimizing Production RAG",
+      "url": "https://docs.llamaindex.ai/en/stable/optimizing/production_rag/",
+      "snippet": "Evaluating retrieval and generation quality is a core part of building production RAG."
+    }
+  },
+  {
+    "id": "q_rag_093",
+    "type": "short",
+    "isPractice": false,
+    "stem": "没有人工标注时，怎么近似估计「该召回的是不是都召回了」？",
+    "options": [],
+    "referenceAnswer": "没有标注时可以用三种近似。一是可回答性判断：把检索结果交给模型，只问「这些材料够不够回答问题」，用不可回答的比例作为召回不足的代理指标。二是 k 曲线：把 k 从 3 加到 50，观察答案质量与「信息足够」比例的边际变化，若还在明显上升说明当前 k 偏小。三是上界近似：用查询改写、多路检索、扩大 k 得到的并集当近似上界，看当前链路离上界有多远。",
+    "keyPoints": [
+      "用「答案是否可回答」反推：把问题交给只看检索结果的模型，判断信息是否足够",
+      "用不同 k 的曲线观察边际收益，判断召回是否还在增长",
+      "用查询改写/多路检索的并集作为召回上界的近似"
+    ],
+    "explanation": "这些都是近似，但足以回答「瓶颈在召回还是在生成」这个最关键的问题。",
+    "extension": "把「信息足够但答案错」与「信息不足」分开统计，能直接区分是召回问题还是生成问题。",
+    "difficulty": 4,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "评估",
+      "召回"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "RAGAS: Automated Evaluation of Retrieval Augmented Generation",
+      "url": "https://arxiv.org/abs/2309.15217",
+      "snippet": "RAGAS provides a reference-free evaluation framework for RAG pipelines."
+    }
+  },
+  {
+    "id": "q_rag_094",
+    "type": "short",
+    "isPractice": false,
+    "stem": "「先按文档级检索、再在文档内做段落级检索」有什么好处？",
+    "options": [],
+    "referenceAnswer": "直接对片段做全局检索的问题是「局部相似、整体无关」：某个片段恰好包含关键词，但它在原文里的语境与问题无关，仍然会挤进 top-k。先用文档级（或章节级）检索确定范围，再在该范围内做段落级检索，可以让排序同时考虑两个层级的证据，命中内容的相关性更高。这也与层级切分天然契合：标题、小节、段落各存一层，检索时由粗到细。",
+    "keyPoints": [
+      "文档级先缩小范围，能避免片段相似但整篇不相关的文档干扰",
+      "段落级在受限范围内精挑，可以按比例提高上下文相关性",
+      "两级检索天然适合与层级切分（标题/小节）配合"
+    ],
+    "explanation": "两级检索的另一好处是可解释性：可以告诉用户「答案来自这三篇文档的第几节」。",
+    "extension": "实现上常用「小片段建索引、父块做上下文」（父文档检索），与此思路一致。",
+    "difficulty": 4,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "层级检索",
+      "上下文"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "LlamaIndex - Auto-Merging Retriever",
+      "url": "https://docs.llamaindex.ai/en/stable/examples/retrievers/auto_merging_retriever/",
+      "snippet": "The auto-merging retriever merges leaf nodes into their parent nodes when a sufficiently large fraction of child nodes are retrieved."
+    }
+  },
+  {
+    "id": "q_rag_095",
+    "type": "short",
+    "isPractice": false,
+    "stem": "语料包含多种语言时，检索层需要注意什么？",
+    "options": [],
+    "referenceAnswer": "两个基本选择：用多语言 embedding 把所有语料映射到同一个语义空间，允许跨语言检索；或者按语言分库，用查询语种路由到对应库。前者的效果取决于模型是否真正把多语言对齐（可用跨语言检索评测验证），后者实现简单、可控，但无法跨语言找证据。混合检索时还要特别注意：BM25 依赖分词，中英日文的切词规则完全不同，分词器选错会让关键词通道完全失效。",
+    "keyPoints": [
+      "要么用多语言 embedding 统一编码，要么按语言分库并用同语种查询检索",
+      "跨语言检索（用中文问英文资料）需要模型本身对齐多语言语义空间",
+      "分词与 BM25 高度依赖语言，混合检索时要按语言选用分词器"
+    ],
+    "explanation": "跨语言检索最容易被误判成「模型不行」，实际常常是分词或语言路由的问题。",
+    "extension": "可以给 chunk 标上语种，便于在结果里做语言加权或按用户偏好优先展示母语资料。",
+    "difficulty": 4,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "多语言",
+      "混合检索"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "Multilingual E5 Text Embeddings",
+      "url": "https://arxiv.org/abs/2402.05672",
+      "snippet": "we introduce the multilingual E5 text embedding models, which achieve strong performance on multilingual benchmarks."
+    }
+  },
+  {
+    "id": "q_rag_096",
+    "type": "short",
+    "isPractice": false,
+    "stem": "向量量化（如标量量化、乘积量化 PQ）能省什么、损失什么？",
+    "options": [],
+    "referenceAnswer": "量化把每个维度用更少的比特表示（标量量化）或把向量切段用码本近似（PQ），收益是内存与磁盘占用下降、缓存更友好、距离计算更快。代价是表示精度下降，相近的向量可能被压到同一码字上，造成召回损失。是否划算不能凭感觉：应该用同一批查询比较精确检索与量化检索的 recall@k，再结合重排后的最终质量判断损失是否可接受。",
+    "keyPoints": [
+      "大幅降低内存占用与索引体积，提高缓存命中率，通常也更快",
+      "量化会引入近似误差，降低检索召回，需要重排序来补偿",
+      "是否可接受要用「精确检索 vs 量化检索」的召回对比来量化"
+    ],
+    "explanation": "量化常与重排配对使用：先用量化索引快速粗排大候选集，再用精确模型精排。",
+    "extension": "通常可以把向量存量化版本、把原文向量或更精细表示留在磁盘上以支持二次精算。",
+    "difficulty": 4,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "量化",
+      "内存"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "Faiss Wiki - Guidelines to choose an index",
+      "url": "https://github.com/facebookresearch/faiss/wiki/Guidelines-to-choose-an-index",
+      "snippet": "For example, you can use a compressed index to save memory."
+    }
+  },
+  {
+    "id": "q_rag_097",
+    "type": "short",
+    "isPractice": false,
+    "stem": "重排序阶段应该喂多少候选？候选数怎么定？",
+    "options": [],
+    "referenceAnswer": "先看召回侧的 recall@N：如果正确答案基本都落在前 20 里，重排喂 20 就够了；如果 recall@50 才明显上升，就需要把 N 提到 50，否则重排再准也没有正确答案可排。N 的代价是线性的重排延迟与成本，所以要在 recall 曲线出现拐点处截断。进一步优化是分层截断：对向量分数明显偏低的候选直接丢弃，只对中间地带做重排。",
+    "keyPoints": [
+      "候选数要覆盖「正确答案在召回里的位置」，通常从 recall@N 曲线确定 N",
+      "候选越多质量上限越高，但重排的延迟与成本线性增长",
+      "对分数很低的候选做提前截断，能在几乎不损质量的前提下省成本"
+    ],
+    "explanation": "N 的取值本质上是「用重排预算买召回」的性价比问题。",
+    "extension": "上线后要监控重排输入/输出的 NDCG 变化，N 变了需要重新评估。",
+    "difficulty": 4,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "重排序",
+      "成本"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "LlamaIndex - Optimizing Production RAG",
+      "url": "https://docs.llamaindex.ai/en/stable/optimizing/production_rag/",
+      "snippet": "Reranking is a common technique to improve retrieval quality for production RAG systems."
+    }
+  },
+  {
+    "id": "q_rag_098",
+    "type": "short",
+    "isPractice": false,
+    "stem": "用户只输入「这个方案有哪些风险」这类宽泛问题时，检索层怎么处理？",
+    "options": [],
+    "referenceAnswer": "宽泛问题的向量表示本身就很「居中」，容易命中同样泛泛而谈的段落，而真正有信息量的具体分析排在后面。三种处理方式：一是澄清，直接问用户指的是哪个方案，成本最低且往往最有效；二是结合对话历史把指代补全（「这个方案」→ 具体名称）后再检索；三是先做一轮宽泛检索，把命中的主题聚类后让用户选方向，再按选定方向精查。",
+    "keyPoints": [
+      "宽泛问题在向量空间里没有明确方向，容易命中泛泛而谈的段落",
+      "可用澄清提问、结合上下文补全指代，或先生成候选子问题再检索",
+      "也可以先做一轮宽泛检索，根据结果向用户确认方向再精查"
+    ],
+    "explanation": "宽泛问题最忌讳的是硬答：模型会输出一堆正确但无用的套话。",
+    "extension": "如果产品不方便追问，可以退化为「多查询 + 融合」，用覆盖面替换精度。",
+    "difficulty": 3,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "查询理解",
+      "澄清"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "LangChain - Query construction / rewriting",
+      "url": "https://python.langchain.com/docs/concepts/retrieval/",
+      "snippet": "Query translation transforms the input query into a form better suited for retrieval."
+    }
+  },
+  {
+    "id": "q_rag_099",
+    "type": "short",
+    "isPractice": false,
+    "stem": "表格类内容进入 RAG 时，怎么切分才能保住结构信息？",
+    "options": [],
+    "referenceAnswer": "表格的核心信息在「列与值的对应关系」，一旦拍平成一行文本，检索命中的片段往往缺少表头，模型无法知道数字属于哪一列。推荐做法是以行为单位切分并复制表头，使每个片段自解释；对多级表头要保留层级路径；对关键指标还可以额外生成自然语言描述（例如「2024 年 Q1 收入为 X」）单独入索引，用描述提高语义匹配率，展示时仍用原表。",
+    "keyPoints": [
+      "不要把表格压成一行文本，否则行列对应关系丢失",
+      "每行配表头（或按行组切分并保留表头）能让片段自解释",
+      "必要时把表格转成「主谓宾」式的自然语言句子再嵌入，提升可匹配性"
+    ],
+    "explanation": "表格问题常常不是「没检索到」，而是「检索到了但模型读错了列」。",
+    "extension": "同一张表的描述与原文可以都入库，靠去重与来源标注避免重复计数。",
+    "difficulty": 4,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "表格",
+      "切分"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "LlamaIndex - Loading Data",
+      "url": "https://docs.llamaindex.ai/en/stable/understanding/loading/loading/",
+      "snippet": "Documents can be loaded from many data sources and formats, including tables and spreadsheets."
+    }
+  },
+  {
+    "id": "q_rag_100",
+    "type": "short",
+    "isPractice": false,
+    "stem": "用户反馈「答案是对的，但给出的引用看不出来支持这个结论」，说明什么？怎么治？",
+    "options": [],
+    "referenceAnswer": "这类问题通常有两个来源：一是模型先写出答案再补引用，引用只是「看起来相关」的片段；二是引用确实相关，但只覆盖结论的一部分，用户无法从片段推出完整结论。治理上要在提示层要求结论与依据绑定（每一句结论后面紧跟取自哪段），在链路层保证引用编号与上下文块严格对应，并在评测里加入引用一致性指标——把「结论 + 被引片段」单独拿出来判断是否被支持，作为 faithfulness 的具体实现。",
+    "keyPoints": [
+      "说明引用是模型事后补的，或者引用的片段只部分相关，引用与结论之间缺少可验证的对应",
+      "提示层要求「每条结论必须紧邻其依据」而不是先写答案再挂引用",
+      "评测层加入「引用一致性」检查：把结论与引用片段单独交给模型或人工判断是否被支持"
+    ],
+    "explanation": "引用错比没有引用更危险：它让用户产生了「已经核实过」的错觉。",
+    "extension": "把引用做成可点击并高亮命中片段，用户核验成本下降，这类问题的反馈量会明显上升（这是好事）。",
+    "difficulty": 4,
+    "categories": [
+      "RAG"
+    ],
+    "tags": [
+      "引用",
+      "faithfulness"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "RAGAS: Automated Evaluation of Retrieval Augmented Generation",
+      "url": "https://arxiv.org/abs/2309.15217",
+      "snippet": "Faithfulness measures whether the generated answer is supported by the retrieved context."
+    }
   }
 ]
