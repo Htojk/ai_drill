@@ -70,6 +70,9 @@ function render(state) {
 function allIds() {
   const ids = [];
   const scan = (text) => {
+    // 仓库是 CRLF：不归一化的话每行末尾会多一个 \r，正则的 $ 匹配不上，
+    // 结果就是「扫不到 PLAN.md 里的编号」，新任务会和归档里的旧编号撞车。
+    text = text.replace(/\r\n/g, "\n");
     // 只认任务行，避免头部说明里的示例编号（如 “(T-004)”）被当成已用编号
     for (const line of text.split("\n")) {
       const m = line.match(TASK_RE);
@@ -123,6 +126,9 @@ function find(state, id) {
 const [cmd = "list", ...rest] = process.argv.slice(2);
 const state = readPlan();
 
+/** 已用过的编号（含归档），用于给 add 兜底：撞号会让 plan.mjs show 无法回溯。 */
+const usedIds = () => new Set(allIds().map((n) => `T-${String(n).padStart(3, "0")}`));
+
 function requireTask(id) {
   const hit = find(state, id);
   if (!hit) {
@@ -141,6 +147,10 @@ if (cmd === "list") {
     process.exit(1);
   }
   const id = nextId();
+  if (usedIds().has(id)) {
+    console.error(`✗ 取号撞车：${id} 已被占用（多半是归档里用过）。请检查 tools/plan.mjs 的取号逻辑。`);
+    process.exit(1);
+  }
   state.todo.push({ id, title, meta: `新增 ${today()}` });
   save(state);
   console.log(`✓ 已新增 ${id} ${title}`);
