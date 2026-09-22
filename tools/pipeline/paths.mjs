@@ -16,7 +16,9 @@ export const SOURCES_DIR = path.join(CONTENT, "sources");
 export const RAW_DIR = path.join(CONTENT, "raw");
 /** stage 2 产物：规范化语料 CorpusDoc（可重建，不入库）。 */
 export const CORPUS_DIR = path.join(CONTENT, "corpus");
-/** stage 3 产物：出题草稿，交给 gen-questions --merge（不入库）。 */
+/** stage 3 产物：切分后的出题素材块（可重建，不入库）。 */
+export const CHUNKS_DIR = path.join(CONTENT, "chunks");
+/** stage 4 产物：出题草稿，交给 gen-questions --merge（不入库）。 */
 export const DRAFTS_DIR = path.join(CONTENT, "drafts");
 /** 结构化日志，每跑一次一个 JSONL 文件（不入库）。 */
 export const LOGS_DIR = path.join(CONTENT, "logs");

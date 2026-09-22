@@ -1,12 +1,16 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  checkBlocksVerbatim,
+  explodeBlocks,
   extractTitle,
   isLowValue,
   makeCorpusDoc,
   markdownToText,
   normalizeMarkdownDoc,
   slugify,
+  snippetFrom,
+  splitBlocks,
   stripBoilerplate
 } from "./normalize.mjs";
 
@@ -28,8 +32,19 @@ describe("stripBoilerplate", () => {
 });
 
 describe("markdownToText", () => {
-  it("标题转成「标题：」行", () => {
-    assert.equal(markdownToText("## RAG 是什么"), "RAG 是什么：");
+  it("标题只去掉 # 标记，不插入原文没有的字符", () => {
+    assert.equal(markdownToText("## RAG 是什么"), "RAG 是什么");
+  });
+
+  it("变换全是「删除」：结果一定是输入的子序列（不凭空造字）", () => {
+    const src = "见 [LangChain 文档](https://x)，用 `top_k=5` 与 **粗体**。";
+    const out = markdownToText(src);
+    let cursor = 0;
+    for (const ch of out) {
+      cursor = src.indexOf(ch, cursor);
+      assert.notEqual(cursor, -1, `输出字符「${ch}」在原文中找不到，说明清洗规则插入了新字符`);
+      cursor += 1;
+    }
   });
 
   it("链接只留可见文字", () => {
@@ -161,5 +176,111 @@ describe("normalizeMarkdownDoc", () => {
       raw: "太短了"
     });
     assert.equal(doc, null);
+  });
+
+  it("产出的块带原文切片，并记录逐字校验结果", () => {
+    const doc = normalizeMarkdownDoc({
+      sourceId: "x",
+      url: "https://x",
+      license: "MIT",
+      raw: `# 标题\n\n${"按语义切分能保留上下文完整性，避免关键前提被切走。".repeat(12)}`
+    });
+    assert.ok(doc.blocks.length >= 2);
+    assert.ok(doc.blocks.some((b) => b.raw.startsWith("# 标题")));
+    assert.equal(doc.meta.verbatimOk, true);
+  });
+});
+
+describe("splitBlocks", () => {
+  const md = [
+    "# 指南",
+    "",
+    "第一段。",
+    "仍然是第一段。",
+    "",
+    "## 切分",
+    "",
+    "第二段。",
+    "",
+    "```js",
+    "const a = 1;",
+    "",
+    "console.log(a);",
+    "```"
+  ].join("\n");
+
+  it("标题单独成块，并带上标题路径", () => {
+    const heading = splitBlocks(md).find((b) => b.raw === "# 指南");
+    assert.deepEqual(heading.headingPath, ["指南"]);
+    assert.equal(heading.text, "指南");
+  });
+
+  it("空行切段，段内换行保留为一整块", () => {
+    const para = splitBlocks(md).find((b) => b.raw.startsWith("第一段。"));
+    assert.equal(para.raw, "第一段。\n仍然是第一段。");
+  });
+
+  it("二级标题之后的块带两级标题路径", () => {
+    const para = splitBlocks(md).find((b) => b.raw === "第二段。");
+    assert.deepEqual(para.headingPath, ["指南", "切分"]);
+  });
+
+  it("代码块整体保留为一块，内部空行不切分", () => {
+    const code = splitBlocks(md).find((b) => b.raw.includes("const a = 1;"));
+    assert.ok(code.raw.includes("console.log(a);"));
+    assert.ok(code.raw.includes("```"));
+  });
+});
+
+describe("checkBlocksVerbatim", () => {
+  const raw = "# 指南\n\n按语义切分更稳。\n\n## 切分\n\n固定长度会切断上下文。";
+
+  it("真实块都能在素材里逐字定位", () => {
+    const result = checkBlocksVerbatim(splitBlocks(raw), raw);
+    assert.equal(result.ok, true);
+    assert.deepEqual(result.failed, []);
+  });
+
+  it("块里出现原文没有的内容时报出下标", () => {
+    const blocks = [...splitBlocks(raw), { headingPath: [], raw: "原文里没有这句话", text: "原文里没有这句话" }];
+    const result = checkBlocksVerbatim(blocks, raw);
+    assert.equal(result.ok, false);
+    assert.deepEqual(result.failed, [blocks.length - 1]);
+  });
+});
+
+describe("explodeBlocks", () => {
+  it("短块原样返回", () => {
+    const block = { headingPath: ["a"], raw: "短", text: "短" };
+    assert.deepEqual(explodeBlocks([block], 100), [block]);
+  });
+
+  it("超长块按原文拆分，每块原文仍是原块的子串（verbatim 不丢）", () => {
+    const raw = Array.from({ length: 4 }, (_, i) => `第 ${i} 段${"x".repeat(60)}`).join("\n\n");
+    const parts = explodeBlocks([{ headingPath: ["a"], raw, text: raw }], 80);
+    assert.ok(parts.length > 1);
+    for (const part of parts) {
+      assert.ok(part.raw.length <= 80);
+      assert.ok(raw.includes(part.raw));
+      assert.deepEqual(part.headingPath, ["a"]);
+    }
+  });
+});
+
+describe("snippetFrom", () => {
+  it("短文本原样返回且标记未截断", () => {
+    assert.deepEqual(snippetFrom("一句短话。", 100), { text: "一句短话。", truncated: false });
+  });
+
+  it("超长文本优先在句末收尾", () => {
+    const out = snippetFrom(`${"a".repeat(18)}。${"b".repeat(30)}`, 20);
+    assert.equal(out.truncated, true);
+    assert.equal(out.text, `${"a".repeat(18)}。`);
+  });
+
+  it("找不到句子边界时硬切到上限", () => {
+    const out = snippetFrom("x".repeat(50), 20);
+    assert.equal(out.truncated, true);
+    assert.equal(out.text.length, 20);
   });
 });
