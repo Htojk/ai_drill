@@ -51,6 +51,7 @@ node tools/finish-task.mjs --task T-00N \
 | --- | --- | --- |
 | 加/改某分类的题 | `data/questions/<分类>.json`（源数据）+ `data/questions/index.ts` | 各 ~145 行 |
 | 出题流水线（素材 → 草稿 → 合并） | `tools/gen-questions.mjs` | ~330 行 |
+| 题目获取流水线（抓权威素材 → 切块 → 草稿） | `tools/pipeline/`（先看 `run.mjs`；抓取规则在 `sources.mjs`，清洗规则在 `normalize.mjs`） | 各 ≤ 275 行 |
 | 改每日出题规则 | `lib/recommend.ts` | ~180 行 |
 | 改间隔重复节奏 | `lib/review.ts` | ~31 行 |
 | 改本地存储 / 导出码 | `lib/storage.ts` | ~170 行 |
@@ -171,7 +172,22 @@ tools/                        约束与流程脚本
   finish-task.mjs             收尾：校验 + 测试 + 计划 + 提交
   gen-icons.mjs               生成 PWA / iOS 的 PNG 图标
   gen-questions.mjs           出题流水线：--check 校验题库 / --draft 生成草稿 / --merge 合并
-content/sources/              出题素材（草稿写到 content/drafts/，已 gitignore）
+  question-schema.mjs         题目契约（pipeline 与 gen-questions 共用的**唯一**契约）
+  llm.mjs                     出题 prompt + 模型调用
+  pipeline/                   题目获取流水线（与业务解耦，只产出草稿，不认识题库）
+    run.mjs                   编排 CLI：--list / --all / --stage / --source / --limit / --mode
+    sources.mjs               权威源注册表（含 license / authority）+ GitHub / arXiv 抓取
+    arxiv.mjs                 arXiv Atom 解析（纯函数，离线可测）
+    http.mjs                  带重试与日志的 HTTP 客户端（实现可注入）
+    logger.mjs                结构化 JSONL 日志 + 计数 + 耗时 + 脱敏
+    normalize.mjs             原始素材 → CorpusDoc（text 供出题 / verbatim 保逐字引用）
+    chunk.mjs                 切块 + 跨源去重
+    stages.mjs                normalize / chunk / draft 三个 stage 的落盘与统计
+    paths.mjs                 content/ 下各产物目录的统一约定
+content/
+  sources/                    人工素材（入库）
+  raw/ corpus/ chunks/        流水线中间产物（可由 sources 或权威源重建，已 gitignore）
+  drafts/ logs/ reports/      出题草稿 / JSONL 日志 / 运行报告（已 gitignore）
 .github/workflows/ci.yml      CI：题库校验 + 分层 + 构建 + 全量测试
 app/src/
   types.ts                    全局类型（最底层）
@@ -194,4 +210,31 @@ node tools/gen-questions.mjs --merge content/drafts/<草稿>.json RAG      # 校
 - 草稿写在 `content/drafts/`（已 gitignore），人工修订来源与解析后再 merge。
 - 合并会改变题目顺序：记得同步 `data/questions/all.test.ts` 里的 `EXPECTED_IDS`。
 
-（v0.1 · 2026-09-22 建立）
+### 题目获取流水线（v0.10 新增，与业务解耦）
+
+```bash
+node tools/pipeline/run.mjs --list                      # 看有哪些权威源、许可与「为何可信」
+node tools/pipeline/run.mjs --all                       # fetch+normalize+chunk+draft（离线可跑）
+node tools/pipeline/run.mjs --stage fetch --source arxiv --limit 3
+node tools/pipeline/run.mjs --stage draft --mode llm     # 调模型出题，需 OPENAI_API_KEY
+```
+
+产物（全部在 `content/` 下，已 gitignore，可重建）：
+
+```
+raw/<sourceId>/*.md + <sourceId>.manifest.json   抓回来的原始素材
+corpus/<sourceId>.json                           CorpusDoc[]（统一契约）
+chunks/<sourceId>.json                           TextChunk[]（text + verbatim 双轨）
+drafts/oss-<runId>.json                          出题草稿 → 只有 --merge 才能进题库
+logs/<runId>.jsonl / reports/latest.json         结构化日志与运行报告
+```
+
+改这条流水线时必须守住的三条：
+
+1. **不许反向依赖业务**：`tools/pipeline/*` 不能 import `tools/gen-questions.mjs`，也不能认识「题库 / 分类白名单」；两者只共用 `tools/question-schema.mjs`。
+2. **出处必须逐字**：题目 `source.snippet` 只能取自 `chunk.verbatim`（原文切片）。normalize 的清洗规则只允许「删除」字符，加了插入类变换就会被 `checkBlocksVerbatim()` 记为 `corpus.nonverbatim` —— 这不是可以放宽的告警。
+3. **失败要留痕**：新增/修改流程时同步补日志与计数（`logger.count` / `logger.timer`），单个源失败只记 error 不中断；错误最后要能在 `content/reports/latest.json` 里复盘。
+
+测试只跑本目录（`node --test "tools/pipeline/*.test.mjs"`，共 93 个用例）；这些测试不联网，改 `sources.mjs` / `run.mjs` 时用注入假 `httpGetText` / `httpGetJson` 的方式验证编排。
+
+（v0.2 · 2026-09-22 更新：新增题目获取流水线）

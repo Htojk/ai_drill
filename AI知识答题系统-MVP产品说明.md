@@ -1,7 +1,7 @@
-- 版本：v0.9（MVP）
+- 版本：v0.10（MVP）
 - 日期：2026-09-22
-- 状态：**功能闭环已实现；线上仍是初版产物（待重新部署），手机实测未做**
-- 本版变更：补齐 iOS/Android PNG 图标、分类专项练习页、断点续答、收藏 UI、进度码口令加密、离线出题流水线（题库源数据改 JSON）、CI；调研文件归入 `docs/research/`（详见附录 A.1）
+- 状态：**功能闭环已实现并已部署（v0.9 线上）；题目获取流水线（T-013）已跑通；手机实测仍未做**
+- 本版变更：新增**题目获取流水线** `tools/pipeline/`（6 个权威开源源 → 规范化 → 切块 → 出草稿，结构化日志 + 运行报告，与业务解耦）；详见附录 A.1
 
 ---
 
@@ -15,6 +15,7 @@
 2. **当前进度**：功能闭环已完成（0.3）；**唯一卡住的是手机实测**（10.7），做之前先重新部署（0.7 第 1 步）。
 3. **怎么改代码**：先读 `AGENTS.md`（分层 / 计划 / 800 行提交 / 只跑相关测试 / 完成即提交），任务清单在 `docs/PLAN.md`。
 4. **加题**：`tools/gen-questions.mjs --draft` 出草稿 → 人工审 → `--merge` 合并（见 0.5）。
+   （v0.10 起可先用 `node tools/pipeline/run.mjs --all` 从 6 个权威开源项目自动抓素材出草稿，见 0.5）
 5. **标准收尾**：`node tools/finish-task.mjs --task T-0NN --message "feat(scope): 说明" --evidence "验证方式"`。
 
 ### 0.1 项目是什么
@@ -53,6 +54,7 @@
 | **断点续答（A9）** | ✅ 已完成 | v0.9：答完即记进度，重进回到中断的那一题（`lib/task.ts`） |
 | **收藏题目（B3 上半）** | ✅ 已完成 | v0.9：答题页可收藏，复习页「收藏」标签可查看与练习 |
 | **离线出题流水线（D3/D8）** | ✅ 已完成 | v0.9 新增 `tools/gen-questions.mjs`：--check / --draft / --merge |
+| **题目获取流水线（T-013）** | ✅ 已完成 | v0.10 新增 `tools/pipeline/`：6 个权威开源源 → CorpusDoc → chunk → 草稿；结构化日志 + 运行报告；与业务解耦 |
 | 题目反馈按钮（B4） | ✅ 已完成 | 4 种原因，存本地 `aq.reports.v1`（v0.6 新增） |
 | 错题本 + 间隔重复（1/3/7/15/30 天） | ✅ 已完成 | `app/src/lib/review.ts` |
 | 统计页 + 掌握度图 + streak | ✅ 已完成 | `app/src/pages/Stats.tsx` |
@@ -78,7 +80,9 @@
 | `AGENTS.md` | **开发约束（harness）：分层规则、提交流程、门禁命令（v0.8 新增）** |
 | `docs/PLAN.md` | 任务计划；已完成只留 5 条，更早的归档到 `docs/plan-archive/` |
 | `docs/research/` | 调研笔记：竞品（2 篇）、小程序否决、CloudBase 默认域名风控（v0.9 从根目录移入） |
-| `tools/` | 约束脚本 5 个（plan / check-commit-size / check-layers / test-related / finish-task）+ 内容脚本 2 个（gen-icons / gen-questions） |
+| `tools/` | 约束脚本 5 个（plan / check-commit-size / check-layers / test-related / finish-task）+ 内容脚本与共享模块（gen-icons / gen-questions / question-schema / llm） |
+| `tools/pipeline/` | **题目获取流水线（v0.10 新增）**：`run.mjs` 编排；`sources.mjs` 权威源注册表；`arxiv.mjs` / `http.mjs` / `logger.mjs` / `normalize.mjs` / `chunk.mjs` / `stages.mjs` / `paths.mjs`。各文件 ≤ 275 行 |
+| `content/`（`raw` / `corpus` / `chunks` / `logs` / `reports` 子目录） | 流水线中间产物（可重建，已 gitignore）：原始素材 → CorpusDoc → 切块 → JSONL 日志 → 运行报告 |
 | `.github/workflows/ci.yml` | CI：题库校验 → 分层检查 → 构建 → 全量测试（v0.9 新增） |
 | `AI知识答题系统-MVP产品说明.md` | 本文档（产品设计 + 当前状态） |
 | `手机访问二维码.png` | 指向线上地址的二维码（410×410 有效 PNG） |
@@ -110,7 +114,7 @@
 - 难度分布：2 分 8 题、3 分 12 题、4 分 4 题；**没有 5 分题**。
 - 数据质量良好：无重复 id；每个错误选项都有 `wrongReason`；每题都有 `extension` 与 `snippet`；覆盖全部 8 个分类。
 - 每题固定 4 个选项，正确答案均为 1 个。
-- **出题流程**（v0.9）：`--check` 校验 → `--draft content/sources/*.md`（离线模板或调模型）→ 人工修订 → `--merge <草稿> <分类>`。
+- **出题流程**（v0.10 推荐路径）：`node tools/pipeline/run.mjs --all` 从权威开源项目抓素材并出草稿（`content/drafts/oss-<runId>.json`）→ 人工修订 → `node tools/gen-questions.mjs --merge <草稿> <分类>`。手工素材仍可走 `--draft content/sources/*.md`（离线模板或调模型）。
 
 ### 0.6 已知问题与技术债（v0.9 核实，按优先级）
 
@@ -124,12 +128,14 @@
 | P2 | 明文进度码仍可导出 | 明文 base64 保留兼容性，含答题记录与画像；加密导出（v0.9）需用户主动选择 |
 | P2 | 收藏列表未做单题删除以外的管理 | 只能取消收藏，没有批量管理/分组 |
 | P2 | 出题草稿质量依赖人工 | 离线草稿是占位模板；调模型出题需要自备 API key，且产出必须人工复核 |
+| P2 | 流水线 `llm` 出题模式未实测 | T-013 只验证了 `extract`（离线）模式；`--stage draft --mode llm` 需要 `OPENAI_API_KEY`，尚未跑真实模型出题 |
+| P2 | 流水线无增量缓存 | 每次 `fetch` 都重拉整棵文件树、按 `--limit` 取前 N 个文件；暂未做「已抓过就跳过」的去重 |
 
 ### 0.7 建议的下一步（按顺序）
 
 1. **手机实测**（第 10.7 节清单）——唯一卡住的一步，结果决定是否走 ICP 备案。v0.9 已部署，可以直接测。
-2. **扩题库到 200–500 题**：`--draft` 出草稿 → 人工审 → `--merge` 合并；注意 `all.test.ts` 的 `EXPECTED_IDS` 要同步。（用户当前要求暂缓）
-3. 之后可选：题目笔记、判断题与多选题题型补齐、CI 覆盖率门槛。
+2. **扩题库到 200–500 题**：推荐先用 `node tools/pipeline/run.mjs --all` 批量抓素材出草稿 → 人工审 → `--merge` 合并；注意 `all.test.ts` 的 `EXPECTED_IDS` 要同步。（题库扩容本身用户要求暂缓，流水线已就绪）
+3. 之后可选：流水线 `llm` 出题模式实测与增量缓存、题目笔记、判断题与多选题题型补齐、CI 覆盖率门槛。
 
 ### 0.8 怎么把它跑起来
 
@@ -734,7 +740,26 @@ v0.3 起，**题库数据与用户数据分离**：题库在构建期固化为�
 
 ## 附录 A：变更记录
 
-### A.1 v0.8 → v0.9（本版）
+### A.1 v0.9 → v0.10（本版）
+
+本轮做的是**题目获取流水线（T-013）**：把「从权威开源项目拿到可引用的素材 → 规范化 → 切分 → 出草稿」做成一条可重复运行、与业务解耦、全程有结构化日志的流水线。目标是让扩题库不再依赖手抄素材。
+
+| 变更 | 说明 |
+| --- | --- |
+| **权威源注册表** | 新增 `tools/pipeline/sources.mjs`：6 个源（OpenAI Cookbook、DAIR.AI Prompt Engineering Guide、微软 generative-ai-for-beginners、HuggingFace Transformers 文档、OWASP LLM Top 10、arXiv cs.CL/cs.AI）。每个源都带 `license` / `homepage` / `authority`（为什么可信），抓取规则用 `include` / `exclude` / `minBytes` 声明 |
+| **四个 stage** | `fetch`（GitHub 树 API 选文件后抓 raw；arXiv 解 Atom）→ `normalize`（去噪 → CorpusDoc）→ `chunk`（切块 + 跨源去重）→ `draft`（`extract` 离线草稿 / `llm` 调模型）。stage 之间只通过 `content/` 下的 JSON 契约通信 |
+| **与业务解耦** | `tools/pipeline/*` 不认识「题库 / 分类白名单」这些概念，只产出素材与草稿；**唯一业务写入口仍是 `tools/gen-questions.mjs --merge`**。依赖方向：pipeline 与 gen-questions 互不 import，都只依赖 `tools/question-schema.mjs` |
+| **逐字可引用的出处** | 每个 chunk 同时带 `text`（规范化，供出题阅读）与 `verbatim`（原文切片，供题目 `source.snippet`）。normalize 的清洗规则只允许「删除」类变换，并用 `checkBlocksVerbatim()` 校验块原文是素材的连续子串；不满足就记 `corpus.nonverbatim` 告警 |
+| **结构化日志** | 新增 `tools/pipeline/logger.mjs`：每条 JSONL 带 `ts/level/runId/stage/msg/ms`；`timer()` 记耗时，`count()` 记计数（`docs.fetched` / `docs.skipped` / `corpus.docs` / `corpus.nonverbatim` / `chunks.total` / `drafts.total`）；自动脱敏（api key / token / cookie → `***`）。日志落 `content/logs/<runId>.jsonl` |
+| **运行报告** | 每次运行写 `content/reports/<runId>.json` 与 `latest.json`：各 stage 的处理量、warn/error 明细、下一步该跑什么命令 |
+| **带重试的 HTTP 客户端** | 新增 `tools/pipeline/http.mjs`：4xx（除 429）不重试，429/5xx 指数退避；实现可注入，故编排逻辑离线可测 |
+| **单源失败不中断** | 一个源抓取失败只记 error 并继续下一个源；整轮有 error 时进程退出码为 1，方便 CI / 定时任务发现 |
+| **抓取原则** | 只用 `blob` 地址做出处（人可读、可核对），抓正文走 `raw`；arXiv 只取摘要，并标注 `textKind: abstract`（当作「作者观点」而非定论） |
+| **测试** | 流水线新增 4 个测试文件（`logger` 13 / `arxiv` 7 / `sources` 11 / `stages` 5 个用例），并把 `normalize` / `chunk` 的用例改为 text/verbatim 双轨语义；全套 `node --test "tools/pipeline/*.test.mjs"` 共 **93 个用例通过** |
+| **产物不入库** | `.gitignore` 补 `content/raw`、`corpus`、`chunks`、`logs`、`reports`（都可由 `content/sources/` 或权威源重建） |
+| **实测证据** | `node tools/pipeline/run.mjs --all --limit 2 --source owasp-llm-top10`：`docs.fetched=2`、`chunks.total=12`、`drafts.total=1`、`corpus.nonverbatim=0`，warn/error 均为 0；草稿出处（url / title / snippet）与原材料逐字一致 |
+
+### A.2 v0.8 → v0.9
 
 本轮把「0.3 进度表里剩下的待办」全部做掉（除题库扩容，按用户要求暂缓），并把题库改为可流水线生产的 JSON 源数据。
 
@@ -753,7 +778,7 @@ v0.3 起，**题库数据与用户数据分离**：题库在构建期固化为�
 | **仓库整理** | 根目录 4 个调研文件移入 `docs/research/`；主文档版本与引用路径同步 |
 | 本轮提交 | 拆成 9 个提交（每 800 行内：143 / 655 / 290 / 366 / 374 / 45 / 249 / 162 / 218 …），全部带任务号 |
 
-### A.2 v0.7 → v0.8
+### A.3 v0.7 → v0.8
 
 本轮为**工程化建设**：给仓库建立开发约束（agent harness），并把最臃肿的文件按分层规则拆开。
 
@@ -771,7 +796,7 @@ v0.3 起，**题库数据与用户数据分离**：题库在构建期固化为�
 | 文档同步 | 0.3 进度表、0.4 文件地图、0.6 技术债、0.7 下一步 |
 
 首次克隆后需启用钩子：`git config core.hooksPath .githooks`
-### A.3 v0.6 → v0.7
+### A.4 v0.6 → v0.7
 
 本轮为**工程化改动**：把代码纳入版本控制并推送到远程仓库。
 
@@ -783,7 +808,7 @@ v0.3 起，**题库数据与用户数据分离**：题库在构建期固化为�
 | 文档状态更新 | 0.3 进度表、0.4 注意、0.6 技术债、0.7 下一步、README 均改为「已有 git 仓库」 |
 | **未包含** | `cloudbase-418.md`（根目录调研残留）仍在，但已不属于代码；未做测试/CI |
 
-### A.4 v0.5 → v0.6
+### A.5 v0.5 → v0.6
 
 本轮**有代码改动**，并同步更新文档。
 
@@ -797,7 +822,7 @@ v0.3 起，**题库数据与用户数据分离**：题库在构建期固化为�
 | **标注线上待重新部署** | `dist` 哈希已变，线上仍是旧版；已在 0.3、0.7、10.5 三处标出 |
 | 验证方式 | `npm run build` 通过；用内置浏览器跑了真实交互：片段渲染 ✅、反馈写入 ✅、刷新后计数仍在 ✅ |
 
-### A.5 v0.4 → v0.5
+### A.6 v0.4 → v0.5
 
 本轮**未改动任何代码**，只做文档纠偏与整理。
 
@@ -814,7 +839,7 @@ v0.3 起，**题库数据与用户数据分离**：题库在构建期固化为�
 | 里程碑标注实际达成 | 第 11 章 W1 标注「200 题 + 出题脚本」实际未完成 |
 | 待确认问题标注已决 | 第 13 章 Q7/Q9 注明已由路线决策回答 |
 
-### A.6 v0.3 → v0.4
+### A.7 v0.3 → v0.4
 
 | 变更 | 说明 |
 | --- | --- |
@@ -827,7 +852,7 @@ v0.3 起，**题库数据与用户数据分离**：题库在构建期固化为�
 | 里程碑更新 | W4 改为部署到 CloudBase + 手机实测 + 按结果决定是否备案 |
 | 风险表更新 | 删除「pages.dev 不可达」「CloudBase 6 个月后收费」两条，新增默认域名中间页、体验版额度与有效期两条 |
 
-### A.7 v0.2 → v0.3
+### A.8 v0.2 → v0.3
 
 | 变更 | 说明 |
 | --- | --- |
@@ -844,7 +869,7 @@ v0.3 起，**题库数据与用户数据分离**：题库在构建期固化为�
 | 风险表 | 新增 4 条部署相关风险（国内不可达、CloudBase 收费、本地数据丢失、无账号无法同步） |
 | 待确认问题 | 新增 2 条（是否接受无账号、手机运营商） |
 
-### A.8 v0.1 → v0.2
+### A.9 v0.1 → v0.2
 
 | 变更 | 说明 |
 | --- | --- |
