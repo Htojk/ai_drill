@@ -6,21 +6,43 @@ import { CATEGORIES, QUESTIONS, QUESTIONS_BY_ID, getQuestion } from "./index";
  * 改动任何分类文件后本文件都会入选相关测试（见 tools/test-related.mjs）。
  */
 
-/** 锁定的题目顺序：顺序会影响新用户摸底抽样，改动必须是有意的 */
-const EXPECTED_IDS = [
-  "q_base_001", "q_base_002", "q_base_003",
-  "q_prompt_001", "q_prompt_002", "q_prompt_003",
-  "q_rag_001", "q_rag_002", "q_rag_003",
-  "q_agent_001", "q_agent_002", "q_agent_003",
-  "q_onto_001", "q_onto_002", "q_onto_003",
-  "q_tune_001", "q_tune_002", "q_tune_003",
-  "q_eval_001", "q_eval_002", "q_eval_003",
-  "q_eng_001", "q_eng_002", "q_eng_003"
+/**
+ * 锁定的题库结构与题量。
+ *
+ * 为什么不再逐条列出 id：题库扩到几百题后，几百行的 id 列表没人会真的看，
+ * 反而会把「顺序变了」这个真正要防的问题淹没掉。这里改成锁定
+ * 「每个文件的题量 + 各文件 id 必须成块且升序」，同样能拦住无意的顺序改动，
+ * 而且加题时只需要更新这个表。
+ *
+ * 顺序会影响「新用户均匀摸底」的抽样结果，所以改动必须是有意的。
+ */
+const EXPECTED_FILES: { prefix: string; count: number }[] = [
+  { prefix: "q_base_", count: 3 },
+  { prefix: "q_prompt_", count: 3 },
+  { prefix: "q_rag_", count: 23 },
+  { prefix: "q_agent_", count: 3 },
+  { prefix: "q_onto_", count: 3 },
+  { prefix: "q_tune_", count: 3 },
+  { prefix: "q_eval_", count: 3 },
+  { prefix: "q_eng_", count: 3 }
 ];
 
 describe("题库结构", () => {
-  it("题目顺序与预期一致", () => {
-    expect(QUESTIONS.map((q) => q.id)).toEqual(EXPECTED_IDS);
+  it("每个文件的题量与预期一致", () => {
+    const actual = EXPECTED_FILES.map(({ prefix }) => QUESTIONS.filter((q) => q.id.startsWith(prefix)).length);
+    expect(actual).toEqual(EXPECTED_FILES.map((f) => f.count));
+  });
+
+  it("题目按文件成块排列，且 id 升序（顺序改动必须是有意的）", () => {
+    let cursor = 0;
+    for (const { prefix, count } of EXPECTED_FILES) {
+      const block = QUESTIONS.slice(cursor, cursor + count);
+      expect(block.every((q) => q.id.startsWith(prefix))).toBe(true);
+      const nums = block.map((q) => Number(q.id.slice(prefix.length)));
+      expect(nums).toEqual([...nums].sort((a, b) => a - b));
+      cursor += count;
+    }
+    expect(cursor).toBe(QUESTIONS.length);
   });
 
   it("id 唯一", () => {
