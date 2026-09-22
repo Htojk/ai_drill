@@ -940,6 +940,93 @@
     }
   },
   {
+    "id": "q_agent_021",
+    "type": "short",
+    "isPractice": false,
+    "stem": "「智能体」和「调用一次模型的聊天机器人」的本质区别是什么？",
+    "options": [],
+    "referenceAnswer": "聊天机器人是一次无状态的映射：你给输入，它给输出，步骤由调用方决定。智能体的控制流在运行时由模型生成——它可以选择调用哪个工具、要不要继续、什么时候结束，并把工具返回的真实结果写回上下文继续推理。因此判断一个系统是不是智能体，看的是「下一步由谁决定」，而不是「有没有调用 API」。",
+    "keyPoints": [
+      "智能体在运行中自行决定下一步动作，并可调用外部工具影响环境",
+      "聊天机器人是单次输入到输出，控制流由调用方写死",
+      "关键区别是控制流归属，而不是有没有用到工具"
+    ],
+    "explanation": "这个区别决定了可靠性策略：控制流由代码决定的系统可以穷举测试，由模型决定的必须靠轨迹追踪与过程指标。",
+    "extension": "实践中大量「智能体」其实是工作流加单步模型调用，这通常反而更稳妥。",
+    "difficulty": 2,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "Agent 定义",
+      "控制流"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "ReAct: Synergizing Reasoning and Acting in Language Models",
+      "url": "https://arxiv.org/abs/2210.03629",
+      "snippet": "We explore the use of LLMs to generate both reasoning traces and task-specific actions in an interleaved manner."
+    }
+  },
+  {
+    "id": "q_agent_022",
+    "type": "short",
+    "isPractice": false,
+    "stem": "ReAct 循环由哪几步构成？最容易在哪一步出问题？",
+    "options": [],
+    "referenceAnswer": "ReAct 的一轮是：模型输出思考（下一步要做什么）、选择一个动作（通常是一次工具调用）、系统执行并把真实观测写回上下文、模型据此进入下一轮，直到给出最终答案或触发终止条件。实践中最脆的环节有两个：一是动作选择，工具描述不清或候选过多时会选错工具、填错参数；二是观测处理，工具返回太长被粗暴截断或干脆被忽略，导致模型基于错误前提继续推理。",
+    "keyPoints": [
+      "循环为「推理 → 选择动作 → 执行 → 观察结果写回」，直到满足终止条件",
+      "最容易出问题的是动作选择（工具或参数选错）与观察结果的处理（截断、忽略）",
+      "缺少明确的终止条件会导致循环不收敛"
+    ],
+    "explanation": "排查 ReAct 时先看工具调用序列：多数失败在第三次调用之前就已经注定了。",
+    "extension": "给每一轮都记录「思考 + 动作 + 观测」，是复盘的基本材料。",
+    "difficulty": 2,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "ReAct",
+      "循环结构"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "ReAct: Synergizing Reasoning and Acting in Language Models",
+      "url": "https://arxiv.org/abs/2210.03629",
+      "snippet": "We explore the use of LLMs to generate both reasoning traces and task-specific actions in an interleaved manner."
+    }
+  },
+  {
+    "id": "q_agent_023",
+    "type": "short",
+    "isPractice": false,
+    "stem": "工具描述要怎么写，模型才不容易选错、用错？",
+    "options": [],
+    "referenceAnswer": "好的工具描述是一份写给「没见过这个系统的工程同事」的说明书：先说用途与适用场景，再说不能用来做什么（避免与邻近工具混用），然后逐个参数说明类型、单位、枚举取值与示例。典型输入输出示例特别有用，它能让模型把抽象的 schema 对齐到具体调用形态，显著降低参数填错率。反过来，只有一句「查询数据」的描述几乎必然导致误用。",
+    "keyPoints": [
+      "说明「什么时候用」和「什么时候不要用」，而不仅是功能与参数",
+      "参数写清类型、单位、取值范围与示例，必填项要显式标出",
+      "给出典型输入输出示例，让模型能对齐调用形态"
+    ],
+    "explanation": "描述里写明「不要用」的场景，是降低工具误用的性价比最高的改动。",
+    "extension": "工具数量超过十几个后，应该先做路由再暴露相关子集，而不是继续加强描述。",
+    "difficulty": 3,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "工具描述",
+      "工具选择"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
     "id": "q_agent_024",
     "type": "judge",
     "isPractice": false,
@@ -1631,6 +1718,354 @@
     "tags": [
       "Agent",
       "判断"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_044",
+    "type": "short",
+    "isPractice": false,
+    "stem": "原生 function calling 和「让模型输出 JSON 再自己解析」相比，优势在哪里？",
+    "options": [],
+    "referenceAnswer": "原生 function calling 在模型侧有约束：参数被约束成符合 schema 的结构，格式错误显著减少，调用意图与参数有独立字段，便于日志与审计。让模型自己输出 JSON 再解析，格式错误、多余解释文本、嵌套错误都需要额外处理，解析失败会直接变成链路故障。不过要注意，格式正确不等于参数正确，业务层仍必须做范围与权限校验。",
+    "keyPoints": [
+      "模型侧对 schema 有约束与训练，参数格式更稳定，解析失败率更低",
+      "工具调用与消息结构分离，调用意图、参数、结果都有独立字段，便于审计",
+      "但两者都不能保证语义正确，仍需服务端校验"
+    ],
+    "explanation": "选型上优先用厂商原生工具调用；只有模型不支持时才退回「约束 JSON 输出 + 重试」的方案。",
+    "extension": "无论哪种方式，都要把「解析失败」当成一类可度量的错误指标来监控。",
+    "difficulty": 2,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "Function Calling",
+      "可靠性"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_045",
+    "type": "short",
+    "isPractice": false,
+    "stem": "工具参数校验失败时，为什么要把错误信息回传给模型而不是直接终止？",
+    "options": [],
+    "referenceAnswer": "参数校验失败往往只是格式或取值范围问题（时间格式不对、枚举值写错、缺少必填字段），模型看到明确的错误说明后通常能一次改正。直接终止会把可恢复的小错误变成任务失败，也浪费了前面已经完成的步骤。回传信息要具体：哪个字段、期望什么、收到什么；模糊的「参数错误」会让模型反复试错。同时要限制重试次数，并要求模型换一种方式而不是原样重发。",
+    "keyPoints": [
+      "多数参数错误是可修复的，把校验信息回传能让模型自我纠正后重试",
+      "回传的信息要具体（哪个字段、期望格式、实际值），否则模型只能瞎猜",
+      "同时要设重试上限，避免在同一个错误上反复消耗"
+    ],
+    "explanation": "校验错误是最廉价的改进信号：统计哪些字段最容易出错，往往能直接改进工具描述。",
+    "extension": "把校验规则写在工具层而不是提示词里，才能被单元测试覆盖。",
+    "difficulty": 3,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "参数校验",
+      "自修复"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_046",
+    "type": "short",
+    "isPractice": false,
+    "stem": "Agent 陷入来回调用、迟迟不收敛时，你会怎么分析和处理？",
+    "options": [],
+    "referenceAnswer": "先读轨迹，把循环归类：重复同一动作说明模型的观测没被有效利用，通常是返回被截断或过于冗长；在两个工具间摇摆说明工具职责重叠，模型无法判断该用哪个；不断微调参数则往往是校验失败的反馈不够具体。根因常在上下文质量而非模型智力。处理上三管齐下：设置步数与预算上限保证代价可控；把失败原因（「这个接口需要先认证」）显式写入上下文；对已经验证稳定的重复步骤改写成确定性代码，只把不确定的部分留给模型。",
+    "keyPoints": [
+      "先看轨迹：是重复同一动作、在两个工具间摇摆，还是在不断细微改参数",
+      "常见根因是观测结果没有被正确利用（截断、格式难读）、目标描述不清或工具不可用",
+      "处理手段包括：终止条件与预算上限、失败经验写入上下文、把重复步骤改为确定性代码"
+    ],
+    "explanation": "「不收敛」几乎总能在轨迹里找到第一次走错的拐点，值得把它做成回归用例。",
+    "extension": "对同一步骤重复超过阈值的检测，可以做成运行时熔断条件。",
+    "difficulty": 4,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "循环检测",
+      "收敛"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "ReAct: Synergizing Reasoning and Acting in Language Models",
+      "url": "https://arxiv.org/abs/2210.03629",
+      "snippet": "We explore the use of LLMs to generate both reasoning traces and task-specific actions in an interleaved manner."
+    }
+  },
+  {
+    "id": "q_agent_047",
+    "type": "short",
+    "isPractice": false,
+    "stem": "Agent 的上下文里，什么东西必须放、什么东西坚决不该放？",
+    "options": [],
+    "referenceAnswer": "必须放的是决策依据：任务目标与边界条件、当前进展与已完成事项、可用工具及其限制、以及最近几步的关键观测结果。不该放的是已经消化完的过程细节（三步前那次失败的完整报错）、与本任务无关的历史对话、以及大段原始日志。判断标准就是对下一步决策是否还有用。全部塞进去会让关键信息被淹没，也会明显抬高成本。",
+    "keyPoints": [
+      "必须放：任务目标与约束、当前状态、可用的工具清单、最近的关键观测",
+      "不该放：已完成步骤的详细过程、与任务无关的历史闲聊、大段原始日志",
+      "原则是按「对下一步决策是否有用」筛，而不是按「是否真实发生过」筛"
+    ],
+    "explanation": "压缩历史时保留结论与状态、把原始记录留在日志里，是可以兼顾可读与可溯源的常见做法。",
+    "extension": "上下文结构最好固定分块（目标/状态/工具/观测），比开头的系统提示更利于模型稳定遵循。",
+    "difficulty": 3,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "上下文工程",
+      "信噪比"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "ReAct: Synergizing Reasoning and Acting in Language Models",
+      "url": "https://arxiv.org/abs/2210.03629",
+      "snippet": "We explore the use of LLMs to generate both reasoning traces and task-specific actions in an interleaved manner."
+    }
+  },
+  {
+    "id": "q_agent_048",
+    "type": "short",
+    "isPractice": false,
+    "stem": "「先规划再执行」和「边想边做」两种 Agent 结构各适合什么任务？",
+    "options": [],
+    "referenceAnswer": "先规划再执行（plan-and-execute）把计划显式列出来，好处是能提前发现缺依赖、顺序冲突和资源不足，也便于让人审阅计划；适合步骤多、流程较固定的任务。边想边做（ReAct 式）只依赖当前观测决定下一步，灵活但容易迷失方向，适合每步结果都会大幅改变后续路径的探索型任务。实践中常见的组合是：先让模型产出粗粒度计划作为骨架，执行中每一大步再根据真实观测调整后续计划。",
+    "keyPoints": [
+      "先规划再执行适合步骤多、依赖长、需要提前发现资源冲突的任务",
+      "边想边做适合路径高度依赖中间结果、难以提前规划的探索型任务",
+      "两者可以混合：先粗规划定框架，执行中按观测动态调整"
+    ],
+    "explanation": "把计划显式化还有一个额外好处：计划本身可以被评测，而不只是最终答案。",
+    "extension": "计划不要过细：过细的计划在第一步观测到来后就会失效，反而增加维护成本。",
+    "difficulty": 3,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "任务规划",
+      "架构"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "ReAct: Synergizing Reasoning and Acting in Language Models",
+      "url": "https://arxiv.org/abs/2210.03629",
+      "snippet": "We explore the use of LLMs to generate both reasoning traces and task-specific actions in an interleaved manner."
+    }
+  },
+  {
+    "id": "q_agent_049",
+    "type": "short",
+    "isPractice": false,
+    "stem": "多智能体之间交接任务时，上下文应该怎么传？",
+    "options": [],
+    "referenceAnswer": "交接的关键是「结构化摘要而非原文转发」：给接收方的应该是明确的目标、已经完成的部分、还缺什么、以及必要资料的位置（文件路径、ID、链接），而不是把上游的整段对话塞过去——那既昂贵又引入无关信息。同时要约定返回格式，例如「结论 + 依据 + 未决问题」，否则汇总方拿到一段自由文本，很难判断子任务是否真的完成。",
+    "keyPoints": [
+      "传「目标 + 已完成 + 待办 + 必要资料引用」，而不是把整段对话复制过去",
+      "接收方应只拿到完成任务所需的最小上下文，减少干扰与成本",
+      "要约定返回结构（结论、证据、未解决问题），否则汇总时会信息丢失"
+    ],
+    "explanation": "交接格式定得越清楚，多智能体系统越接近「一组有契约的服务」而不是「一群人开会」。",
+    "extension": "交接上下文应可被日志记录，便于判断是哪个子任务给出了错误结论。",
+    "difficulty": 4,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "多智能体",
+      "交接"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "Reflexion: Language Agents with Verbal Reinforcement Learning",
+      "url": "https://arxiv.org/abs/2303.11366",
+      "snippet": "Reflexion agents verbally reflect on task feedback signals, then maintain their own reflective text in an episodic memory buffer."
+    }
+  },
+  {
+    "id": "q_agent_050",
+    "type": "short",
+    "isPractice": false,
+    "stem": "工具返回「查无结果」时，Agent 应该怎么处理才算合格？",
+    "options": [],
+    "referenceAnswer": "空结果有两种含义：一是数据里确实不存在，二是查询条件本身有误（日期范围反了、ID 格式不对、筛选过严）。合格的处理是先自检条件，必要时放宽或修正后再查一次；如果确认没有，就把「不存在」作为确定的事实继续推理（例如转去别的数据源，或直接告知用户）。要避免两种坏做法：一次为空就放弃，以及不断放宽条件直到凑出一个不相关的结果——后者会产出看似有据的错误答案。",
+    "keyPoints": [
+      "区分「确实没有」与「查询条件写错了」，后者应该修正条件重试",
+      "不要因为一次空结果就放弃，也不要无限放宽条件直到凑出结果",
+      "要把空结果作为事实写回上下文，并据此调整下一步或如实告知用户"
+    ],
+    "explanation": "空结果是一类需要显式设计的返回值，工具层最好区分「无匹配」与「查询失败」。",
+    "extension": "对关键查询建议保留放宽过程的记录，便于复盘为什么会命中错误数据。",
+    "difficulty": 3,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "空结果",
+      "鲁棒性"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_051",
+    "type": "short",
+    "isPractice": false,
+    "stem": "Agent 发现缺少必要信息时，应该先问用户还是先猜？",
+    "options": [],
+    "referenceAnswer": "正确顺序是「能用工具拿到的不要问用户」：时间、汇率、订单状态这类信息先自己去查。只有当信息无法获得、且缺失会导致答案不成立时才向用户提问，并且一次问全，避免挤牙膏式追问消耗耐心。对影响大但可以合理假设的参数（如「默认最近 30 天」），应当显式说明假设，并让用户容易修正，而不是悄悄猜。",
+    "keyPoints": [
+      "先判断缺少的信息能否从已有工具或上下文获得，能拿就先拿",
+      "确实无法获得且影响结论时，一次性把需要的信息问清楚，而不是来回追问",
+      "对可猜测但影响大的参数，应明确说明假设并给出可修正的入口"
+    ],
+    "explanation": "提问本身也是产品体验的一部分：问得越少、越精准，用户越信任系统。",
+    "extension": "把常见缺失项的默认值设计进交互，可以显著减少对话轮次。",
+    "difficulty": 3,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "澄清",
+      "交互设计"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "ReAct: Synergizing Reasoning and Acting in Language Models",
+      "url": "https://arxiv.org/abs/2210.03629",
+      "snippet": "We explore the use of LLMs to generate both reasoning traces and task-specific actions in an interleaved manner."
+    }
+  },
+  {
+    "id": "q_agent_052",
+    "type": "short",
+    "isPractice": false,
+    "stem": "怎么给 Agent 做权限最小化？",
+    "options": [],
+    "referenceAnswer": "最小权限要落到三层：工具粒度上，不要给代理一个「执行任意 SQL」或「调用任意接口」的万能工具，而是封装成受约束的具体动作；运行时按用户身份与任务上下文动态裁剪可用工具集，避免所有用户看到全部能力；对不可逆或高影响的动作加二次校验，必要时要求人工确认。这样即便模型被提示注入诱导，能造成的破坏也被限制在预定义范围内。",
+    "keyPoints": [
+      "工具以「完成任务所需的最小能力」为单位设计，而不是复用管理员接口",
+      "按用户身份与上下文动态决定可用工具集，而不是全局暴露",
+      "高危动作（写、删、转账、外发）加二次校验与人工确认"
+    ],
+    "explanation": "权限设计要假设「模型会被骗」，因为提示注入无法在提示层被彻底防住。",
+    "extension": "工具级审计日志（谁、何时、用哪些参数调用了什么）是权限体系能否落地的验证手段。",
+    "difficulty": 4,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "权限",
+      "安全"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "Model Context Protocol - Introduction",
+      "url": "https://modelcontextprotocol.io/introduction",
+      "snippet": "MCP is an open protocol that standardizes how applications provide context to LLMs."
+    }
+  },
+  {
+    "id": "q_agent_053",
+    "type": "short",
+    "isPractice": false,
+    "stem": "怎么测量 Agent 的「工具选择」是否准确？",
+    "options": [],
+    "referenceAnswer": "先在评测集里为每个任务标注期望的工具（或可接受的工具集合），运行时把实际调用序列与期望比对，拆成四个可度量的错误类型：选错工具、参数错误、该调用却跳过了、以及不该调用却调了。分类统计的价值在于指向不同的修法——选错工具通常要改描述或做路由；参数错误要改 schema 与示例；漏调往往是提示里的流程说明不足；多调则是触发条件写得过宽。",
+    "keyPoints": [
+      "构造「任务 → 期望工具序列」的评测集，对比实际调用与期望",
+      "分别统计：工具选错、参数填错、该调未调、不该调却调了",
+      "把失败样例按工具归类，定位是描述问题还是能力缺失"
+    ],
+    "explanation": "「不该调却调了」是最容易被忽略的一类，但它直接关系到权限与成本。",
+    "extension": "评测要固定工具集的版本，工具一变，历史基线就不可比了。",
+    "difficulty": 4,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "评测",
+      "工具选择"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_054",
+    "type": "short",
+    "isPractice": false,
+    "stem": "为什么要把「模型决定做什么」和「代码执行动作」严格分开？",
+    "options": [],
+    "referenceAnswer": "模型是不确定的、可被输入影响的组件，不应该直接持有修改外部状态的权力。正确的架构是模型只输出「意图 + 参数」，由代码层负责权限校验、参数检查、必要时人工确认，然后执行真实动作。这样即便模型被误导，破坏面也被限制在代码允许的范围内；同时所有副作用都经过同一处代码，便于审计与幂等控制。",
+    "keyPoints": [
+      "模型输出的是意图与参数，真正的副作用由可信代码执行并校验",
+      "分开后可以在执行前做权限检查、参数校验与人工确认",
+      "也让模型无法绕过业务规则直接修改外部状态"
+    ],
+    "explanation": "这也是「工具是可信边界」的含义：边界以内是代码的责任，边界以外才是模型的空间。",
+    "extension": "执行层要返回结构化的成功/失败结果给模型，让它能据此继续，而不是让它以为已经成功。",
+    "difficulty": 4,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "架构",
+      "信任边界"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_055",
+    "type": "short",
+    "isPractice": false,
+    "stem": "Agent 的成本主要花在哪里？有哪些有效的控制手段？",
+    "options": [],
+    "referenceAnswer": "成本大头通常是三处：每一轮都重发的历史上下文（尤其工具返回的原始 JSON）、失败重试带来的额外往返、以及用大模型做本来小模型就能做的简单判断。有效手段包括：把已完成步骤压缩成结论、在工具层裁剪返回值、设置步数与重试上限、按任务复杂度分级选模型（简单分类用小模型）、以及缓存幂等的查询结果。优化前要先按任务类型量化成本分布，否则很容易砍掉最不该砍的部分。",
+    "keyPoints": [
+      "主要花在重复的上下文（每轮都重发历史）、工具返回的原始内容、以及失败的往返重试上",
+      "控制手段：上下文压缩、工具结果裁剪、限制步数与重试、按任务选模型、缓存可复用结果",
+      "要先按任务类型测量成本分布，再针对性优化，不要一刀切降规格"
+    ],
+    "explanation": "成本曲线通常在任务复杂度上是超线性的：复杂度翻倍，步数与 token 可能涨好几倍。",
+    "extension": "把「每任务成本」纳入上线验收指标，可以避免质量优化的成本失控。",
+    "difficulty": 4,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "成本控制",
+      "优化"
     ],
     "source": {
       "type": "doc",

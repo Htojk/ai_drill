@@ -87,6 +87,11 @@ async function runDraft(args) {
   console.log("  下一步：人工修订来源/解析后，用 --merge 合并进题库。");
 }
 
+/** 取出 q_xxx_007 尾部的数字，用于按 id 升序排列。 */
+function idNumber(id) {
+  return Number(String(id).slice(String(id).lastIndexOf("_") + 1)) || 0;
+}
+
 /* ---------------- --merge ---------------- */
 
 function runMerge(args) {
@@ -135,11 +140,13 @@ function runMerge(args) {
 
   // 落到具体文件时才编号：id 前缀由文件名决定，避免上游各自维护前缀
   const numbered = assignIds(fresh, fileKey, new Set(target.questions.map((q) => q.id)));
-  const merged = [...target.questions, ...numbered];
+  // 取号会优先填补被删除的空号，若只做追加，文件里的 id 就不再升序。
+  // all.test.ts 要求同一文件的 id 成块升序，所以这里统一按 id 数字升序落盘。
+  const merged = [...target.questions, ...numbered].sort((a, b) => idNumber(a.id) - idNumber(b.id));
   fs.writeFileSync(targetPath, JSON.stringify(merged, null, 2) + "\n");
   console.log(`✓ 合并 ${numbered.length} 题 → ${target.file}（现共 ${merged.length} 题）`);
   console.log(`  新 id：${numbered.map((q) => q.id).join(", ")}`);
-  console.log("  提醒：题目顺序变了，请同步更新 app/src/data/questions/all.test.ts 的 EXPECTED_IDS。");
+  console.log("  提醒：题量变化后，请同步更新 app/src/data/questions/all.test.ts 里的 EXPECTED_FILES 计数。");
 }
 
 /* ---------------- 入口 ---------------- */
