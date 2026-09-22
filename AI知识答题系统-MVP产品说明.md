@@ -602,7 +602,7 @@ v0.3 起，**题库数据与用户数据分离**：题库在构建期固化为�
 | 样式 | 原生 CSS（当前，体积小） | MVP 不引入 Tailwind / UI 框架，避免额外依赖 |
 | PWA | `vite-plugin-pwa` | 生成 manifest + service worker，可加到主屏幕、可离线 |
 | 本地存储 | localStorage 封装（当前）→ 数据量上来后换 IndexedDB | 答题记录、错题本、掌握度、每日任务 |
-| 题库 | 构建期常量（源数据 `app/src/data/questions/*.json`，由 `index.ts` 组装） | 现有 **315 题 ≈ 200 KB**（原始 JSON 口径）；按此推算 **500 题约 320 KB**，gzip 后更小。当前构建产物总量约 200 KB（JS 199.50 kB），题库仍是小头 |
+| 题库 | 构建期常量（源数据 `app/src/data/questions/*.json`，由 `index.ts` 组装） | 现有 **315 题**：原始 JSON 约 487 KB（≈1.55 KB/题），构建后 JS **417.75 kB（gzip 187 kB）**；按此推算 500 题约 660 KB（gzip ≈290 KB）。PWA 预缓存 15 项 / 598 KiB。⚠️ 题库已是主包体积的主要来源，再扩量时考虑按分类懒加载或把题目挪出主 chunk |
 | 出题/审核工具 | 本地 Node 脚本 + LLM API | 只在开发机运行，不部署 |
 | 托管 | 腾讯云 CloudBase 静态网站托管 | 国内直连，见 10.3 |
 
