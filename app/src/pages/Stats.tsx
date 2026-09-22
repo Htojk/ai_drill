@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { QUESTIONS } from "../data/questions";
+import { checkPassphrase, decryptProgressCode, encryptProgressCode, isEncrypted } from "../lib/crypto";
 import { computeOverview, accuracyLevel } from "../lib/stats";
 import * as store from "../lib/storage";
 import type { AnswerRecord, Profile } from "../types";
@@ -13,7 +14,9 @@ interface Props {
 export default function Stats({ profile, records, onProfileChange }: Props) {
   const overview = computeOverview(records, QUESTIONS);
   const [code, setCode] = useState("");
+  const [passphrase, setPassphrase] = useState("");
   const [message, setMessage] = useState("");
+  const passphraseError = passphrase ? checkPassphrase(passphrase) : null;
 
   const days = new Set(records.map((r) => new Date(r.answeredAt).toDateString())).size;
   const reportCount = store.loadReports().length;
@@ -31,12 +34,46 @@ export default function Stats({ profile, records, onProfileChange }: Props) {
   }
 
   function doImport() {
-    const res = store.importProgress(code);
-    setMessage(res.message);
-    if (res.ok) {
-      onProfileChange(store.loadProfile());
-      window.location.reload();
-    }
+    void (async () => {
+      let plain = code;
+      if (isEncrypted(code)) {
+        if (!passphrase) {
+          setMessage("这是加密进度码，请先在上面填写口令。");
+          return;
+        }
+        try {
+          plain = await decryptProgressCode(code, passphrase);
+        } catch (err) {
+          setMessage(err instanceof Error ? err.message : "解密失败");
+          return;
+        }
+      }
+      const res = store.importProgress(plain);
+      setMessage(res.message);
+      if (res.ok) {
+        onProfileChange(store.loadProfile());
+        window.location.reload();
+      }
+    })();
+  }
+
+  function doEncryptedExport() {
+    void (async () => {
+      try {
+        const plain = store.exportProgress();
+        const payload = await encryptProgressCode(plain, passphrase);
+        setCode(payload);
+        setMessage("已生成加密进度码（AQ1. 开头），需要同一口令才能导入。");
+        try {
+          await navigator.clipboard?.writeText(payload);
+          setMessage("已生成加密进度码并尝试复制到剪贴板。");
+        } catch {
+          /* 忽略剪贴板失败 */
+        }
+      } catch (err) {
+        setMessage(err instanceof Error ? err.message : "加密失败");
+      }
+    })();
   }
 
   return (
@@ -91,10 +128,22 @@ export default function Stats({ profile, records, onProfileChange }: Props) {
           进度只存在这台设备的浏览器里。换手机或清理缓存前，请导出进度码保存。
         </div>
         <button className="btn ghost" onClick={doExport}>导出进度码</button>
+        <input
+          className="pass-input"
+          style={{ marginTop: 10 }}
+          type="password"
+          placeholder="口令（至少 6 位，用于加密导出/导入）"
+          value={passphrase}
+          onChange={(e) => setPassphrase(e.target.value)}
+        />
+        {passphraseError && <div className="muted" style={{ marginTop: 6 }}>{passphraseError}</div>}
+        <button className="btn ghost" style={{ marginTop: 10 }} disabled={!!passphraseError || !passphrase} onClick={doEncryptedExport}>
+          加密导出进度码
+        </button>
         <textarea
           className="code-input"
           style={{ marginTop: 10 }}
-          placeholder="粘贴进度码到这里，然后点导入"
+          placeholder="粘贴进度码到这里（加密码需要先填上面的口令），然后点导入"
           value={code}
           onChange={(e) => setCode(e.target.value)}
         />

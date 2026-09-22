@@ -99,3 +99,4 @@ button { font-family: inherit; }
 .opt-list li { margin-bottom: 4px; }
 .code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; background: #0d1424; padding: 10px; border-radius: 8px; overflow-x: auto; }
 textarea.code-input { width: 100%; min-height: 120px; background: #0d1424; color: var(--fg); border: 1px solid var(--line); border-radius: 10px; padding: 10px; font-family: ui-monospace, monospace; font-size: 12px; }
+input.pass-input { width: 100%; background: #0d1424; color: var(--fg); border: 1px solid var(--line); border-radius: 10px; padding: 10px; font-size: 13px; }
