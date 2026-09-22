@@ -1,0 +1,17 @@
+# 依赖
+node_modules/
+
+# 构建产物（由 npm run build 生成，部署时用 tcb hosting deploy 上传）
+app/dist/
+
+# 日志 / 临时文件
+*.log
+*.tmp
+
+# 编辑器与系统
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
