@@ -24,6 +24,7 @@ export default function App() {
   const [profile, setProfile] = useState<Profile>(() => store.loadProfile());
   const [records, setRecords] = useState<AnswerRecord[]>(() => store.loadRecords());
   const [reviews, setReviews] = useState<Record<string, ReviewState>>(() => store.loadReviews());
+  const [bookmarks, setBookmarks] = useState<string[]>(() => store.loadBookmarks());
   const [session, setSession] = useState<Session | null>(null);
 
   const today = store.todayStr();
@@ -51,6 +52,10 @@ export default function App() {
   const startSession = useCallback((ids: string[], mode: AnswerMode) => {
     setSession({ ids, mode, results: [] });
     setRoute("quiz");
+  }, []);
+
+  const toggleBookmark = useCallback((questionId: string) => {
+    setBookmarks(store.toggleBookmark(questionId));
   }, []);
 
   const handleAnswer = useCallback(
@@ -110,16 +115,23 @@ export default function App() {
         <Quiz
           ids={session.ids}
           mode={session.mode}
+          bookmarkIds={bookmarks}
           onAnswer={handleAnswer}
           onFinish={finishSession}
           onExit={() => setRoute("today")}
+          onToggleBookmark={toggleBookmark}
         />
       )}
 
       {route === "result" && session && <Result session={session} onBack={() => setRoute("today")} />}
 
       {route === "wrong" && (
-        <WrongBook wrongIds={wrongIds} onPractice={(ids) => startSession(ids, "review")} />
+        <WrongBook
+          wrongIds={wrongIds}
+          bookmarkIds={bookmarks}
+          onPractice={(ids) => startSession(ids, "review")}
+          onToggleBookmark={toggleBookmark}
+        />
       )}
 
       {route === "categories" && (
@@ -135,7 +147,7 @@ export default function App() {
         </button>
         <button className={route === "wrong" ? "on" : ""} onClick={() => setRoute("wrong")}>
           <span className="ico">📕</span>
-          错题本
+          复习
         </button>
         <button className={route === "categories" ? "on" : ""} onClick={() => setRoute("categories")}>
           <span className="ico">📚</span>

@@ -2,23 +2,19 @@ import { useMemo, useRef, useState } from "react";
 import { QUESTIONS_BY_ID } from "../data/questions";
 import * as store from "../lib/storage";
 import type { AnswerMode, AnswerRecord, Question, ReportReason } from "../types";
-
-const REPORT_REASONS: { value: ReportReason; label: string }[] = [
-  { value: "wrong_answer", label: "答案有误" },
-  { value: "unclear", label: "表述不清" },
-  { value: "disputed", label: "有争议" },
-  { value: "other", label: "其他" }
-];
+import QuizExplanation from "./QuizExplanation";
 
 interface Props {
   ids: string[];
   mode: AnswerMode;
+  bookmarkIds: string[];
   onAnswer: (record: AnswerRecord) => void;
   onFinish: () => void;
   onExit: () => void;
+  onToggleBookmark: (questionId: string) => void;
 }
 
-export default function Quiz({ ids, mode, onAnswer, onFinish, onExit }: Props) {
+export default function Quiz({ ids, mode, bookmarkIds, onAnswer, onFinish, onExit, onToggleBookmark }: Props) {
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState<string[]>([]);
   const [submitted, setSubmitted] = useState(false);
@@ -94,9 +90,18 @@ export default function Quiz({ ids, mode, onAnswer, onFinish, onExit }: Props) {
         <h1>
           第 {index + 1} / {questions.length} 题
         </h1>
-        <button className="btn ghost small" style={{ width: "auto", padding: "6px 12px" }} onClick={onExit}>
-          退出
-        </button>
+        <div style={{ display: "flex", gap: 8, flex: "none" }}>
+          <button
+            className="btn ghost small"
+            style={{ width: "auto", padding: "6px 12px" }}
+            onClick={() => onToggleBookmark(question.id)}
+          >
+            {bookmarkIds.includes(question.id) ? "★ 已收藏" : "☆ 收藏"}
+          </button>
+          <button className="btn ghost small" style={{ width: "auto", padding: "6px 12px" }} onClick={onExit}>
+            退出
+          </button>
+        </div>
       </div>
 
       <div className="bar" style={{ marginBottom: 16 }}>
@@ -135,57 +140,16 @@ export default function Quiz({ ids, mode, onAnswer, onFinish, onExit }: Props) {
         )}
 
         {submitted && (
-          <>
-            <div className="card" style={{ background: isCorrect ? "rgba(34,197,94,.1)" : "rgba(239,68,68,.1)", borderColor: isCorrect ? "var(--ok)" : "var(--bad)", marginTop: 12, marginBottom: 0 }}>
-              <div style={{ fontWeight: 600, marginBottom: 4 }}>
-                {isCorrect ? "✅ 答对了" : "❌ 答错了"}
-              </div>
-              <div className="muted">正确答案：{correctKeys.join("、")}</div>
-            </div>
-
-            <div className="exp">
-              <h4>为什么对</h4>
-              <p>{question.explanation}</p>
-              {question.extension && (
-                <>
-                  <h4>延伸</h4>
-                  <p>{question.extension}</p>
-                </>
-              )}
-              <a className="src" href={question.source.url} target="_blank" rel="noreferrer">
-                出处 · {question.source.title} ↗
-              </a>
-              {question.source.snippet && <p className="snip">“{question.source.snippet}”</p>}
-
-              <div className="report">
-                {!reportState && (
-                  <button
-                    className="link-btn"
-                    onClick={() => setReports((prev) => ({ ...prev, [question.id]: "open" }))}
-                  >
-                    这题有问题？反馈
-                  </button>
-                )}
-                {reportState === "open" && (
-                  <div className="report-opts">
-                    <span className="muted">问题类型：</span>
-                    {REPORT_REASONS.map((r) => (
-                      <button key={r.value} className="chip" onClick={() => submitReport(r.value)}>
-                        {r.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {reportState && reportState !== "open" && (
-                  <span className="muted">已记录反馈，感谢。</span>
-                )}
-              </div>
-            </div>
-
-            <button className="btn" onClick={next} style={{ marginTop: 14 }}>
-              {index + 1 >= questions.length ? "完成，看结果" : "下一题"}
-            </button>
-          </>
+          <QuizExplanation
+            question={question}
+            isCorrect={isCorrect}
+            correctKeys={correctKeys}
+            reportState={reportState}
+            onOpenReport={() => setReports((prev) => ({ ...prev, [question!.id]: "open" }))}
+            onReport={submitReport}
+            isLast={index + 1 >= questions.length}
+            onNext={next}
+          />
         )}
       </div>
     </>
