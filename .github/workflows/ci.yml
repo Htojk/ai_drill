@@ -1,0 +1,37 @@
+name: CI
+
+# 本地按铁律 4 只跑相关测试；CI 是合并前最后一道闸，所以这里跑全量。
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: 安装依赖
+        working-directory: app
+        run: npm ci
+
+      - name: 题库校验（结构与分层解析字段）
+        run: node tools/gen-questions.mjs --check
+
+      - name: 分层与单文件体积
+        run: node tools/check-layers.mjs
+
+      - name: 类型检查 + 构建
+        working-directory: app
+        run: npm run build
+
+      - name: 全量测试
+        working-directory: app
+        run: npx vitest run
