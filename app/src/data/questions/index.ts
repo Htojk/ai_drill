@@ -16,7 +16,7 @@ function asQuestions(raw: unknown): Question[] {
   return raw as Question[];
 }
 
-/** 题库分类。新增分类时同步补一个同名的 <分类>.ts 数据文件。 */
+/** 题库分类。新增分类时同步补一个同名的 <分类>.json 源数据文件。 */
 export const CATEGORIES = [
   "大模型基础",
   "提示工程",
@@ -37,11 +37,11 @@ export const QUESTIONS: Question[] = [
   ...asQuestions(baseQuestions),
   ...asQuestions(promptQuestions),
   ...asQuestions(ragQuestions),
-  ...agentQuestions,
-  ...ontologyQuestions,
-  ...tuningQuestions,
-  ...evalQuestions,
-  ...engineeringQuestions
+  ...asQuestions(agentQuestions),
+  ...asQuestions(ontologyQuestions),
+  ...asQuestions(tuningQuestions),
+  ...asQuestions(evalQuestions),
+  ...asQuestions(engineeringQuestions)
 ];
 
 export const QUESTIONS_BY_ID = new Map(QUESTIONS.map((q) => [q.id, q]));
