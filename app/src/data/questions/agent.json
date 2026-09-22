@@ -95,7 +95,7 @@
   },
   {
     "id": "q_agent_003",
-    "type": "scenario",
+    "type": "single",
     "isPractice": true,
     "stem": "团队要做客服 Agent，在「单 Agent + 多工具」和「多 Agent 协作」之间纠结。以下判断最合理的是？",
     "options": [
@@ -138,6 +138,476 @@
       "title": "Anthropic - Building Effective Agents",
       "url": "https://www.anthropic.com/engineering/building-effective-agents",
       "snippet": "we recommend finding the simplest solution possible, and only increasing complexity when needed..."
+    }
+  },
+  {
+    "id": "q_agent_004",
+    "type": "single",
+    "isPractice": false,
+    "stem": "ReAct 范式里，「推理」与「行动」交替出现的核心目的是什么？",
+    "options": [
+      {
+        "key": "A",
+        "content": "让模型的推理过程可以直接决定下一步调用哪个工具，并用工具返回的真实结果修正推理",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "把推理过程写进日志便于审计",
+        "isCorrect": false,
+        "wrongReason": "写日志是附带收益，不是交替结构存在的理由。"
+      },
+      {
+        "key": "C",
+        "content": "减少模型的输出长度以节省 token",
+        "isCorrect": false,
+        "wrongReason": "交替反而会增加输出量，这不是目的。"
+      },
+      {
+        "key": "D",
+        "content": "让模型在无工具可用时也能给出答案",
+        "isCorrect": false,
+        "wrongReason": "ReAct 的重点是利用外部工具，而不是绕过它。"
+      }
+    ],
+    "explanation": "ReAct 把「想」和「做」交织在一起：模型先推理出需要的动作，执行后把真实观测结果写回上下文，再据此继续推理。这样推理不会停留在臆测上，而是不断被外部事实纠正。",
+    "extension": "它的副产品是可解释性——推理轨迹与工具调用都留在上下文里，排查时能看出是哪一步想错了。",
+    "difficulty": 2,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "ReAct",
+      "推理与行动"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "ReAct: Synergizing Reasoning and Acting in Language Models",
+      "url": "https://arxiv.org/abs/2210.03629",
+      "snippet": "We explore the use of LLMs to generate both reasoning traces and task-specific actions in an interleaved manner."
+    }
+  },
+  {
+    "id": "q_agent_005",
+    "type": "single",
+    "isPractice": false,
+    "stem": "让模型调用工具时，为什么要用结构化的参数 schema，而不是让模型输出一段自然语言指令？",
+    "options": [
+      {
+        "key": "A",
+        "content": "结构化参数可以被程序校验、拒绝和重试，自然语言无法可靠解析",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "结构化参数能让模型少输出一些 token",
+        "isCorrect": false,
+        "wrongReason": "省 token 只是次要收益，核心是可靠性。"
+      },
+      {
+        "key": "C",
+        "content": "自然语言无法描述复杂的工具参数",
+        "isCorrect": false,
+        "wrongReason": "自然语言能描述，但不保证可解析、可校验。"
+      },
+      {
+        "key": "D",
+        "content": "结构化参数能自动提升模型推理能力",
+        "isCorrect": false,
+        "wrongReason": "schema 不提升推理能力，只约束输出格式。"
+      }
+    ],
+    "explanation": "工具调用是「模型输出 → 程序执行」的边界，必须有一个可校验的契约。结构化 schema 让参数可以被类型检查、范围校验、缺省填充，失败时可以带着明确的错误信息重试；自然语言指令在解析上永远存在歧义，出错时也无法区分是模型表达问题还是解析器问题。",
+    "extension": "schema 越严格越好用：把枚举、必填项、单位写清楚，模型选错参数的概率会明显下降。",
+    "difficulty": 2,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "工具调用",
+      "Function Calling"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_006",
+    "type": "single",
+    "isPractice": false,
+    "stem": "Agent 长会话中上下文不断膨胀，最有效的治理手段是？",
+    "options": [
+      {
+        "key": "A",
+        "content": "把已完成步骤的详细过程压缩成结论，只保留当前状态与关键中间结果",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "把温度调低以减少输出长度",
+        "isCorrect": false,
+        "wrongReason": "温度影响随机性，不会缓解上下文膨胀。"
+      },
+      {
+        "key": "C",
+        "content": "提高最大输出 token 上限",
+        "isCorrect": false,
+        "wrongReason": "这会让上下文增长更快。"
+      },
+      {
+        "key": "D",
+        "content": "每次调用都重新加载完整历史以免丢失信息",
+        "isCorrect": false,
+        "wrongReason": "这正是导致膨胀的做法。"
+      }
+    ],
+    "explanation": "长会话的上下文里大部分是「已经完成的探索过程」，对后续决策没有价值。有效做法是做状态化压缩：每完成一步就把过程折叠成结论与当前状态，只保留还需用到的中间结果（文件名、ID、已确认事实）。这样既控制了长度，也不会丢掉决策依据。",
+    "extension": "压缩要保留可回溯的原始记录（日志），只是不把它们放进模型上下文。",
+    "difficulty": 3,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "上下文管理",
+      "长会话"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "ReAct: Synergizing Reasoning and Acting in Language Models",
+      "url": "https://arxiv.org/abs/2210.03629",
+      "snippet": "We explore the use of LLMs to generate both reasoning traces and task-specific actions in an interleaved manner."
+    }
+  },
+  {
+    "id": "q_agent_007",
+    "type": "single",
+    "isPractice": false,
+    "stem": "关于多智能体的分工，下列说法最准确的是？",
+    "options": [
+      {
+        "key": "A",
+        "content": "只有当子任务可以清晰划分、且各自需要不同工具或上下文时，拆分才划算",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "智能体数量越多，任务完成质量越高",
+        "isCorrect": false,
+        "wrongReason": "数量增加会带来协调成本与信息损耗，不一定提升质量。"
+      },
+      {
+        "key": "C",
+        "content": "多智能体主要作用是省 token",
+        "isCorrect": false,
+        "wrongReason": "多智能体通常更贵，而不是更省。"
+      },
+      {
+        "key": "D",
+        "content": "只要有一个「管理者」智能体，协调开销就可以忽略",
+        "isCorrect": false,
+        "wrongReason": "管理者的调度与结果汇总本身就是主要开销来源。"
+      }
+    ],
+    "explanation": "多智能体不是免费的并行：拆分意味着上下文要传递、结果要汇总、冲突要裁决。只有在子任务边界清晰、且各自确实需要不同工具或大量独立上下文时，拆分带来的收益才可能超过协调成本。",
+    "extension": "经验上先用单智能体加清晰的工具集把流程跑通，再按真实瓶颈拆分，而不是一开始就设计三层智能体。",
+    "difficulty": 3,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "多智能体",
+      "架构取舍"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "Reflexion: Language Agents with Verbal Reinforcement Learning",
+      "url": "https://arxiv.org/abs/2303.11366",
+      "snippet": "Reflexion agents verbally reflect on task feedback signals, then maintain their own reflective text in an episodic memory buffer."
+    }
+  },
+  {
+    "id": "q_agent_008",
+    "type": "single",
+    "isPractice": false,
+    "stem": "工具执行失败（超时、500、参数被拒）时，Agent 最应该具备的能力是？",
+    "options": [
+      {
+        "key": "A",
+        "content": "把错误信息作为观测结果写回上下文，判断是否可重试、是否换工具、是否降级",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "立刻放弃任务并返回原始错误",
+        "isCorrect": false,
+        "wrongReason": "直接放弃会让本来就轻微可恢复的失败变成整体失败。"
+      },
+      {
+        "key": "C",
+        "content": "无限重试直到成功",
+        "isCorrect": false,
+        "wrongReason": "无限重试会放大故障并浪费成本。"
+      },
+      {
+        "key": "D",
+        "content": "静默忽略错误继续下一步",
+        "isCorrect": false,
+        "wrongReason": "静默忽略会产生基于错误前提的连锁错误。"
+      }
+    ],
+    "explanation": "工具失败是 Agent 的常态而非异常。正确做法是把结构化错误（错误码、消息、是否可重试）写回上下文，让模型据此决策：参数错就改参数重试，依赖错就先补齐前置步骤，服务不可用就换等价工具或降级返回部分结果。同时要有重试次数与总预算上限。",
+    "extension": "把「可重试」与「不可重试」错误在工具层就区分开，能显著减少模型的无谓重试。",
+    "difficulty": 3,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "错误处理",
+      "鲁棒性"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
+    }
+  },
+  {
+    "id": "q_agent_009",
+    "type": "single",
+    "isPractice": false,
+    "stem": "「工作流」和「智能体」的边界在哪里？",
+    "options": [
+      {
+        "key": "A",
+        "content": "步骤固定、分支可枚举时用工作流更可靠；只有路径无法预先枚举时才有必要上智能体",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "智能体总是工作流的超集，能覆盖所有场景",
+        "isCorrect": false,
+        "wrongReason": "智能体在确定性任务上反而更不稳定、更贵。"
+      },
+      {
+        "key": "C",
+        "content": "工作流无法调用模型",
+        "isCorrect": false,
+        "wrongReason": "工作流里每一步都可以是模型调用，差别在于控制流由谁决定。"
+      },
+      {
+        "key": "D",
+        "content": "只要用了工具调用就是智能体",
+        "isCorrect": false,
+        "wrongReason": "工具调用是能力，控制流是否由模型决定才是分界。"
+      }
+    ],
+    "explanation": "分界线是控制流由谁决定：工作流把步骤和分支写死在代码里，模型只负责单步内容生成，因此可测试、可回滚、成本可预测；智能体让模型自己决定下一步，灵活但不确定。只有当任务路径无法预先枚举（依赖运行时的中间结果）时，智能体的灵活性才值得付出稳定性的代价。",
+    "extension": "实践中常见的是混合结构：外层工作流固定骨架，局部用智能体处理不确定的子问题。",
+    "difficulty": 3,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "工作流",
+      "架构选型"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "ReAct: Synergizing Reasoning and Acting in Language Models",
+      "url": "https://arxiv.org/abs/2210.03629",
+      "snippet": "We explore the use of LLMs to generate both reasoning traces and task-specific actions in an interleaved manner."
+    }
+  },
+  {
+    "id": "q_agent_010",
+    "type": "single",
+    "isPractice": false,
+    "stem": "MCP（Model Context Protocol）要解决的问题是？",
+    "options": [
+      {
+        "key": "A",
+        "content": "把「工具与数据源如何接入模型应用」标准化，避免每个应用各写一套对接",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "让模型推理更快",
+        "isCorrect": false,
+        "wrongReason": "MCP 不涉及推理性能。"
+      },
+      {
+        "key": "C",
+        "content": "替代向量数据库",
+        "isCorrect": false,
+        "wrongReason": "MCP 是接入协议，与检索存储是不同层面的东西。"
+      },
+      {
+        "key": "D",
+        "content": "给模型提供更强的记忆能力",
+        "isCorrect": false,
+        "wrongReason": "它规范的是上下文供给方式，不是记忆机制本身。"
+      }
+    ],
+    "explanation": "在没有协议的情况下，每个模型应用都要为每个数据源或工具单独写适配层。MCP 用统一的协议描述「有哪些能力可用、如何调用、返回什么」，让工具与数据源一次实现、多端复用。它解决的是集成成本与生态复用问题，不改变模型本身的能力。",
+    "extension": "采用 MCP 时要考虑权限与信任边界：第三方 server 提供的能力需要显式授权与审计。",
+    "difficulty": 3,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "MCP",
+      "工具接入"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "Model Context Protocol - Introduction",
+      "url": "https://modelcontextprotocol.io/introduction",
+      "snippet": "MCP is an open protocol that standardizes how applications provide context to LLMs."
+    }
+  },
+  {
+    "id": "q_agent_011",
+    "type": "single",
+    "isPractice": false,
+    "stem": "Agent 的「反思」（Reflexion）机制为什么能提升后续表现？",
+    "options": [
+      {
+        "key": "A",
+        "content": "把失败原因转成文字经验写回记忆，下一次尝试时作为约束条件",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "反思会重新训练模型权重",
+        "isCorrect": false,
+        "wrongReason": "反思不更新权重，只更新上下文中的经验文本。"
+      },
+      {
+        "key": "C",
+        "content": "反思能降低推理延迟",
+        "isCorrect": false,
+        "wrongReason": "反思会增加一次模型调用，通常更慢。"
+      },
+      {
+        "key": "D",
+        "content": "反思让模型不再需要外部工具",
+        "isCorrect": false,
+        "wrongReason": "反思与是否用工具无关。"
+      }
+    ],
+    "explanation": "Reflexion 的思路是把「这次为什么失败」变成可复用的语言经验，存进记忆并在后续尝试时带入。模型虽然参数没变，但每一轮都带着「上次哪里错了」的约束，因此更可能绕开同一类陷阱。它本质上是用上下文做在线学习，而不是改权重。",
+    "extension": "反思内容要具体（错在哪一步、缺什么信息），否则容易退化成无信息量的自我批评。",
+    "difficulty": 3,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "反思",
+      "记忆"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "Reflexion: Language Agents with Verbal Reinforcement Learning",
+      "url": "https://arxiv.org/abs/2303.11366",
+      "snippet": "Reflexion agents verbally reflect on task feedback signals, then maintain their own reflective text in an episodic memory buffer."
+    }
+  },
+  {
+    "id": "q_agent_012",
+    "type": "single",
+    "isPractice": false,
+    "stem": "评测一个 Agent 系统时，为什么不能只看最终任务成功率？",
+    "options": [
+      {
+        "key": "A",
+        "content": "还要看过程指标：工具调用次数、无效调用占比、步数、成本、是否走危险路径",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "因为成功率无法测量",
+        "isCorrect": false,
+        "wrongReason": "成功率可以测量，只是不够。"
+      },
+      {
+        "key": "C",
+        "content": "因为过程指标更容易计算",
+        "isCorrect": false,
+        "wrongReason": "过程指标往往更难采集，需要链路追踪。"
+      },
+      {
+        "key": "D",
+        "content": "因为成功率只与模型能力有关",
+        "isCorrect": false,
+        "wrongReason": "这也正是只看成功率的局限之一。"
+      }
+    ],
+    "explanation": "成功率是结果指标，掩盖了过程差异：两个系统成功率相同，一个平均 3 步完成，另一个 20 步、调用了一堆无关工具、偶尔触发危险操作。过程指标（步数、工具调用有效性、成本、危险动作拦截率）才能指出系统是否可靠、是否可长期运行。",
+    "extension": "评测集要固定任务与初始状态，否则成功率波动无法归因。",
+    "difficulty": 3,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "评测",
+      "可观测"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "ToolLLM: Facilitating Large Language Models to Master 16000+ Real-world APIs",
+      "url": "https://arxiv.org/abs/2307.16789",
+      "snippet": "We present ToolBench, an instruction tuning dataset for tool use built from 16,464 real-world REST APIs."
+    }
+  },
+  {
+    "id": "q_agent_013",
+    "type": "single",
+    "isPractice": false,
+    "stem": "给 Agent 设计工具集时，下列哪种做法最有利于模型正确选择？",
+    "options": [
+      {
+        "key": "A",
+        "content": "工具数量少、职责边界清晰，名称与描述说明「什么时候用」",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "把几十个细粒度接口全部暴露给模型，让它自由组合",
+        "isCorrect": false,
+        "wrongReason": "候选过多会显著降低选择准确率，也更容易误用。"
+      },
+      {
+        "key": "C",
+        "content": "用含义模糊的名称以适配更多场景",
+        "isCorrect": false,
+        "wrongReason": "模糊名称会让模型难以判断适用场景。"
+      },
+      {
+        "key": "D",
+        "content": "只在描述里写明参数类型，不说明使用场景",
+        "isCorrect": false,
+        "wrongReason": "缺少场景描述时，模型只能靠名字猜。"
+      }
+    ],
+    "explanation": "工具选择本质是一次分类，候选越多、边界越模糊，准确率越低。有效做法是收敛工具数量、按职责划分边界，并在名称与描述里写清「什么时候该用、什么时候不要用」。对确实需要大量能力的系统，可以先做工具路由再暴露少量相关工具。",
+    "extension": "工具描述里写明典型输入输出示例，能进一步降低参数错误率。",
+    "difficulty": 2,
+    "categories": [
+      "Agent"
+    ],
+    "tags": [
+      "工具设计",
+      "工具选择"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "OpenAI - Function Calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling",
+      "snippet": "Function calling allows models to connect to external tools and APIs in a structured way."
     }
   }
 ]
