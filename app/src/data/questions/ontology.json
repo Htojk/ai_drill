@@ -95,7 +95,7 @@
   },
   {
     "id": "q_onto_003",
-    "type": "scenario",
+    "type": "single",
     "isPractice": true,
     "stem": "多跳问答（例如「A 公司的 CEO 毕业于哪所大学」）用纯向量 RAG 效果很差，最应该引入什么？",
     "options": [
@@ -139,6 +139,429 @@
       "title": "From Local to Global: A Graph RAG Approach to Query-Focused Summarization",
       "url": "https://arxiv.org/abs/2404.16130",
       "snippet": "we propose GraphRAG, a graph-based approach that builds an entity knowledge graph and uses community summaries..."
+    }
+  },
+  {
+    "id": "q_onto_004",
+    "type": "single",
+    "isPractice": false,
+    "stem": "RDF 三元组由哪三个部分组成？",
+    "options": [
+      {
+        "key": "A",
+        "content": "主语、谓语、宾语",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "实体、关系、属性",
+        "isCorrect": false,
+        "wrongReason": "这是属性图（property graph）的说法，不是 RDF 的术语体系。"
+      },
+      {
+        "key": "C",
+        "content": "主体、客体、上下文",
+        "isCorrect": false,
+        "wrongReason": "上下文不是三元组的组成部分，命名图才用来表达上下文。"
+      },
+      {
+        "key": "D",
+        "content": "类、实例、属性",
+        "isCorrect": false,
+        "wrongReason": "这是本体建模的概念，不是三元组的结构。"
+      }
+    ],
+    "explanation": "RDF 数据的最小单位是三元组（subject, predicate, object）：主语通常是 IRI 或空白节点，谓语必须是 IRI，宾语可以是 IRI、空白节点或字面量。",
+    "extension": "谓语不能是字面量，这是 RDF 与属性图在建模上最直接的区别之一。",
+    "difficulty": 1,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "RDF",
+      "三元组"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "RDF 1.1 Concepts and Abstract Syntax",
+      "url": "https://www.w3.org/TR/rdf11-concepts/",
+      "snippet": "An RDF triple consists of three components: the subject, the predicate, and the object."
+    }
+  },
+  {
+    "id": "q_onto_005",
+    "type": "single",
+    "isPractice": false,
+    "stem": "RDFS 与 OWL 的关系，最准确的描述是？",
+    "options": [
+      {
+        "key": "A",
+        "content": "RDFS 提供类、属性、层次的基础词汇；OWL 在其上增加了逻辑表达能力（如基数约束、不相交、等价）",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "两者是完全不同的建模语言，互不兼容",
+        "isCorrect": false,
+        "wrongReason": "OWL 建立在 RDF/RDFS 之上，词汇与语义是延续的。"
+      },
+      {
+        "key": "C",
+        "content": "OWL 是 RDFS 的简化版本",
+        "isCorrect": false,
+        "wrongReason": "方向反了：OWL 的表达能力更强。"
+      },
+      {
+        "key": "D",
+        "content": "OWL 只能用来描述实例，RDFS 用来描述类",
+        "isCorrect": false,
+        "wrongReason": "两者都能描述类与实例。"
+      }
+    ],
+    "explanation": "RDFS 定义了 Class、subClassOf、domain、range 等基础词汇，能表达类层次与属性的定义域值域；OWL 在此之上引入描述逻辑语义，能表达不相交类、等价类、基数约束、属性特性等，从而支持真正的推理。",
+    "extension": "表达力越强推理代价越高，所以 OWL 才需要划分 EL、QL、RL 等针对特定用途的子语言。",
+    "difficulty": 2,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "RDFS",
+      "OWL"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "OWL 2 Primer",
+      "url": "https://www.w3.org/TR/owl2-primer/",
+      "snippet": "OWL 2 is an ontology language for the Semantic Web with formally defined meaning."
+    }
+  },
+  {
+    "id": "q_onto_006",
+    "type": "single",
+    "isPractice": false,
+    "stem": "开放世界假设（OWA）在知识图谱推理中意味着什么？",
+    "options": [
+      {
+        "key": "A",
+        "content": "没被声明为真的命题不被视为假，缺失信息只表示「未知」",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "所有未声明的事实都默认为假",
+        "isCorrect": false,
+        "wrongReason": "这是封闭世界假设（CWA），与 OWA 相反。"
+      },
+      {
+        "key": "C",
+        "content": "同一实体只能有一个名字",
+        "isCorrect": false,
+        "wrongReason": "那是唯一命名假设，与开放性无关。"
+      },
+      {
+        "key": "D",
+        "content": "查询不做推理也能得到完整答案",
+        "isCorrect": false,
+        "wrongReason": "OWA 与是否物化推理无关。"
+      }
+    ],
+    "explanation": "在 OWA 下，知识库只声明「已知为真」的事实，没写的内容代表未知而非为假。因此「查不到」不能推出「不存在」，验证约束时也必须显式声明封闭范围，否则无法判断数据是否合规。",
+    "extension": "OWA 是很多人初次接触本体时最大的认知落差：它让约束校验比关系数据库复杂得多。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "开放世界假设",
+      "推理"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "OWL 2 Primer",
+      "url": "https://www.w3.org/TR/owl2-primer/",
+      "snippet": "OWL 2 is an ontology language for the Semantic Web with formally defined meaning."
+    }
+  },
+  {
+    "id": "q_onto_007",
+    "type": "single",
+    "isPractice": false,
+    "stem": "SHACL 的主要用途是？",
+    "options": [
+      {
+        "key": "A",
+        "content": "对 RDF 图做形状约束校验，检查数据是否符合预期的结构",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "把 RDF 转换成属性图",
+        "isCorrect": false,
+        "wrongReason": "转换是 ETL/映射工具的任务，与 SHACL 的目标不同。"
+      },
+      {
+        "key": "C",
+        "content": "为三元组建立索引以加速查询",
+        "isCorrect": false,
+        "wrongReason": "索引是存储引擎的实现细节。"
+      },
+      {
+        "key": "D",
+        "content": "自动补全知识图谱中缺失的关系",
+        "isCorrect": false,
+        "wrongReason": "补全是链接预测的任务。"
+      }
+    ],
+    "explanation": "SHACL 用「形状」描述数据应当满足的条件（必填属性、值的类型、基数、取值范围等），然后对图做校验并给出具体违规报告。它把「结构约束」从推理中分离出来，适合数据质量检查与入库验证。",
+    "extension": "在 OWA 下用 OWL 表达「必填」并不会产生期望的报错，这正是需要 SHACL 的原因。",
+    "difficulty": 3,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "SHACL",
+      "数据质量"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "Shapes Constraint Language (SHACL)",
+      "url": "https://www.w3.org/TR/shacl/",
+      "snippet": "SHACL is a language for validating RDF graphs against a set of conditions."
+    }
+  },
+  {
+    "id": "q_onto_008",
+    "type": "single",
+    "isPractice": false,
+    "stem": "SPARQL 中用于「构造新三元组并返回图」的查询形式是？",
+    "options": [
+      {
+        "key": "A",
+        "content": "CONSTRUCT",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "SELECT",
+        "isCorrect": false,
+        "wrongReason": "SELECT 返回变量绑定表，不返回图。"
+      },
+      {
+        "key": "C",
+        "content": "ASK",
+        "isCorrect": false,
+        "wrongReason": "ASK 只返回布尔值。"
+      },
+      {
+        "key": "D",
+        "content": "DESCRIBE",
+        "isCorrect": false,
+        "wrongReason": "DESCRIBE 由实现决定返回哪些描述性三元组，语义不精确。"
+      }
+    ],
+    "explanation": "CONSTRUCT 允许用模板把查询结果拼成新的三元组集合，因此常用于格式转换、视图定义与数据导出；SELECT 返回表格，ASK 返回布尔值，DESCRIBE 的返回内容由实现自行决定。",
+    "extension": "CONSTRUCT 是定义「本体视图」的常用手段：把底层数据映射成上层词汇供查询使用。",
+    "difficulty": 3,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "SPARQL",
+      "CONSTRUCT"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "SPARQL 1.1 Query Language",
+      "url": "https://www.w3.org/TR/sparql11-query/",
+      "snippet": "SPARQL is a query language for RDF graphs."
+    }
+  },
+  {
+    "id": "q_onto_009",
+    "type": "single",
+    "isPractice": false,
+    "stem": "在 OWL 中把属性声明为 owl:FunctionalProperty 表示什么？",
+    "options": [
+      {
+        "key": "A",
+        "content": "对每个主语，该属性最多只有一个取值",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "该属性对所有主语都必须有取值",
+        "isCorrect": false,
+        "wrongReason": "「必须有」是基数约束的下限（minCardinality），functional 只限制上限。"
+      },
+      {
+        "key": "C",
+        "content": "该属性的取值必须是字面量",
+        "isCorrect": false,
+        "wrongReason": "取值类型由 range 决定，与 functional 无关。"
+      },
+      {
+        "key": "D",
+        "content": "该属性在子类中会被继承",
+        "isCorrect": false,
+        "wrongReason": "属性继承由 subPropertyOf 表达。"
+      }
+    ],
+    "explanation": "Functional 表示「函数式」：同一个主语通过该属性最多连到一个宾语。例如 hasBirthDate 是 functional，因为一个人只可能有一个出生日期。注意它不要求必须有值，只限制不能有多个值。",
+    "extension": "与 owl:InverseFunctionalProperty 配合可以表达「标识性属性」，是数据清洗与去重的常见手段。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "OWL",
+      "属性特性"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "OWL 2 Primer",
+      "url": "https://www.w3.org/TR/owl2-primer/",
+      "snippet": "OWL 2 is an ontology language for the Semantic Web with formally defined meaning."
+    }
+  },
+  {
+    "id": "q_onto_010",
+    "type": "single",
+    "isPractice": false,
+    "stem": "知识图谱里「实体链接」（entity linking）要解决的问题是？",
+    "options": [
+      {
+        "key": "A",
+        "content": "把文本中提到的名称映射到知识库中的具体实体，并消解同名歧义",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "把两个不同知识图谱的实体对齐起来",
+        "isCorrect": false,
+        "wrongReason": "那是实体对齐（entity alignment），跨的是图谱而不是文本与图谱。"
+      },
+      {
+        "key": "C",
+        "content": "从文本中抽取关系",
+        "isCorrect": false,
+        "wrongReason": "那是关系抽取。"
+      },
+      {
+        "key": "D",
+        "content": "为实体生成向量表示",
+        "isCorrect": false,
+        "wrongReason": "那是知识图谱嵌入。"
+      }
+    ],
+    "explanation": "实体链接分两步：候选生成（找出文本片段可能对应的实体集合）与消歧（结合上下文选出最合理的那个）。它要处理同名异义（「苹果」是公司还是水果）与异名同义（简称、别名、错拼）。",
+    "extension": "实体链接的准确率直接决定了下游图谱问答与检索质量，是知识图谱应用最常见的瓶颈。",
+    "difficulty": 3,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "实体链接",
+      "消歧"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "RDF 1.1 Concepts and Abstract Syntax",
+      "url": "https://www.w3.org/TR/rdf11-concepts/",
+      "snippet": "An RDF triple consists of three components: the subject, the predicate, and the object."
+    }
+  },
+  {
+    "id": "q_onto_011",
+    "type": "single",
+    "isPractice": false,
+    "stem": "图查询里的「属性路径」（property path）主要解决什么问题？",
+    "options": [
+      {
+        "key": "A",
+        "content": "用一条表达式表达多跳与传递关系，而不必手写若干层三元组连接",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "为图建立索引以加速点查询",
+        "isCorrect": false,
+        "wrongReason": "属性路径是查询语法，不是索引机制。"
+      },
+      {
+        "key": "C",
+        "content": "把 RDF 图导出为属性图",
+        "isCorrect": false,
+        "wrongReason": "与图格式转换无关。"
+      },
+      {
+        "key": "D",
+        "content": "自动推断缺失的类层次",
+        "isCorrect": false,
+        "wrongReason": "类层次的推断属于推理范畴。"
+      }
+    ],
+    "explanation": "属性路径允许把「通过任意多个中间节点相连」写成表达式，例如通过 ex:parentOf+ 表达祖先关系，从而用一条查询完成原本需要多级 join 的遍历。它让传递闭包类的查询变得简洁，但对深度不加限制时容易触发性能问题。",
+    "extension": "在 SPARQL 1.1 中，路径运算符包括 /（连接）、|（并）、*、+、?。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "属性路径",
+      "SPARQL"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "SPARQL 1.1 Query Language",
+      "url": "https://www.w3.org/TR/sparql11-query/",
+      "snippet": "SPARQL is a query language for RDF graphs."
+    }
+  },
+  {
+    "id": "q_onto_012",
+    "type": "single",
+    "isPractice": false,
+    "stem": "把 RDF 三元组存储与属性图（如 Neo4j）对比，下列说法正确的是？",
+    "options": [
+      {
+        "key": "A",
+        "content": "RDF 用全局 IRI 与标准词汇表达，跨库合并更自然；属性图把属性直接挂在节点/边上，建模更贴近应用",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "属性图不支持多跳查询",
+        "isCorrect": false,
+        "wrongReason": "属性图恰恰擅长多跳遍历，Cypher 是为此设计的。"
+      },
+      {
+        "key": "C",
+        "content": "RDF 无法表达属性",
+        "isCorrect": false,
+        "wrongReason": "RDF 用字面量三元组表达属性，只是形式更啰嗦。"
+      },
+      {
+        "key": "D",
+        "content": "两者可以无损互转且不需要约定",
+        "isCorrect": false,
+        "wrongReason": "互转需要显式约定（RDF 星、具体化等），并非无损默认发生。"
+      }
+    ],
+    "explanation": "两者的差异在于建模哲学：RDF 的全局 IRI 让不同来源的数据可以自然拼接，标准词汇让语义可被机器解释；属性图把属性内联在节点与边上，读写与遍历更直观高效，更适合以应用为中心的图数据。选择取决于是否需要跨源融合与形式化语义，还是更看重开发效率与查询性能。",
+    "extension": "很多知识图谱项目会同时用两者：RDF 做本体与融合层，属性图做高性能分析层。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "RDF",
+      "属性图"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "RDF 1.1 Concepts and Abstract Syntax",
+      "url": "https://www.w3.org/TR/rdf11-concepts/",
+      "snippet": "An RDF triple consists of three components: the subject, the predicate, and the object."
     }
   }
 ]
