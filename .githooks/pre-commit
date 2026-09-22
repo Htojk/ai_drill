@@ -1,0 +1,6 @@
+#!/bin/sh
+# 提交守门：行数预算 + 分层约束
+# 由 core.hooksPath 指向本目录启用：git config core.hooksPath .githooks
+# 紧急绕过：git commit --no-verify（不要养成习惯，见 AGENTS.md 铁律 3）
+
+exec node tools/check-commit-size.mjs --staged
