@@ -162,6 +162,7 @@ README.md                     项目入口
 AI知识答题系统-MVP产品说明.md    产品设计 + 第 0 章「交接摘要」（当前真实状态）
 docs/PLAN.md                  任务计划（脚本维护）
 docs/plan-archive/            已完成任务的归档
+docs/research/                调研笔记（竞品、小程序、CloudBase 风控）
 tools/                        约束与流程脚本
   plan.mjs                    计划增删改 + 自动归档
   check-commit-size.mjs       提交行数门禁
@@ -170,6 +171,8 @@ tools/                        约束与流程脚本
   finish-task.mjs             收尾：校验 + 测试 + 计划 + 提交
   gen-icons.mjs               生成 PWA / iOS 的 PNG 图标
   gen-questions.mjs           出题流水线：--check 校验题库 / --draft 生成草稿 / --merge 合并
+content/sources/              出题素材（草稿写到 content/drafts/，已 gitignore）
+.github/workflows/ci.yml      CI：题库校验 + 分层 + 构建 + 全量测试
 app/src/
   types.ts                    全局类型（最底层）
   data/questions/index.ts      题库组装 + 查询（把 JSON 断言成 Question[]）

@@ -14,8 +14,10 @@
 
 - 路线已定：**纯静态 Web PWA**（Vite + React + TS）+ 腾讯云 CloudBase 静态托管，零服务器、零数据库、¥0。
 - 已上线：<https://test-d2gk9bnf2dc862288-1304936445.tcloudbaseapp.com>
-- 唯一卡住的一步：**手机 4G 真实网络实测**（清单见产品说明 10.7）。
-- 题库只有 24 题，仅够跑通链路；扩题与离线出题脚本都还没做。
+- 功能闭环已完成：今日 10 题 / 分层解析 / 错题复习 / 分类专项 / 收藏 / 断点续答 / 统计与 streak / 加密码备份 / PWA（含 iOS 图标）。
+- 唯一卡住的一步：**手机 4G 真实网络实测**（清单见产品说明 10.7），**实测前需先重新部署**（线上仍是初版产物）。
+- 题库只有 24 题，仅够跑通链路；出题流水线已就绪（`tools/gen-questions.mjs`），扩题按用户要求暂缓。
+- 质量基线：81 个 vitest 用例、GitHub Actions CI（题库校验 + 分层 + 构建 + 全量测试）。
 
 ## 跑起来
 
@@ -58,13 +60,13 @@ tcb hosting deploy "app/dist" / -e test-d2gk9bnf2dc862288
 | 路径 | 说明 |
 | --- | --- |
 | `AI知识答题系统-MVP产品说明.md` | **主文档**：产品设计 + 第 0 章交接摘要 |
-| `竞品调研报告.md`、`竞品调研-中文搜索.md` | 竞品调研 |
-| `小程序调研.md` | 否决微信小程序的调研记录 |
+| `docs/research/` | 调研笔记：竞品（2 篇）、否决小程序、CloudBase 默认域名风控 |
 | `AGENTS.md` | **开发约束（harness）**：分层、计划、提交与测试门禁 |
 | `docs/PLAN.md` | 任务计划（脚本维护） |
-| `tools/` | 约束脚本：plan / check-commit-size / check-layers / test-related / finish-task |
+| `tools/` | 约束脚本 5 个（plan / check-commit-size / check-layers / test-related / finish-task）+ 内容脚本 2 个（gen-icons / gen-questions） |
+| `content/sources/` | 出题素材；草稿输出到 `content/drafts/`（gitignore） |
 | `app/` | 前端源码（Vite + React + TS） |
-| `app/src/data/questions/` | 题库：每个分类一个文件，`index.ts` 负责组装 |
+| `app/src/data/questions/` | 题库源数据（每个分类一个 JSON）+ `index.ts` 组装 |
 | `app/dist/` | 构建产物，部署的就是这个目录 |
 
 ## 注意
