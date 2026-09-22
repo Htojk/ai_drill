@@ -9,8 +9,9 @@ import Quiz from "./pages/Quiz";
 import Result from "./pages/Result";
 import WrongBook from "./pages/WrongBook";
 import Stats from "./pages/Stats";
+import Categories from "./pages/Categories";
 
-type Route = "today" | "quiz" | "result" | "wrong" | "stats";
+type Route = "today" | "quiz" | "result" | "wrong" | "categories" | "stats";
 
 interface Session {
   ids: string[];
@@ -121,6 +122,10 @@ export default function App() {
         <WrongBook wrongIds={wrongIds} onPractice={(ids) => startSession(ids, "review")} />
       )}
 
+      {route === "categories" && (
+        <Categories records={records} onPractice={(ids) => startSession(ids, "practice")} />
+      )}
+
       {route === "stats" && <Stats profile={profile} records={records} onProfileChange={setProfile} />}
 
       <nav className="nav">
@@ -131,6 +136,10 @@ export default function App() {
         <button className={route === "wrong" ? "on" : ""} onClick={() => setRoute("wrong")}>
           <span className="ico">📕</span>
           错题本
+        </button>
+        <button className={route === "categories" ? "on" : ""} onClick={() => setRoute("categories")}>
+          <span className="ico">📚</span>
+          分类
         </button>
         <button className={route === "stats" ? "on" : ""} onClick={() => setRoute("stats")}>
           <span className="ico">📊</span>
