@@ -1,0 +1,73 @@
+import type { Question } from "../../types";
+
+export const baseQuestions: Question[] = [
+  {
+    id: "q_base_001",
+    type: "single",
+    isPractice: false,
+    stem: "Transformer 的自注意力本身对输入顺序不敏感，模型靠什么获得「词序」信息？",
+    options: [
+      { key: "A", content: "词表大小", isCorrect: false, wrongReason: "词表只决定 token 到向量的映射，与顺序无关。" },
+      { key: "B", content: "位置编码（如 RoPE、可学习绝对位置嵌入）", isCorrect: true },
+      { key: "C", content: "层归一化", isCorrect: false, wrongReason: "归一化用于稳定训练，对置换仍然等变。" },
+      { key: "D", content: "Dropout", isCorrect: false, wrongReason: "这是正则化手段，不携带位置信息。" }
+    ],
+    explanation: "自注意力是置换等变的：打乱输入顺序，注意力权重分布不变。因此必须额外注入位置信息，模型才能区分「猫追狗」和「狗追猫」。",
+    extension: "RoPE 通过旋转矩阵把相对位置编码进 Q/K 内积，是目前主流 LLM 的默认选择，且天然支持一定程度的长度外推。",
+    difficulty: 2,
+    categories: ["大模型基础"],
+    tags: ["Transformer", "位置编码"],
+    source: {
+      type: "paper",
+      title: "RoFormer: Enhanced Transformer with Rotary Position Embedding",
+      url: "https://arxiv.org/abs/2104.09864",
+      snippet: "we propose a novel method named Rotary Position Embedding (RoPE) to leverage the positional information..."
+    }
+  },
+  {
+    id: "q_base_002",
+    type: "single",
+    isPractice: false,
+    stem: "要把模型输出从「稳定可复现」调整为「更有创意」，最直接的做法是？",
+    options: [
+      { key: "A", content: "调高 temperature", isCorrect: true },
+      { key: "B", content: "把 top_p 设为 0", isCorrect: false, wrongReason: "top_p=0 会把候选集截断到空，属于非法配置而非调参。" },
+      { key: "C", content: "增大 max_tokens", isCorrect: false, wrongReason: "只影响输出长度上限，不改变随机性。" },
+      { key: "D", content: "降低 temperature 并提高 top_k", isCorrect: false, wrongReason: "降低温度会更确定，方向与目标相反。" }
+    ],
+    explanation: "温度对 logits 做缩放，温度越高分布越平坦，采样越随机、越发散；温度趋近 0 时接近贪心解码。",
+    extension: "即使 temperature=0，受批处理与并行归约顺序影响，输出也未必严格可复现，生产上不要依赖它做幂等保证。",
+    difficulty: 2,
+    categories: ["大模型基础"],
+    tags: ["采样", "推理参数"],
+    source: {
+      type: "doc",
+      title: "OpenAI API Reference - Chat Completions (temperature)",
+      url: "https://platform.openai.com/docs/api-reference/chat",
+      snippet: "What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random..."
+    }
+  },
+  {
+    id: "q_base_003",
+    type: "single",
+    isPractice: false,
+    stem: "把远超训练长度的文本塞给模型，最常见的后果是什么？",
+    options: [
+      { key: "A", content: "模型直接拒绝回答", isCorrect: false, wrongReason: "模型不会因为长度而拒绝，通常照常生成。" },
+      { key: "B", content: "位置泛化能力下降，长文段质量明显退化", isCorrect: true },
+      { key: "C", content: "显存占用保持不变", isCorrect: false, wrongReason: "KV cache 随上下文长度线性增长。" },
+      { key: "D", content: "自动截断且对质量无影响", isCorrect: false, wrongReason: "截断只是兜底，被截掉的信息等价于丢失。" }
+    ],
+    explanation: "模型只在接近训练长度时有良好的位置泛化。超出后注意力分布失真，容易出现「中间遗忘」和答非所问。",
+    extension: "实践中还有「Lost in the Middle」现象：关键信息放在长上下文中间时最容易被忽略，重要内容应放在开头或结尾。",
+    difficulty: 2,
+    categories: ["大模型基础"],
+    tags: ["上下文窗口", "长文本"],
+    source: {
+      type: "paper",
+      title: "Lost in the Middle: How Language Models Use Long Contexts",
+      url: "https://arxiv.org/abs/2307.03172",
+      snippet: "performance is often highest when relevant information occurs at the beginning or end of the input context..."
+    }
+  }
+];
