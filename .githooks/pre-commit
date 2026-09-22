@@ -1,6 +1,14 @@
 #!/bin/sh
-# 提交守门：行数预算 + 分层约束
+# 提交守门：行数预算（铁律 3）+ 分层与文件体积（铁律 1）
 # 由 core.hooksPath 指向本目录启用：git config core.hooksPath .githooks
-# 紧急绕过：git commit --no-verify（不要养成习惯，见 AGENTS.md 铁律 3）
+# 紧急绕过：git commit --no-verify（不要养成习惯，见 AGENTS.md 第 3 节）
+#
+# 注意：行数检查针对暂存内容，分层检查针对工作区文件（两者正常是一致的）。
+# 更完整的门禁（含测试与计划更新）请用 tools/finish-task.mjs。
 
-exec node tools/check-commit-size.mjs --staged
+set -e
+
+node tools/check-commit-size.mjs --staged
+node tools/check-layers.mjs
+
+exit 0
