@@ -2953,5 +2953,440 @@
       "url": "https://www.w3.org/TR/shacl/",
       "snippet": "SHACL is a language for validating RDF graphs against a set of conditions."
     }
+  },
+  {
+    "id": "q_onto_086",
+    "type": "short",
+    "isPractice": false,
+    "stem": "要启动一个知识图谱项目，最小可行的起步应该是什么样？",
+    "options": [],
+    "referenceAnswer": "可行的起步是一个小闭环：选定一个真实且边界清晰的问题域（例如「查某个产品的上游供应商」），列出回答它需要的实体与关系，只抽取这些数据；然后打通「抽取 → 入库 → 查询 → 校验」的完整链路，用人工抽检验证质量。跑通之后，再按新出现的问题域逐步扩展。反过来先建完整体现再找用途的项目，几乎都停在「建好没人用」。",
+    "keyPoints": [
+      "从一个具体、有明确问答需求的小领域开始，而不是全公司全量建模",
+      "先把「问题 → 需要的实体与关系」列清楚，只抽这些数据",
+      "用人工校验闭环保证质量，跑通端到端之后再扩范围"
+    ],
+    "explanation": "判断起步是否合理的标准是：第一个月内能不能回答一个真实问题。",
+    "extension": "把每个新增概念都绑定到一个真实用例，是控制范围蔓延的有效纪律。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "项目起步",
+      "MVP"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "A Survey on Knowledge Graphs: Representation, Acquisition and Applications",
+      "url": "https://arxiv.org/abs/2002.00388",
+      "snippet": "Knowledge Graphs (KGs) have gained increasing attention in recent years."
+    }
+  },
+  {
+    "id": "q_onto_087",
+    "type": "short",
+    "isPractice": false,
+    "stem": "用 LLM 从文本抽取三元组，怎么控制可靠性？",
+    "options": [],
+    "referenceAnswer": "三个层次的保障：一是溯源校验，要求每条抽取结果给出支撑它的原文片段，并用逐字匹配验证该片段确实来自源文本，这能过滤掉大部分编造；二是稳定性检查，同一段文本多次抽取取交集，或用两个不同提示交叉验证，只在一致时采纳；三是抽样评估，对关键关系定期人工抽检并记录准确率，把准确率作为该批次数据的置信度指标。",
+    "keyPoints": [
+      "要求抽取结果必须附带原文片段，并校验该片段确实存在于源文本（逐字比对）",
+      "用结构化输出约束格式，多次抽取取交集或用一致性检查过滤不稳定结果",
+      "对关键关系做人工抽检，并统计准确率作为该批次的置信度"
+    ],
+    "explanation": "要求给原文片段这一步非常关键：模型编造内容容易，编造一段「存在于原文中的片段」要难得多。",
+    "extension": "抽取器版本要记录进溯源信息，否则模型升级后无法区分新旧数据。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "LLM 抽取",
+      "可靠性"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "A Survey on Knowledge Graphs: Representation, Acquisition and Applications",
+      "url": "https://arxiv.org/abs/2002.00388",
+      "snippet": "Knowledge Graphs (KGs) have gained increasing attention in recent years."
+    }
+  },
+  {
+    "id": "q_onto_088",
+    "type": "short",
+    "isPractice": false,
+    "stem": "如何用本体去约束大模型的输出？",
+    "options": [],
+    "referenceAnswer": "本体的作用是把「模型自由发挥」收敛到「受控取值」。做法上有三步：生成前把允许的类、属性与枚举值注入提示，明确只能使用这些取值；生成中要求结构化输出（表单/JSON schema），实体类字段要求填知识库 ID 而不是名称；生成后用 SHACL 或 JSON schema 校验，违规就带着具体错误重试。这样可以把语义一致性的责任从模型转移到可验证的约束上。",
+    "keyPoints": [
+      "把本体中的受控词表作为枚举约束注入提示，限定模型只能从中取值",
+      "输出后用 SHACL 或 schema 校验，不合规就带错误重试",
+      "对实体类字段，要求模型输出知识库中的实体 ID 而不是自由文本"
+    ],
+    "explanation": "要求输出实体 ID 而不是名称，能顺带解决实体链接的歧义问题。",
+    "extension": "校验失败的统计本身就是有价值的信号：高频违规说明提示或词表设计有问题。",
+    "difficulty": 5,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "本体约束",
+      "LLM 输出"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "OWL 2 Primer",
+      "url": "https://www.w3.org/TR/owl2-primer/",
+      "snippet": "OWL 2 is an ontology language for the Semantic Web with formally defined meaning."
+    }
+  },
+  {
+    "id": "q_onto_089",
+    "type": "short",
+    "isPractice": false,
+    "stem": "知识图谱的 IRI 与命名规范应该怎么设计？",
+    "options": [],
+    "referenceAnswer": "IRI 是全局标识，一旦被外部引用就不能随意更改。因此规范要强调三点：稳定性优先，语义变了就建新 IRI 并保留旧的作为历史；命名空间要按来源划分（自有词汇、复用词汇、实例数据各占一个前缀），避免混用；IRI 本身尽量不含业务含义（不要把分类写进路径），人类可读的名称用 rdfs:label 与别名表达，这样业务变更时标识不会被牵连。",
+    "keyPoints": [
+      "IRI 要稳定且不可变：一旦发布就不应随业务改名，语义变化应新建 IRI",
+      "使用统一的命名空间与前缀，本地术语与复用术语分域存放",
+      "ID 尽量无业务含义（避免下划线或自增顺序被外界依赖），可读名称用标签（rdfs:label）表达"
+    ],
+    "explanation": "改名是图数据最危险的操作之一：它会让所有历史链接静默失效。",
+    "extension": "建议同时维护 owl:sameAs 或版本映射表，记录 IRI 的历史变更。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "IRI",
+      "命名规范"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "RDF 1.1 Concepts and Abstract Syntax",
+      "url": "https://www.w3.org/TR/rdf11-concepts/",
+      "snippet": "An RDF triple consists of three components: the subject, the predicate, and the object."
+    }
+  },
+  {
+    "id": "q_onto_090",
+    "type": "short",
+    "isPractice": false,
+    "stem": "多语言环境下的命名与检索怎么处理？",
+    "options": [],
+    "referenceAnswer": "正确的做法是把语言维度交给 RDF 的语言标签：同一个标签属性可以有多个语言版本，查询时按用户语言优先取用。别名与简称则用 skos:altLabel 之类的属性集中维护，它们是实体检索命中的主要来源，也方便持续补充。要避免把语言写进 IRI 或属性名（如 name_zh），否则每增加一种语言就要改结构。",
+    "keyPoints": [
+      "用 rdfs:label 配合语言标签（@zh、@en）存储多语言名称，而不是把语言写进同一个字符串",
+      "别名（简称、错拼、旧称）单独用 skos:altLabel 维护，供实体检索使用",
+      "不要把语言信息编码进 IRI 或属性名，否则扩展语种时结构要重构"
+    ],
+    "explanation": "跨语言检索还需要多语言嵌入或多路翻译，单纯靠标签无法解决语义匹配问题。",
+    "extension": "别名的维护成本常被低估：它直接决定用户能不能搜到实体。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "多语言",
+      "标注"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "RDF 1.1 Concepts and Abstract Syntax",
+      "url": "https://www.w3.org/TR/rdf11-concepts/",
+      "snippet": "An RDF triple consists of three components: the subject, the predicate, and the object."
+    }
+  },
+  {
+    "id": "q_onto_091",
+    "type": "short",
+    "isPractice": false,
+    "stem": "知识图谱冷启动阶段的数据来源有哪些？各自的取舍是什么？",
+    "options": [],
+    "referenceAnswer": "三类来源组合使用最实际：开放库用于快速获得通用实体与关系，省去从零构建的代价，代价是许可、质量与标识稳定性需要管理；内部结构化数据（订单、工单、组织架构）质量最好、最贴合业务，但只覆盖系统里已经结构化的部分；非结构化文本抽取能覆盖手册与报告这类「知识沉淀在文档里」的内容，覆盖广但必须配套抽取校验与人工抽检。起步阶段通常以内部结构化数据为主，保证质量与可用性。",
+    "keyPoints": [
+      "开放知识库导入（Wikidata/DBpedia 等）：覆盖快，但需处理许可、质量与标识稳定性",
+      "内部结构化数据转换（数据库、日志）：质量高且贴合业务，但覆盖面限于已有系统",
+      "从非结构化文本抽取（手册、报告、工单）：覆盖面广，但需要抽取校验与人工闭环"
+    ],
+    "explanation": "先把内部数据接好，往往比导入开放库更快产出可用结果。",
+    "extension": "不同来源要放进不同命名图，方便按来源评估质量与做增量更新。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "冷启动",
+      "数据来源"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "A Survey on Knowledge Graphs: Representation, Acquisition and Applications",
+      "url": "https://arxiv.org/abs/2002.00388",
+      "snippet": "Knowledge Graphs (KGs) have gained increasing attention in recent years."
+    }
+  },
+  {
+    "id": "q_onto_092",
+    "type": "short",
+    "isPractice": false,
+    "stem": "图谱里出现重复实体（同一对象有多个节点），怎么发现和处理？",
+    "options": [],
+    "referenceAnswer": "发现分两阶段：先用高置信规则（唯一编号完全相同）找出一批确定重复，这批可以直接处理；剩下的用相似度方法，结合名称相似、属性重叠度、以及结构特征（共同邻居比例）生成候选对，按分数排序后人工确认。合并本身要谨慎：把两个节点的关系合并、冲突属性按来源与时效裁决、保留被合并节点的 IRI 作为别名，并记录合并操作以便回滚。",
+    "keyPoints": [
+      "用标识性属性（唯一编号、邮箱、证件号）做规则匹配，快速发现高置信重复",
+      "用名称相似度 + 属性重叠 + 结构上下文（共同邻居）计算相似度，生成候选对",
+      "合并前人工确认；合并时要保留来源与历史，并处理冲突属性值"
+    ],
+    "explanation": "误合并的代价远高于重复：合并后两条真实信息被永久混在一起，很难拆分。",
+    "extension": "建立「合并日志 + 可回滚」机制，是让团队敢于做合并的前提。",
+    "difficulty": 5,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "去重",
+      "实体消解"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "A Survey on Knowledge Graphs: Representation, Acquisition and Applications",
+      "url": "https://arxiv.org/abs/2002.00388",
+      "snippet": "Knowledge Graphs (KGs) have gained increasing attention in recent years."
+    }
+  },
+  {
+    "id": "q_onto_093",
+    "type": "short",
+    "isPractice": false,
+    "stem": "知识图谱与全文搜索引擎如何配合？",
+    "options": [],
+    "referenceAnswer": "两者擅长的事情不同：搜索引擎在关键词匹配、拼写容错、大规模文本排序上成熟高效；图谱在关系表达、多跳查询与一致性约束上更强。典型配合有两种：检索优先，用全文搜索找到候选实体或文档，再用图谱补充关系（例如找到公司后补齐其子公司与高管）；索引增强，把图谱里的结构化特征（类目、关系数量、重要度）写成字段随文档一起索引，改善排序与过滤效果。",
+    "keyPoints": [
+      "全文检索引擎负责关键词与模糊匹配，图谱负责结构化关系与多跳查询",
+      "常见做法是全文检索定位实体或文档，再由图谱补充关系与约束",
+      "也可以把图谱的结构化结果作为字段索引进搜索引擎，改善排序与过滤"
+    ],
+    "explanation": "选择入口的关键是用户输入更像「关键词」还是「关系型问题」。",
+    "extension": "两边都要维护同一套实体 ID，否则结果无法对齐。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "混合架构",
+      "搜索"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "A Survey on Knowledge Graphs: Representation, Acquisition and Applications",
+      "url": "https://arxiv.org/abs/2002.00388",
+      "snippet": "Knowledge Graphs (KGs) have gained increasing attention in recent years."
+    }
+  },
+  {
+    "id": "q_onto_094",
+    "type": "short",
+    "isPractice": false,
+    "stem": "图谱在对话系统里承担什么角色？",
+    "options": [],
+    "referenceAnswer": "图谱在对话里主要做两件事：一是事实层，回答「谁是 X 的创始人」这类结构化问题，并为生成内容提供校验依据，避免模型编造；二是状态层，把对话中提到的实体与关系以结构化形式记录下来，让多轮对话可以引用而不会丢失上下文（「他」指的是哪个实体，可以直接查状态）。自然语言的理解与表达仍由模型负责，图谱提供的是确定性的骨架。",
+    "keyPoints": [
+      "作为事实来源与约束：回答结构化问题、校验生成内容、提供可核验依据",
+      "作为对话状态的结构化载体：把用户提到的实体与关系显式记录下来供后续轮次使用",
+      "不适合承担自然语言理解与生成，那部分仍由模型完成"
+    ],
+    "explanation": "把对话状态放进结构化存储，比把整段历史塞给模型更可靠也更便宜。",
+    "extension": "图谱里查不到的实体要允许回退到检索或直接提问，否则对话会变得僵硬。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "对话系统",
+      "图谱角色"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "A Survey on Knowledge Graphs: Representation, Acquisition and Applications",
+      "url": "https://arxiv.org/abs/2002.00388",
+      "snippet": "Knowledge Graphs (KGs) have gained increasing attention in recent years."
+    }
+  },
+  {
+    "id": "q_onto_095",
+    "type": "short",
+    "isPractice": false,
+    "stem": "图数据里的隐私与合规风险有哪些？",
+    "options": [],
+    "referenceAnswer": "图的风险高于普通数据：单个属性可能都不敏感，但「居住地 + 常去场所 + 社交关系」组合起来就能定位到具体的人。这使得差分隐私、访问控制与查询审计在图场景中格外重要。合规上，删除请求必须能沿着图找到该人的全部数据，包括派生出的嵌入与推理结果，否则无法证明删除彻底。此外还要防止通过反复查询推断出受限信息（统计推断攻击）。",
+    "keyPoints": [
+      "多跳关联本身就是隐私风险：看起来无害的两条关系组合起来可能暴露敏感信息",
+      "删除权要求能按人定位并删除所有相关节点、边与派生数据（含嵌入与推理结果）",
+      "图谱的聚合分析能力让它比其他数据结构更容易推断出个人隐私"
+    ],
+    "explanation": "图谱的可用性来自关联，风险也来自关联，二者无法简单分离。",
+    "extension": "对敏感关系可以只保留必要的聚合结果，而不是保存原始的多跳细节。",
+    "difficulty": 5,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "隐私",
+      "合规"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "RDF 1.1 Concepts and Abstract Syntax",
+      "url": "https://www.w3.org/TR/rdf11-concepts/",
+      "snippet": "An RDF triple consists of three components: the subject, the predicate, and the object."
+    }
+  },
+  {
+    "id": "q_onto_096",
+    "type": "short",
+    "isPractice": false,
+    "stem": "图数据库的日常运维要关注哪些方面？",
+    "options": [],
+    "referenceAnswer": "运维重点三项：容量上监控节点与边数量、索引与存储增长，提前规划扩容（图库扩容往往比关系库更麻烦）；性能上关注慢查询与超级节点——一个连接十万条边的节点会让遍历迅速变慢，需要拆分或特殊处理；可用性上要定期做备份恢复演练与故障切换验证，因为「有备份但恢复不了」在图库上很常见。",
+    "keyPoints": [
+      "容量与增长趋势：节点/边数量、索引大小、磁盘与内存水位",
+      "查询性能：慢查询统计、查询计划变化、热点节点（超级节点）",
+      "可用性保障：备份与恢复演练、扩容策略、故障切换验证"
+    ],
+    "explanation": "超级节点是图库特有的性能陷阱：它会让所有经过该节点的查询变慢。",
+    "extension": "把关键查询的耗时基线与索引状态纳入监控，能提前发现退化。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "运维",
+      "性能"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "A Survey on Knowledge Graphs: Representation, Acquisition and Applications",
+      "url": "https://arxiv.org/abs/2002.00388",
+      "snippet": "Knowledge Graphs (KGs) have gained increasing attention in recent years."
+    }
+  },
+  {
+    "id": "q_onto_097",
+    "type": "short",
+    "isPractice": false,
+    "stem": "知识图谱项目常见的失败原因有哪些？",
+    "options": [],
+    "referenceAnswer": "三类典型失败：一是场景缺位，项目以「把知识图谱建起来」为目标，没绑定具体问答或分析需求，交付后无人使用；二是质量失控，抽取与对齐错误没有抽检机制，用户发现几处错误事实后就不再信任；三是过度建模，投入大量精力定义精细的本体与推理规则，但没有任何查询依赖它们，维护成本持续累积。三者的共同点是把「模型漂亮」当成了目标，而不是「解决具体问题」。",
+    "keyPoints": [
+      "没有明确的使用场景，建模完成后无人查询，最终废弃",
+      "数据质量失控：抽取错误与错误对齐没有被发现，导致结论不可信",
+      "过度建模与维护成本失控，模型复杂度远超实际需求"
+    ],
+    "explanation": "衡量成功要看「业务查询的使用频次」，而不是实体与关系的数量。",
+    "extension": "上线前设一个「这个图谱能回答哪些之前答不了的问题」的验收清单，能有效防止自嗨。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "失败原因",
+      "项目治理"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "A Survey on Knowledge Graphs: Representation, Acquisition and Applications",
+      "url": "https://arxiv.org/abs/2002.00388",
+      "snippet": "Knowledge Graphs (KGs) have gained increasing attention in recent years."
+    }
+  },
+  {
+    "id": "q_onto_098",
+    "type": "short",
+    "isPractice": false,
+    "stem": "什么情况下选 RDF，什么情况下选属性图？",
+    "options": [],
+    "referenceAnswer": "选择的核心是需求排序。若关键需求是「把多个来源的数据按统一语义合起来」「复用 schema.org/Wikidata 等标准词汇」「做形式化推理与一致性校验」，RDF 的全局 IRI 与标准语义是无可替代的。若关键需求是「应用内部高性能多跳查询、图算法、快速迭代」，属性图的建模直觉与工具链更顺手。两者并不互斥，很多系统用 RDF 维护语义层，用属性图承载线上查询负载。",
+    "keyPoints": [
+      "需要跨来源融合、复用标准词汇、形式化推理或与外部数据交换时选 RDF",
+      "以应用内的高效遍历、图算法与开发效率为优先时选属性图",
+      "也可以组合：RDF 做语义与融合层，属性图做高性能分析与服务层"
+    ],
+    "explanation": "一个实用的判断问题是：外部系统需要消费你的数据并理解其语义吗？",
+    "extension": "转换时要显式定义映射规则，避免「看起来能转」但语义已经丢失。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "选型",
+      "RDF vs LPG"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "RDF 1.1 Concepts and Abstract Syntax",
+      "url": "https://www.w3.org/TR/rdf11-concepts/",
+      "snippet": "An RDF triple consists of three components: the subject, the predicate, and the object."
+    }
+  },
+  {
+    "id": "q_onto_099",
+    "type": "short",
+    "isPractice": false,
+    "stem": "把图谱推理的结论讲给业务方时，要注意什么？",
+    "options": [],
+    "referenceAnswer": "业务方要的不是「系统说 X 是风险公司」，而是「因为它与已知风险公司共享同一收款账户」。因此展示时要把推理链翻译成业务语言：事实是什么、经过哪一条关系推出结论、每一步的依据在哪。同时要显式区分直接数据与推断结论，因为后者依赖前提的正确性，前提错了结论也就不可靠，讲清这一点能避免过度信任。",
+    "keyPoints": [
+      "必须能给出推导依据（用了哪些事实、走了什么规则），不能只给结论",
+      "区分「直接事实」与「推理得出」，并说明后者的可能误差来源",
+      "用业务语言复述路径，而不是暴露本体术语与查询语句"
+    ],
+    "explanation": "能解释的结论才会被采信；不能解释的结论即使正确，也常被业务方弃用。",
+    "extension": "把推理链可视化，是让业务方快速理解与反馈的最有效方式。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "可解释性",
+      "沟通"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "OWL 2 Primer",
+      "url": "https://www.w3.org/TR/owl2-primer/",
+      "snippet": "OWL 2 is an ontology language for the Semantic Web with formally defined meaning."
+    }
+  },
+  {
+    "id": "q_onto_100",
+    "type": "short",
+    "isPractice": false,
+    "stem": "知识图谱上线的验收清单应该包含哪些项？",
+    "options": [],
+    "referenceAnswer": "清单至少覆盖三类。质量上要有可量化的抽检结果（准确率、覆盖率、重复率），并把 SHACL 或一致性检查纳入 CI；功能上要确认目标场景全部可回答，且答案能给出依据，而不是只返回一个结论；工程上要确认查询延迟与并发达标、增量更新链路可用、权限与访问审计到位、以及出现问题时能回滚到上一版图谱与本体。",
+    "keyPoints": [
+      "质量：事实准确率抽检、覆盖率、一致性校验与重复实体比例",
+      "功能：目标查询场景全部可回答，且答案附带依据与出处",
+      "工程：查询延迟与并发满足要求、增量更新可用、权限与审计到位、可回滚"
+    ],
+    "explanation": "「能回答哪些问题」的清单要由业务方确认，而不是由工程方单方面定义。",
+    "extension": "把抽检结果与查询日志作为持续运营的输入，验收不是一次性动作。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "验收",
+      "上线"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "Shapes Constraint Language (SHACL)",
+      "url": "https://www.w3.org/TR/shacl/",
+      "snippet": "SHACL is a language for validating RDF graphs against a set of conditions."
+    }
   }
 ]
