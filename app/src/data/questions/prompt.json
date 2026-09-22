@@ -96,7 +96,7 @@
   {
     "id": "q_prompt_003",
     "type": "single",
-    "isPractice": false,
+    "isPractice": true,
     "stem": "需要模型稳定输出可被程序解析的 JSON，最可靠的做法是？",
     "options": [
       {

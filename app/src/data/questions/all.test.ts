@@ -60,8 +60,11 @@ describe("题库结构", () => {
     expect(CATEGORIES.filter((c) => !covered.has(c))).toEqual([]);
   });
 
-  it("工程判断题数量足够支撑每日 3 题的下限", () => {
-    expect(QUESTIONS.filter((q) => q.isPractice).length).toBeGreaterThanOrEqual(3);
+  it("工程判断题数量达到题库扩容的验收下限（>=60，且足够支撑每日 3 题）", () => {
+    const practice = QUESTIONS.filter((q) => q.isPractice);
+    expect(practice.length).toBeGreaterThanOrEqual(60);
+    // 工程判断题要覆盖多个分类，否则每日挑战会集中在同一领域
+    expect(new Set(practice.map((q) => q.categories[0])).size).toBeGreaterThanOrEqual(3);
   });
 });
 
