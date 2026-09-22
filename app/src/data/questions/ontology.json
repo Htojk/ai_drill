@@ -2516,5 +2516,442 @@
       "url": "https://www.w3.org/TR/owl2-primer/",
       "snippet": "OWL 2 is an ontology language for the Semantic Web with formally defined meaning."
     }
+  },
+  {
+    "id": "q_onto_071",
+    "type": "short",
+    "isPractice": false,
+    "stem": "SHACL 与 OWL 各自负责什么？为什么不能互相替代？",
+    "options": [],
+    "referenceAnswer": "两者的目标不同：SHACL 面向数据质量与入库校验，检查「这个节点必须有某个属性、值必须落在枚举内」，它能明确指出哪条数据违规；OWL 面向语义，检查「这些断言是否自相矛盾」（例如同一实体同时属于两个不相交类），并推导出隐含事实。因为语义假设相反（封闭 vs 开放），用 OWL 表达必填项不会产生期望的报错，而 SHACL 也无法做形式化推理。完整方案应同时包含两者。",
+    "keyPoints": [
+      "SHACL 负责「数据是否满足结构约束」，工作在封闭世界语义下，能给出具体违规报告",
+      "OWL 负责「语义是否自洽」，能推出隐含结论并发现逻辑矛盾",
+      "不能用 OWL 表达必填与枚举，也不能用 SHACL 做形式化推理"
+    ],
+    "explanation": "判断用哪个的问题很简单：想「报错」就找 SHACL，想「推出新结论」就用 OWL。",
+    "extension": "把 SHACL 校验放在数据入库前，能避免脏数据污染推理结果。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "SHACL",
+      "OWL",
+      "职责划分"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "Shapes Constraint Language (SHACL)",
+      "url": "https://www.w3.org/TR/shacl/",
+      "snippet": "SHACL is a language for validating RDF graphs against a set of conditions."
+    }
+  },
+  {
+    "id": "q_onto_072",
+    "type": "short",
+    "isPractice": false,
+    "stem": "用 SHACL 表达「必填」与「枚举取值」大致是什么思路？",
+    "options": [],
+    "referenceAnswer": "一条形状包含三部分：目标（哪些节点要被校验，如 sh:targetClass ex:Person）、属性约束（sh:path 指向某个属性）、以及约束（sh:minCount、sh:maxCount、sh:in、sh:class、sh:datatype 等）。例如「每个 Person 必须有且只有一个出生日期」表达为 sh:path ex:birthDate 加 sh:minCount 1 与 sh:maxCount 1；「状态只能是三个值之一」用 sh:in。校验报告会指明违规节点、路径与约束类型，可以直接用于修数据。",
+    "keyPoints": [
+      "用 sh:targetClass 指定作用的节点集合，用 sh:property 描述该节点的属性约束",
+      "必填用 sh:minCount 1；枚举用 sh:in 列出允许值；类型用 sh:class 或 sh:datatype",
+      "违反约束时报告会给出具体节点与路径，便于定位与修复"
+    ],
+    "explanation": "把 SHACL 形状纳入 CI，可以让「数据质量」像代码一样被持续检查。",
+    "extension": "复杂约束可以用 sh:sparql 写自定义校验，但要权衡可读性与执行成本。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "SHACL",
+      "数据校验"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "Shapes Constraint Language (SHACL)",
+      "url": "https://www.w3.org/TR/shacl/",
+      "snippet": "SHACL is a language for validating RDF graphs against a set of conditions."
+    }
+  },
+  {
+    "id": "q_onto_073",
+    "type": "short",
+    "isPractice": false,
+    "stem": "在 SPARQL 与 Cypher 之间怎么选？",
+    "options": [],
+    "referenceAnswer": "选择的依据是「数据来源与语义需求」以及「查询负载」。需要整合多来源、复用标准词汇、让语义可被机器解释时，RDF + SPARQL 更自然，还能配合推理机。数据来自应用自身、以高效遍历与图算法为主时，属性图 + Cypher（或 Gremlin）开发效率更高，生态里的图算法库也更成熟。两者可以共存：用 RDF 维护语义层与融合层，把高性能分析放到属性图里。",
+    "keyPoints": [
+      "SPARQL 面向 RDF，适合跨源融合、标准推理与本体共存；Cypher 面向属性图，适合应用内的高效遍历与开发效率",
+      "若数据需要与外部标准词汇（schema.org、Wikidata）对齐，SPARQL 生态更合适",
+      "若重点是应用内路径查询与图算法，属性图与 Cypher 通常更顺手"
+    ],
+    "explanation": "不要因为「RDF 更标准」就忽视团队的实际开发效率，反之亦然。",
+    "extension": "如果必须互转，要提前约定好属性、类型与命名的映射规则，否则后续无法对账。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "SPARQL",
+      "Cypher",
+      "选型"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "openCypher - Cypher Query Language",
+      "url": "https://opencypher.org/",
+      "snippet": "Cypher is a declarative graph query language that allows for expressive and efficient querying of property graphs."
+    }
+  },
+  {
+    "id": "q_onto_074",
+    "type": "short",
+    "isPractice": false,
+    "stem": "把关系数据库的数据发布成 RDF，R2RML 的思路是什么？",
+    "options": [],
+    "referenceAnswer": "R2RML 的核心是一组映射：每个逻辑表（或 SQL 查询）定义主语模板（例如 http://ex.com/emp/{id}），列通过谓词-对象映射变成三元组，外键则映射为实体之间的 IRI 连接。这样可以在不搬数据的前提下，把关系库发布成 RDF 视图（虚拟图），也可以物化成三元组库。映射集中在一处，语义变更时只需改映射，便于维护与审计。",
+    "keyPoints": [
+      "R2RML 用映射规则把表/查询结果映射成三元组：定义 subject map、predicate-object map 与目标图",
+      "行映射到主语（通常由主键拼接 IRI），列映射到属性值，外键映射成对象间的连接",
+      "好处是不动原库即可生成虚拟图或物化图，语义由映射集中管理"
+    ],
+    "explanation": "虚拟图省存储但查询要下推为 SQL；物化图查询快但需要同步机制。",
+    "extension": "映射文件同样要版本管理，否则「图谱为什么变了」将无法解释。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "R2RML",
+      "数据发布"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "R2RML: RDB to RDF Mapping Language",
+      "url": "https://www.w3.org/TR/r2rml/",
+      "snippet": "This document describes R2RML, a language for expressing customized mappings from relational databases to RDF datasets."
+    }
+  },
+  {
+    "id": "q_onto_075",
+    "type": "short",
+    "isPractice": false,
+    "stem": "大批量数据导入图数据库时，需要注意什么？",
+    "options": [],
+    "referenceAnswer": "逐条写入在百万级以上会非常慢，正确做法是用存储引擎提供的批量导入工具（离线导入通常最快），并在导入期间临时关闭二级索引与约束检查，导入完成后再重建。批量大小与并发要按可用内存调整：太大会 OOM，太小则收益不明显。导入后必须做校验（节点数、边数、关键约束）并更新统计信息，否则查询计划可能不准确。",
+    "keyPoints": [
+      "优先使用批量导入工具而不是逐条 API 写入，并在导入期间关闭不必要的索引与约束",
+      "按数据规模调整批量大小与并发，避免内存溢出与事务过大",
+      "导入后要重建索引、做一致性校验与统计信息更新"
+    ],
+    "explanation": "导入脚本要幂等且可重跑，因为首次导入几乎不会一次成功。",
+    "extension": "把导入的数据源版本、映射版本记录在元数据里，便于后续追溯。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "批量导入",
+      "运维"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "openCypher - Cypher Query Language",
+      "url": "https://opencypher.org/",
+      "snippet": "Cypher is a declarative graph query language that allows for expressive and efficient querying of property graphs."
+    }
+  },
+  {
+    "id": "q_onto_076",
+    "type": "short",
+    "isPractice": false,
+    "stem": "知识图谱怎么做增量更新与版本管理？",
+    "options": [],
+    "referenceAnswer": "增量更新的前提是「能精确定位到要替换的范围」，命名图正好提供了这个边界：一批导入的数据放进一个命名图，更新时整体替换该图，不会影响其他来源。事实级别的写入时间与来源则支持更细粒度的修正与删除。本体（schema）与实例数据的版本应分开管理：本体变更要评估对已有数据的影响并做兼容性检查，而实例数据可以更频繁地更新。",
+    "keyPoints": [
+      "按来源或批次划分命名图，使增量更新可以精确替换某一批数据",
+      "为每条事实记录写入时间与来源，删除时按来源或时间精确清理",
+      "图谱结构（本体）与实例数据分开版本化，避免互相牵制"
+    ],
+    "explanation": "「只追加不删除」是最常见的坏实践：同一实体会有多个版本的互相矛盾的事实。",
+    "extension": "每次更新都记录批次元数据（谁、何时、从哪个源），是冲突排查的基础。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "增量更新",
+      "版本管理"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "R2RML: RDB to RDF Mapping Language",
+      "url": "https://www.w3.org/TR/r2rml/",
+      "snippet": "This document describes R2RML, a language for expressing customized mappings from relational databases to RDF datasets."
+    }
+  },
+  {
+    "id": "q_onto_077",
+    "type": "short",
+    "isPractice": false,
+    "stem": "知识图谱的权限与多租户隔离怎么做？",
+    "options": [],
+    "referenceAnswer": "隔离的粒度通常落在命名图上：每个租户或数据域一个或多个命名图，查询入口固定注入可见图集合，避免某处忘记过滤导致跨租户泄漏。对同一节点内不同敏感度的属性，可以拆到不同命名图或用属性级策略控制。审计同样重要：记录「谁在什么时间查了哪些图」，既用于合规，也用于排查异常访问。需要强调的是，权限判断应该在数据访问层强制，而不是交给模型或调用方。",
+    "keyPoints": [
+      "用命名图划分租户或数据域，在查询层强制限定可见图，而不是靠调用方自觉加条件",
+      "对敏感属性做单独的图或属性级授权，避免整节点可见带来的越权",
+      "保留访问审计，记录谁查了哪些图与实体"
+    ],
+    "explanation": "跨租户泄漏往往不是模型的问题，而是某个查询路径绕过了过滤。",
+    "extension": "权限设计要有专门的负向测试：以租户 A 的身份断言永远查不到租户 B 的实体。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "权限",
+      "多租户"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "Shapes Constraint Language (SHACL)",
+      "url": "https://www.w3.org/TR/shacl/",
+      "snippet": "SHACL is a language for validating RDF graphs against a set of conditions."
+    }
+  },
+  {
+    "id": "q_onto_078",
+    "type": "short",
+    "isPractice": false,
+    "stem": "图谱检索（实体检索、子图检索）的常见方式有哪些？",
+    "options": [],
+    "referenceAnswer": "实体检索解决「用户说的这个东西在图里是哪个节点」，手段包括别名表、全文索引、向量相似度与拼写纠错。子图检索解决「围绕这些实体要看哪些关系」，通常按问题的结构选择关系类型与扩展深度，必要时限制每跳的度数以避免组合爆炸。多数图谱问答都是两段式：先做实体链接确定锚点，再做受限的子图扩展取回证据，最后交给模型或模板生成答案。",
+    "keyPoints": [
+      "实体检索：按名称/别名/属性的精确匹配与模糊匹配，配合实体链接把用户表述映射到实体",
+      "子图检索：从命中的实体出发，按指定关系与深度扩展，形成以问题为中心的子图",
+      "复杂问题常用「先定位实体再沿关系路径扩展」的两段式流程"
+    ],
+    "explanation": "扩展深度与每跳度数是最关键的参数：不加限制时子图会迅速膨胀到无法处理。",
+    "extension": "把检索到的子图连同路径一起返回，能让答案自带可核验的推理链。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "图谱检索",
+      "子图"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "openCypher - Cypher Query Language",
+      "url": "https://opencypher.org/",
+      "snippet": "Cypher is a declarative graph query language that allows for expressive and efficient querying of property graphs."
+    }
+  },
+  {
+    "id": "q_onto_079",
+    "type": "short",
+    "isPractice": false,
+    "stem": "知识图谱问答（KGQA）有哪些技术路线？各自取舍是什么？",
+    "options": [],
+    "referenceAnswer": "三条路线对应不同的确定性—覆盖度权衡：模板法把常见问题模式穷举成查询模板，结果准确、可解释，但换一种问法就失效；语义解析直接把问题翻译成 SPARQL，覆盖广、可解释，但模型可能生成语法正确而语义错误、甚至无法执行的查询，需要校验与回退；检索式先取子图再让模型作答，实现简单、鲁棒，但答案的精确性依赖检索到的子图是否完整。实践中常用「语义解析优先、失败回退到检索式」的组合。",
+    "keyPoints": [
+      "模板/规则：把问题模式映射成 SPARQL 查询，准确可控但覆盖有限",
+      "语义解析：用模型把自然语言直接翻译成查询语句，覆盖广但需要处理解析失败与不可执行",
+      "检索式：先定位实体与子图，再让模型基于子图生成答案，鲁棒但依赖检索质量"
+    ],
+    "explanation": "无论哪条路线，生成的查询都必须先做可执行性与安全性校验再执行。",
+    "extension": "把「解析失败率」作为核心指标监控，它直接反映了路线选择的适配度。",
+    "difficulty": 5,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "KGQA",
+      "问答"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "Wikidata",
+      "url": "https://www.wikidata.org/",
+      "snippet": "Wikidata is a free and open knowledge base that can be read and edited by both humans and machines."
+    }
+  },
+  {
+    "id": "q_onto_080",
+    "type": "short",
+    "isPractice": false,
+    "stem": "把知识图谱与向量检索混合使用，有哪些典型模式？",
+    "options": [],
+    "referenceAnswer": "三种常见模式：一是「图过滤 + 向量检索」，先用图谱把范围限定在相关实体或子领域，显著提升向量检索的精度；二是「向量召回 + 图验证」，用向量快速找到候选，再用图谱检查关系是否真的成立（例如「A 是不是真的 B 的子公司」）；三是并行融合，图结果给出结构化事实与推理链，向量结果补充背景描述，两者在答案里分别标注来源。选择取决于瓶颈在「找得到」还是「验得准」。",
+    "keyPoints": [
+      "图先缩小范围再向量检索：用实体与关系筛出候选文档集，再做语义检索",
+      "向量先召回再上图验证：用向量找到候选事实，再用图校验其关系是否成立",
+      "两者并行取结果后融合，用图结果提供结构化依据，向量结果补充描述性内容"
+    ],
+    "explanation": "混合检索的价值不仅在效果，还在于可解释性：图结果自带路径，向量结果自带出处片段。",
+    "extension": "融合时要保留来源标记，否则用户无法区分哪部分是推理得出的、哪部分是文本支持的。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "混合检索",
+      "图谱 + 向量"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "Wikidata",
+      "url": "https://www.wikidata.org/",
+      "snippet": "Wikidata is a free and open knowledge base that can be read and edited by both humans and machines."
+    }
+  },
+  {
+    "id": "q_onto_081",
+    "type": "short",
+    "isPractice": false,
+    "stem": "知识图谱嵌入在推荐系统里怎么用？",
+    "options": [],
+    "referenceAnswer": "纯协同过滤在交互稀疏或新物品上表现差，图谱提供了额外的语义信号：物品属于哪些类目、有哪些属性、与哪些实体相连，这些关系可以在冷启动阶段提供相似性依据。此外，基于路径的推理能给出可解释的理由。工程上通常把图谱嵌入作为特征拼接到推荐模型中，而不是单独使用，因为用户行为信号仍然是最强的预测因子。",
+    "keyPoints": [
+      "用图谱补充用户与物品之间的语义关系（类目、属性、共同作者等），缓解协同过滤的冷启动",
+      "通过关系路径解释推荐理由（「因为你关注的人也在看」），提升可解释性",
+      "要和协同信号结合，单靠图谱嵌入通常不如混合模型"
+    ],
+    "explanation": "图谱的价值在长尾与冷启动，对热门物品的推荐提升通常有限。",
+    "extension": "推荐场景要特别关注可解释性与多样性，纯嵌入打分难以支撑解释需求。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "推荐",
+      "图谱嵌入"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "Wikidata",
+      "url": "https://www.wikidata.org/",
+      "snippet": "Wikidata is a free and open knowledge base that can be read and edited by both humans and machines."
+    }
+  },
+  {
+    "id": "q_onto_082",
+    "type": "short",
+    "isPractice": false,
+    "stem": "知识图谱在风控与反欺诈中能发挥什么作用？",
+    "options": [],
+    "referenceAnswer": "风控的核心需求是「发现隐藏的关联」，这正是图的强项：单个账户可能看起来正常，但它与已知风险账户通过设备、手机号、银行卡形成多跳关联时，风险就被暴露出来。相比逐条规则，图查询能表达「两跳内共享同一收款方」这类模式，命中率更高。但风控场景对误报极其敏感，因此每个判定都必须能给出具体的关系路径作为依据，并且要能区分强关联（共享银行卡）与弱关联（同一城市）。",
+    "keyPoints": [
+      "通过关联网络发现团伙：多个账户共享设备、IP、联系人时形成可疑子图",
+      "通过关系路径发现间接关联，识别单点规则看不到的隐蔽联系",
+      "需要解决误报与可解释性：每个判定都要能给出具体关系路径"
+    ],
+    "explanation": "图分析在风控里必须配合时效性：欺诈手法变化快，图的更新延迟直接决定拦截效果。",
+    "extension": "评估时除了准确率，还要看「平均发现时间」，即从风险行为发生到系统识别的时间。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "风控",
+      "关联分析"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "Wikidata",
+      "url": "https://www.wikidata.org/",
+      "snippet": "Wikidata is a free and open knowledge base that can be read and edited by both humans and machines."
+    }
+  },
+  {
+    "id": "q_onto_083",
+    "type": "short",
+    "isPractice": false,
+    "stem": "构建图谱时，选择 Wikidata、DBpedia 这类开放知识库要注意什么？",
+    "options": [],
+    "referenceAnswer": "开放知识库最大的好处是覆盖广、上手快，但使用前要确认许可（CC0 与 CC-BY-SA 的要求差别很大，后者有传染性）。质量上不能无条件信任：社区数据存在缺失与错误，关键事实应交叉验证。工程上要特别注意标识稳定性——实体的 QID 可能被合并或删除，因此要么本地缓存并定期比对变更，要么在本地用自有 ID 并维护到外部 ID 的映射表，避免外部变动直接冲击系统。",
+    "keyPoints": [
+      "数据许可与署名要求不同，商用前要逐项确认",
+      "数据质量参差：开放库依赖社区贡献，存在缺失、过时与错误",
+      "标识体系会变化（合并、拆分、删除），需要用稳定的 ID 并跟踪变更"
+    ],
+    "explanation": "把外部知识库当作「需要持续同步的上游依赖」，而不是一次性导入的数据集。",
+    "extension": "对高频使用的事实，本地存储快照并定期校验，能避免外部变更导致线上行为突变。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "开放知识库",
+      "数据治理"
+    ],
+    "source": {
+      "type": "doc",
+      "title": "Wikidata",
+      "url": "https://www.wikidata.org/",
+      "snippet": "Wikidata is a free and open knowledge base that can be read and edited by both humans and machines."
+    }
+  },
+  {
+    "id": "q_onto_084",
+    "type": "short",
+    "isPractice": false,
+    "stem": "本体文档与团队协作应该怎么做？",
+    "options": [],
+    "referenceAnswer": "本体的可维护性取决于文档质量：只写名称的模型很快会变成没人敢改的黑盒。每个概念应说明含义、适用范围、典型示例，特别是「与相邻概念的区别」——这是最容易被误用的地方。流程上要求新增概念必须附一个真实查询用例，防止为「听起来合理」的抽象而建模；破坏性变更（删除或重命名）必须评估已有数据与下游系统的影响并给出迁移方案。文档与模型同仓版本化，才能保证两者不脱节。",
+    "keyPoints": [
+      "每个类与属性都要有明确的中文/英文定义、使用示例与「什么时候不该用」的说明",
+      "变更走评审流程：新增概念需附真实用例，破坏性变更需评估迁移方案",
+      "文档与模型放在同一仓库，随代码一起评审与版本化"
+    ],
+    "explanation": "把「必须附真实用例」写进评审清单，是防止过度建模最有效的一条规则。",
+    "extension": "可以用 SHACL 把部分文档约束显式化，让规则具备可执行性。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "本体治理",
+      "协作"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "Shapes Constraint Language (SHACL)",
+      "url": "https://www.w3.org/TR/shacl/",
+      "snippet": "SHACL is a language for validating RDF graphs against a set of conditions."
+    }
+  },
+  {
+    "id": "q_onto_085",
+    "type": "short",
+    "isPractice": false,
+    "stem": "怎么判断本体或图谱已经「过度建模」了？",
+    "options": [],
+    "referenceAnswer": "过度建模的几个信号：模型里存在大量「单实例类」和从未被任何查询使用的属性；引入了复杂的推理特性（多层等价、精细的基数约束），但实际没人依赖推理结果；评审时要花很长时间解释某个概念为什么存在，且找不到具体用例。判断标准始终是「它解决了什么真实问题」，而不是「它在理论上是否完备」。",
+    "keyPoints": [
+      "出现大量只有一个实例或从不被查询的类与属性",
+      "为了形式完备引入了团队无人使用的推理特性，维护成本远超收益",
+      "业务方无法用一句话说清某个概念为什么存在"
+    ],
+    "explanation": "建模的收益应该能被查询需求验证，否则就是纯成本。",
+    "extension": "可以定期统计属性与类的使用频率，把长期未使用的部分标记为待清理。",
+    "difficulty": 3,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "过度建模",
+      "评审"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "Shapes Constraint Language (SHACL)",
+      "url": "https://www.w3.org/TR/shacl/",
+      "snippet": "SHACL is a language for validating RDF graphs against a set of conditions."
+    }
   }
 ]
