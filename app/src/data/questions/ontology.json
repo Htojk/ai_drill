@@ -563,5 +563,381 @@
       "url": "https://www.w3.org/TR/rdf11-concepts/",
       "snippet": "An RDF triple consists of three components: the subject, the predicate, and the object."
     }
+  },
+  {
+    "id": "q_onto_013",
+    "type": "single",
+    "isPractice": false,
+    "stem": "TransE 用「关系即平移」的假设表示知识图谱，它的主要局限是？",
+    "options": [
+      {
+        "key": "A",
+        "content": "难以建模一对多、多对一与对称关系，因为多个头实体会被压到同一位置",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "无法处理实体，只能处理关系",
+        "isCorrect": false,
+        "wrongReason": "TransE 恰恰是在学习实体与关系的向量表示。"
+      },
+      {
+        "key": "C",
+        "content": "不能用于大规模图谱",
+        "isCorrect": false,
+        "wrongReason": "TransE 因为简单高效，反而是大规模图谱上的常用基线。"
+      },
+      {
+        "key": "D",
+        "content": "只能处理有向图",
+        "isCorrect": false,
+        "wrongReason": "方向性可以通过不同关系向量处理，这不是主要局限。"
+      }
+    ],
+    "explanation": "TransE 把关系看作头实体到尾实体的平移向量：头 + 关系 ≈ 尾。这个假设简洁高效，但当同一关系连接多个尾实体（一对多）时，所有头实体的表示会被迫靠拢，导致无法区分；对称关系更是直接冲突（关系向量必须为零）。",
+    "extension": "后续工作通过引入复数空间、双线性变换或张量分解来缓解，RotatE 就是其中的代表。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "知识图谱嵌入",
+      "TransE"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "Translating Embeddings for Modeling Multi-relational Data (TransE)",
+      "url": "https://arxiv.org/abs/1301.3781",
+      "snippet": "We propose TransE, a method which models relationships by interpreting them as translations operating on the low-dimensional embeddings of the entities."
+    }
+  },
+  {
+    "id": "q_onto_014",
+    "type": "single",
+    "isPractice": false,
+    "stem": "评估知识图谱链接预测时，MRR 与 Hits@K 分别衡量什么？",
+    "options": [
+      {
+        "key": "A",
+        "content": "MRR 衡量正确实体的排名倒数均值；Hits@K 衡量正确答案落在前 K 名的比例",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "MRR 衡量准确率；Hits@K 衡量召回率",
+        "isCorrect": false,
+        "wrongReason": "它们是排名类指标，与分类的准确率/召回率不是同一个概念。"
+      },
+      {
+        "key": "C",
+        "content": "两者都衡量训练速度",
+        "isCorrect": false,
+        "wrongReason": "两者都是效果指标，与速度无关。"
+      },
+      {
+        "key": "D",
+        "content": "MRR 只用于分类任务",
+        "isCorrect": false,
+        "wrongReason": "MRR 是检索与排名的经典指标。"
+      }
+    ],
+    "explanation": "链接预测把「正确的尾实体」按模型打分排序，MRR 是所有测试三元组中正确实体排名倒数的平均值，Hits@K 是正确实体落在前 K 名之内的比例。前者对整体排名敏感，后者更关注头部命中，通常一起汇报。",
+    "extension": "评估时要去掉训练集中出现过的其他正确三元组（filtered setting），否则指标会被系统性低估。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "链接预测",
+      "评估指标"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "A Survey on Knowledge Graphs: Representation, Acquisition and Applications",
+      "url": "https://arxiv.org/abs/2002.00388",
+      "snippet": "Knowledge Graphs (KGs) have gained increasing attention in recent years."
+    }
+  },
+  {
+    "id": "q_onto_015",
+    "type": "single",
+    "isPractice": false,
+    "stem": "「实体对齐」（entity alignment）要解决的问题是？",
+    "options": [
+      {
+        "key": "A",
+        "content": "识别两个不同知识图谱中指代同一现实对象的实体，并建立等价链接",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "把文本中的名称映射到实体",
+        "isCorrect": false,
+        "wrongReason": "那是实体链接，跨的是文本与图谱。"
+      },
+      {
+        "key": "C",
+        "content": "把两个本体合并成一个",
+        "isCorrect": false,
+        "wrongReason": "本体合并（ontology merging）是对齐之后的一种整合操作，范围不同。"
+      },
+      {
+        "key": "D",
+        "content": "消除同一图谱内的重复三元组",
+        "isCorrect": false,
+        "wrongReason": "那是图谱内的去重，不是跨图谱对齐。"
+      }
+    ],
+    "explanation": "当企业把内部图谱与外部知识库（如 Wikidata）连接时，同一个实体在不同图谱里有不同的标识与不同的描述，需要识别出「这两个节点说的是同一个东西」并建立 owl:sameAs 之类的等价链接，才能跨图谱联合查询。",
+    "extension": "对齐错误会造成错误传播：一个错误对齐会把两个实体的属性混在一起，污染后续所有推理。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "实体对齐",
+      "知识融合"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "A Survey on Knowledge Graphs: Representation, Acquisition and Applications",
+      "url": "https://arxiv.org/abs/2002.00388",
+      "snippet": "Knowledge Graphs (KGs) have gained increasing attention in recent years."
+    }
+  },
+  {
+    "id": "q_onto_016",
+    "type": "single",
+    "isPractice": false,
+    "stem": "从非结构化文本构建知识图谱的典型流水线，顺序最合理的是？",
+    "options": [
+      {
+        "key": "A",
+        "content": "实体识别 → 关系抽取 → 实体链接 →（可选）指代消解与冲突消解",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "关系抽取 → 实体识别 → 图谱嵌入 → 推理",
+        "isCorrect": false,
+        "wrongReason": "关系抽取依赖实体先被识别出来。"
+      },
+      {
+        "key": "C",
+        "content": "图谱嵌入 → 实体识别 → 关系抽取",
+        "isCorrect": false,
+        "wrongReason": "嵌入是表示学习，位于数据构建之后。"
+      },
+      {
+        "key": "D",
+        "content": "实体链接 → 实体识别 → 关系抽取",
+        "isCorrect": false,
+        "wrongReason": "实体链接需要先有实体提及，顺序反了。"
+      }
+    ],
+    "explanation": "合理的顺序是：先做命名实体识别找出文本中的实体提及，再判断提及之间的关系，然后通过实体链接把提及映射到知识库实体，同时处理代词指代与跨句表述；最后做冲突消解，决定同一事实的多个来源以哪个为准。",
+    "extension": "指代消解常被忽略，但它直接决定了关系抽取能否覆盖跨句的事实。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "知识抽取",
+      "流水线"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "A Survey on Knowledge Graphs: Representation, Acquisition and Applications",
+      "url": "https://arxiv.org/abs/2002.00388",
+      "snippet": "Knowledge Graphs (KGs) have gained increasing attention in recent years."
+    }
+  },
+  {
+    "id": "q_onto_017",
+    "type": "single",
+    "isPractice": false,
+    "stem": "关于「物化推理」与「查询时推理」的取舍，下列说法正确的是？",
+    "options": [
+      {
+        "key": "A",
+        "content": "物化推理把推断出的三元组预先算好写入存储，查询快但写入成本高、数据膨胀；查询时推理相反",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "物化推理不需要维护一致性",
+        "isCorrect": false,
+        "wrongReason": "数据变更后物化结果必须重建或增量更新，维护成本恰恰是它的主要代价。"
+      },
+      {
+        "key": "C",
+        "content": "查询时推理的性能与数据量无关",
+        "isCorrect": false,
+        "wrongReason": "查询时要即时计算闭包，数据量越大代价越高。"
+      },
+      {
+        "key": "D",
+        "content": "两者不能同时使用",
+        "isCorrect": false,
+        "wrongReason": "实践中常对高频路径物化、其余留作查询时推理。"
+      }
+    ],
+    "explanation": "物化把推理结果预先算好存下来，查询快、实现简单，但存储膨胀、写入与更新成本高，且需要保证与原始数据一致；查询时推理不改存储、数据永远最新，但每次查询都要计算，深度推理时延迟不可接受。工程上常见做法是按访问频率分级：高频且稳定的推断物化，低频的即时计算。",
+    "extension": "判断的关键是「查询频率 vs 数据更新频率」，而不是哪种更先进。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "推理",
+      "物化"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "RDF 1.1 Concepts and Abstract Syntax",
+      "url": "https://www.w3.org/TR/rdf11-concepts/",
+      "snippet": "An RDF triple consists of three components: the subject, the predicate, and the object."
+    }
+  },
+  {
+    "id": "q_onto_018",
+    "type": "single",
+    "isPractice": false,
+    "stem": "「唯一命名假设」（UNA）在知识图谱中的影响是什么？",
+    "options": [
+      {
+        "key": "A",
+        "content": "开启后不同 IRI 默认代表不同实体；不开启时必须显式声明等价关系，否则无法确定两个标识是否指同一对象",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "开启后不允许同一实体有多个名称",
+        "isCorrect": false,
+        "wrongReason": "UNA 说的是「不同名字 = 不同实体」，并非限制别名。"
+      },
+      {
+        "key": "C",
+        "content": "它是 RDF 规范强制要求的假设",
+        "isCorrect": false,
+        "wrongReason": "RDF/OWL 默认不采用 UNA。"
+      },
+      {
+        "key": "D",
+        "content": "它只影响查询性能，不影响语义",
+        "isCorrect": false,
+        "wrongReason": "它直接改变推理结论，是语义层面的假设。"
+      }
+    ],
+    "explanation": "OWL 默认没有唯一命名假设：两个不同的 IRI 可能指同一个对象，需要用 owl:sameAs 显式声明。而在关系数据库或属性图里，ID 不同通常就意味着对象不同。这种假设差异是数据融合时「同一实体出现多份」的根源之一。",
+    "extension": "做数据合并时，要么显式声明 sameAs，要么引入 UNA 语义的约束语言（如 SHACL）来检查重复。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "唯一命名假设",
+      "语义"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "RDF 1.1 Concepts and Abstract Syntax",
+      "url": "https://www.w3.org/TR/rdf11-concepts/",
+      "snippet": "An RDF triple consists of three components: the subject, the predicate, and the object."
+    }
+  },
+  {
+    "id": "q_onto_019",
+    "type": "single",
+    "isPractice": false,
+    "stem": "命名图（named graph）在 RDF 数据模型中提供的能力是？",
+    "options": [
+      {
+        "key": "A",
+        "content": "把三元组划分为多个可命名的子图，从而表达来源、版本、上下文等维度",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "为三元组建立索引",
+        "isCorrect": false,
+        "wrongReason": "命名图是数据模型的概念，不是索引机制。"
+      },
+      {
+        "key": "C",
+        "content": "把 RDF 转为关系表",
+        "isCorrect": false,
+        "wrongReason": "与存储格式转换无关。"
+      },
+      {
+        "key": "D",
+        "content": "替代 SPARQL 的 UNION 语法",
+        "isCorrect": false,
+        "wrongReason": "两者解决的是不同层面的问题。"
+      }
+    ],
+    "explanation": "命名图给一组三元组起一个名字（IRI），于是数据可以按来源、批次或信任级别分组，查询时能指定在哪些图里检索，也便于做增量更新、版本管理与访问控制。带图名的四元组集合常被称为数据集（dataset）。",
+    "extension": "在知识融合场景里，把不同来源放进不同命名图，是保留出处与处理冲突的常用做法。",
+    "difficulty": 4,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "命名图",
+      "数据模型"
+    ],
+    "source": {
+      "type": "spec",
+      "title": "RDF 1.1 Concepts and Abstract Syntax",
+      "url": "https://www.w3.org/TR/rdf11-concepts/",
+      "snippet": "An RDF triple consists of three components: the subject, the predicate, and the object."
+    }
+  },
+  {
+    "id": "q_onto_020",
+    "type": "single",
+    "isPractice": false,
+    "stem": "构建企业本体时，优先复用已有词表（如 FOAF、Dublin Core、schema.org）的主要理由是？",
+    "options": [
+      {
+        "key": "A",
+        "content": "复用经过验证的语义，让数据能被外部工具理解，也避免自造词汇带来的歧义",
+        "isCorrect": true
+      },
+      {
+        "key": "B",
+        "content": "复用的词汇推理速度更快",
+        "isCorrect": false,
+        "wrongReason": "性能不是复用的主要理由。"
+      },
+      {
+        "key": "C",
+        "content": "复用后就不需要定义自己的类和属性",
+        "isCorrect": false,
+        "wrongReason": "领域特有的概念仍需自行扩展。"
+      },
+      {
+        "key": "D",
+        "content": "复用可以自动完成实体对齐",
+        "isCorrect": false,
+        "wrongReason": "对齐是数据层面的工作，复用词表只是为对齐创造条件。"
+      }
+    ],
+    "explanation": "自造词汇的问题在于语义只对内部人员可见，外部系统无法理解，久而久之形成孤岛。复用成熟词表可以让含义有权威定义、工具链有现成支持，也使跨组织数据交换更顺畅；对于领域特有概念，再通过扩展（subClassOf 已有类）来表达。",
+    "extension": "复用前要确认词表的许可与维护状态，长期无人维护的词汇会成为技术债。",
+    "difficulty": 3,
+    "categories": [
+      "本体与知识图谱"
+    ],
+    "tags": [
+      "本体复用",
+      "词表"
+    ],
+    "source": {
+      "type": "paper",
+      "title": "A Survey on Knowledge Graphs: Representation, Acquisition and Applications",
+      "url": "https://arxiv.org/abs/2002.00388",
+      "snippet": "Knowledge Graphs (KGs) have gained increasing attention in recent years."
+    }
   }
 ]
