@@ -1,4 +1,11 @@
-import type { AnswerRecord, DailyTask, Profile, QuestionReport, ReviewState } from "../types";
+import type {
+  AnswerRecord,
+  DailyTask,
+  MasteryState,
+  Profile,
+  QuestionReport,
+  ReviewState
+} from "../types";
 
 const K = {
   records: "aq.records.v1",
@@ -6,7 +13,8 @@ const K = {
   profile: "aq.profile.v1",
   taskPrefix: "aq.task.v1.",
   bookmarks: "aq.bookmarks.v1",
-  reports: "aq.reports.v1"
+  reports: "aq.reports.v1",
+  mastery: "aq.mastery.v1"
 };
 
 function read<T>(key: string, fallback: T): T {
@@ -102,6 +110,16 @@ export function appendReport(report: QuestionReport): void {
   write(K.reports, all);
 }
 
+/* ---------------- 熟练度自评 ---------------- */
+
+export function loadMastery(): Record<string, MasteryState> {
+  return read<Record<string, MasteryState>>(K.mastery, {});
+}
+
+export function saveMastery(mastery: Record<string, MasteryState>): void {
+  write(K.mastery, mastery);
+}
+
 export interface ProgressBundle {
   version: 1;
   exportedAt: number;
@@ -110,6 +128,7 @@ export interface ProgressBundle {
   profile: Profile;
   bookmarks: string[];
   reports: QuestionReport[];
+  mastery: Record<string, MasteryState>;
 }
 
 export function exportProgress(): string {
@@ -120,8 +139,10 @@ export function exportProgress(): string {
     reviews: loadReviews(),
     profile: loadProfile(),
     bookmarks: loadBookmarks(),
-    reports: loadReports()
+    reports: loadReports(),
+    mastery: loadMastery()
   };
+  // 刻意不带 agent 配置：进度码会明文/加密导出，API key 不该跟着到处跑
   return btoa(unescape(encodeURIComponent(JSON.stringify(bundle))));
 }
 
@@ -134,6 +155,7 @@ export function importProgress(code: string): { ok: boolean; message: string } {
     write(K.profile, parsed.profile ?? {});
     write(K.bookmarks, parsed.bookmarks ?? []);
     write(K.reports, parsed.reports ?? []);
+    write(K.mastery, parsed.mastery ?? {});
     return { ok: true, message: `已导入 ${parsed.records?.length ?? 0} 条答题记录` };
   } catch {
     return { ok: false, message: "进度码格式不正确" };
@@ -153,4 +175,6 @@ export function resetProgress(): void {
   localStorage.removeItem(K.profile);
   localStorage.removeItem(K.bookmarks);
   localStorage.removeItem(K.reports);
+  localStorage.removeItem(K.mastery);
+  // agent 配置（含 API key）故意保留：清空学习进度不等于要重新填一次 key
 }

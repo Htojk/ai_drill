@@ -16,7 +16,7 @@ import { fileURLToPath } from "node:url";
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 export const QUESTIONS_DIR = path.join(ROOT, "app", "src", "data", "questions");
 
-export const TYPES = new Set(["single", "judge", "scenario"]);
+export const TYPES = new Set(["single", "judge", "short", "scenario"]);
 export const SOURCE_TYPES = new Set(["paper", "doc", "spec", "community"]);
 
 /** 题目对象允许出现的字段，多一个都算错（能挡住拼写错误，如 wrongREason）。 */
@@ -26,6 +26,8 @@ export const QUESTION_FIELDS = new Set([
   "isPractice",
   "stem",
   "options",
+  "referenceAnswer",
+  "keyPoints",
   "explanation",
   "extension",
   "difficulty",
@@ -87,23 +89,45 @@ export function validateQuestion(q, { categories, idPrefix } = {}) {
   const extra = unknownKeys(q, QUESTION_FIELDS);
   need(extra.length === 0, `出现未定义字段：${extra.join(", ")}`);
 
+  const isShort = q?.type === "short";
   const options = Array.isArray(q?.options) ? q.options : [];
-  need(options.length >= 2, "至少要有 2 个选项");
-  const keys = options.map((o) => o?.key);
-  need(new Set(keys).size === keys.length, "选项 key 重复");
-  options.forEach((o) => {
-    need(typeof o?.content === "string" && o.content.trim().length > 0, `选项 ${o?.key} 内容为空`);
-    const optExtra = unknownKeys(o, OPTION_FIELDS);
-    need(optExtra.length === 0, `选项 ${o?.key} 出现未定义字段：${optExtra.join(", ")}`);
-    if (o && o.isCorrect === false) {
-      need(
-        typeof o.wrongReason === "string" && o.wrongReason.trim().length > 0,
-        `干扰项 ${o.key} 缺少 wrongReason（分层解析要求每个错项都说明为什么错）`
+
+  if (isShort) {
+    // 简答题没有选项，靠 referenceAnswer + keyPoints 批阅
+    need(options.length === 0, "简答题不应该有选项（由批阅层评分）");
+    need(
+      typeof q?.referenceAnswer === "string" && q.referenceAnswer.trim().length > 0,
+      "简答题缺少 referenceAnswer（参考答案）"
+    );
+    if (q?.keyPoints !== undefined) {
+      need(Array.isArray(q.keyPoints), "keyPoints 必须是字符串数组");
+      (Array.isArray(q.keyPoints) ? q.keyPoints : []).forEach((kp, i) =>
+        need(typeof kp === "string" && kp.trim().length > 0, `keyPoints[${i}] 为空`)
       );
     }
-  });
-  need(options.filter((o) => o?.isCorrect).length >= 1, "没有正确答案");
-  need(options.filter((o) => !o?.isCorrect).length >= 1, "不能所有选项都是正确答案（会渲染成多选）");
+  } else {
+    need(options.length >= 2, "至少要有 2 个选项");
+    const keys = options.map((o) => o?.key);
+    need(new Set(keys).size === keys.length, "选项 key 重复");
+    options.forEach((o) => {
+      need(typeof o?.content === "string" && o.content.trim().length > 0, `选项 ${o?.key} 内容为空`);
+      const optExtra = unknownKeys(o, OPTION_FIELDS);
+      need(optExtra.length === 0, `选项 ${o?.key} 出现未定义字段：${optExtra.join(", ")}`);
+      if (o && o.isCorrect === false) {
+        need(
+          typeof o.wrongReason === "string" && o.wrongReason.trim().length > 0,
+          `干扰项 ${o.key} 缺少 wrongReason（分层解析要求每个错项都说明为什么错）`
+        );
+      }
+    });
+    need(options.filter((o) => o?.isCorrect).length >= 1, "没有正确答案");
+    need(options.filter((o) => !o?.isCorrect).length >= 1, "不能所有选项都是正确答案（会渲染成多选）");
+    if (q?.type === "judge") {
+      need(options.length === 2, "判断题必须恰好 2 个选项（正确 / 错误）");
+    }
+    need(q?.referenceAnswer === undefined, "只有简答题才应该有 referenceAnswer");
+    need(q?.keyPoints === undefined, "只有简答题才应该有 keyPoints");
+  }
 
   const cats = Array.isArray(q?.categories) ? q.categories : [];
   need(cats.length > 0, "缺少分类");

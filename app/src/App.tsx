@@ -1,10 +1,11 @@
 import { useCallback, useMemo, useState } from "react";
 import { QUESTIONS } from "./data/questions";
 import { buildDailyTask, DAILY_SIZE } from "./lib/recommend";
-import { applyAnswer } from "./lib/review";
+import { applyAnswer } from "./lib/ebbinghaus";
+import { inferMastery, resolveMastery } from "./lib/mastery";
 import { firstPendingIndex, markCompleted, pendingCount } from "./lib/task";
 import * as store from "./lib/storage";
-import type { AnswerMode, AnswerRecord, DailyTask, Profile, ReviewState } from "./types";
+import type { AnswerMode, AnswerRecord, DailyTask, MasteryLevel, MasteryState, Profile, ReviewState } from "./types";
 import Today from "./pages/Today";
 import Quiz from "./pages/Quiz";
 import Result from "./pages/Result";
@@ -28,6 +29,7 @@ export default function App() {
   const [records, setRecords] = useState<AnswerRecord[]>(() => store.loadRecords());
   const [reviews, setReviews] = useState<Record<string, ReviewState>>(() => store.loadReviews());
   const [bookmarks, setBookmarks] = useState<string[]>(() => store.loadBookmarks());
+  const [mastery, setMastery] = useState<Record<string, MasteryState>>(() => store.loadMastery());
   const [session, setSession] = useState<Session | null>(null);
 
   const today = store.todayStr();
@@ -39,7 +41,8 @@ export default function App() {
       questions: QUESTIONS,
       records: store.loadRecords(),
       reviews: store.loadReviews(),
-      profile: store.loadProfile()
+      profile: store.loadProfile(),
+      mastery: store.loadMastery()
     });
     const built: DailyTask = { date: today, questionIds: ids, completed: [] };
     store.saveTask(built);
@@ -64,15 +67,45 @@ export default function App() {
     setBookmarks(store.toggleBookmark(questionId));
   }, []);
 
+  /** 熟练度：显式自评（用户点选）或自动推断（答题 / 查看答案）。 */
+  const writeMastery = useCallback(
+    (questionId: string, level: MasteryLevel, explicit: boolean) => {
+      setMastery((prev) => {
+        const next = { ...prev };
+        next[questionId] = resolveMastery(prev[questionId], questionId, {
+          level,
+          explicit,
+          updatedAt: Date.now()
+        });
+        store.saveMastery(next);
+        return next;
+      });
+    },
+    []
+  );
+
   const handleAnswer = useCallback(
     (record: AnswerRecord) => {
       store.appendRecord(record);
       setRecords((prev) => [...prev, record]);
 
       const nextReviews = { ...reviews };
-      nextReviews[record.questionId] = applyAnswer(reviews[record.questionId], record.questionId, record.isCorrect);
+      const level = inferMastery({
+        isCorrect: record.isCorrect,
+        viewedAnswer: record.viewedAnswer,
+        verdict: record.grade?.verdict
+      });
+      nextReviews[record.questionId] = applyAnswer(
+        reviews[record.questionId],
+        record.questionId,
+        record.isCorrect,
+        record.answeredAt,
+        level
+      );
       store.saveReviews(nextReviews);
       setReviews(nextReviews);
+      // 熟练度同步落库：查看答案/答错会自动记为未掌握，用户的显式自评优先级更高
+      writeMastery(record.questionId, level, false);
 
       setProfile((prevProfile) => {
         const streak = nextStreak(prevProfile, today);
@@ -96,7 +129,7 @@ export default function App() {
         return next;
       });
     },
-    [reviews, today]
+    [reviews, today, writeMastery]
   );
 
   const finishSession = useCallback(() => {
