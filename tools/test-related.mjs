@@ -17,7 +17,9 @@ import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
 
 const APP = "app";
-const SRC = join(APP, "src");
+// 统一用绝对路径：否则「改动文件」（来自 git，已 resolve）与「依赖图节点」
+// （来自 walk，原本是相对路径）无法比较，会漏选测试。
+const SRC = resolve(APP, "src");
 const EXTS = [".ts", ".tsx"];
 
 function walk(dir, out = []) {
