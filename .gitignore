@@ -8,8 +8,14 @@ app/dist/
 *.log
 *.tmp
 
-# 出题草稿（tools/gen-questions.mjs --draft 的产物，人工修订后再 --merge 进题库）
+# 流水线产物：全部可由 content/sources 或权威开源源重建，不入库
+# （出题草稿人工修订后才用 gen-questions.mjs --merge 进题库）
+content/raw/
+content/corpus/
+content/chunks/
 content/drafts/
+content/logs/
+content/reports/
 
 # 编辑器与系统
 .vscode/
