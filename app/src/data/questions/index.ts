@@ -2,9 +2,9 @@ import type { Question } from "../../types";
 import baseQuestions from "./base.json";
 import promptQuestions from "./prompt.json";
 import ragQuestions from "./rag.json";
-import { agentQuestions } from "./agent";
-import { ontologyQuestions } from "./ontology";
-import { tuningQuestions } from "./tuning";
+import agentQuestions from "./agent.json";
+import ontologyQuestions from "./ontology.json";
+import tuningQuestions from "./tuning.json";
 import { evalQuestions } from "./eval";
 import { engineeringQuestions } from "./engineering";
 
