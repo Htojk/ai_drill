@@ -1,0 +1,73 @@
+import type { Question } from "../../types";
+
+export const engineeringQuestions: Question[] = [
+  {
+    id: "q_eng_001",
+    type: "single",
+    isPractice: false,
+    stem: "为什么长上下文推理时显存会明显吃紧？",
+    options: [
+      { key: "A", content: "模型权重会随上下文变长而增大", isCorrect: false, wrongReason: "权重是固定的，与输入长度无关。" },
+      { key: "B", content: "KV cache 随序列长度线性增长", isCorrect: true },
+      { key: "C", content: "词表规模被动态扩展", isCorrect: false, wrongReason: "词表在训练后就固定了。" },
+      { key: "D", content: "温度参数占用显存", isCorrect: false, wrongReason: "温度只是一个标量超参。" }
+    ],
+    explanation: "自回归生成时，每一层都要缓存历史 token 的 K、V 张量，长度越长缓存越大，并且随 batch size 继续放大。",
+    extension: "这正是 PagedAttention/vLLM、GQA/MQA 等优化要解决的核心问题：把 KV cache 的分页管理与头维度共享做好，吞吐能提升数倍。",
+    difficulty: 3,
+    categories: ["工程与部署"],
+    tags: ["KV cache", "显存"],
+    source: {
+      type: "paper",
+      title: "Efficient Memory Management for Large Language Model Serving with PagedAttention",
+      url: "https://arxiv.org/abs/2309.06180",
+      snippet: "the key-value cache memory grows and shrinks dynamically, leading to significant memory fragmentation..."
+    }
+  },
+  {
+    id: "q_eng_002",
+    type: "scenario",
+    isPractice: true,
+    stem: "客服系统每次请求都携带 3000 token 的固定系统提示，延迟和成本都很高。最直接的优化手段是？",
+    options: [
+      { key: "A", content: "启用提示缓存（prompt caching），让固定前缀命中缓存", isCorrect: true },
+      { key: "B", content: "把系统提示砍短", isCorrect: false, wrongReason: "可行但会损失能力，不是「最直接且无损」的手段。" },
+      { key: "C", content: "把温度调到 0", isCorrect: false, wrongReason: "温度不影响这部分的计算量。" },
+      { key: "D", content: "换成更小的模型", isCorrect: false, wrongReason: "牺牲能力，且不是针对该瓶颈的优化。" }
+    ],
+    explanation: "固定前缀的 KV 可以跨请求复用。命中缓存后这部分不再重复计算，直接降低首 token 延迟与计费 token 数。",
+    extension: "缓存通常按前缀精确匹配，所以要把稳定内容放前面、易变内容放后面；只要前缀有一个 token 变化，缓存即失效。",
+    difficulty: 3,
+    categories: ["工程与部署"],
+    tags: ["成本优化", "提示缓存"],
+    source: {
+      type: "doc",
+      title: "Anthropic - Prompt Caching",
+      url: "https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching",
+      snippet: "Prompt caching can reduce costs and latency for long prompts by reusing previously processed prefixes."
+    }
+  },
+  {
+    id: "q_eng_003",
+    type: "scenario",
+    isPractice: true,
+    stem: "线上 LLM 调用偶发超时，团队打算加重试。以下做法最正确的是？",
+    options: [
+      { key: "A", content: "失败就立即重试 3 次", isCorrect: false, wrongReason: "服务端过载时立即重试会放大压力，形成重试风暴。" },
+      { key: "B", content: "指数退避 + 抖动，限制总超时预算，并对写操作加幂等键去重", isCorrect: true },
+      { key: "C", content: "超时就直接返回空结果", isCorrect: false, wrongReason: "对用户是静默失败，体验比报错更差。" },
+      { key: "D", content: "只在客户端做重试", isCorrect: false, wrongReason: "客户端重试无法控制服务端压力，也难以保证幂等。" }
+    ],
+    explanation: "指数退避拉长重试间隔，抖动打散同时重试的请求，避免同步冲击；总超时预算防止请求无限堆积；幂等键保证重试不会重复产生副作用。",
+    extension: "重试必须区分错误类型：限流（429）适合退避重试，参数错误（400）重试无意义，超时要结合上游耗时分布设定预算。",
+    difficulty: 4,
+    categories: ["工程与部署"],
+    tags: ["重试", "稳定性"],
+    source: {
+      type: "doc",
+      title: "AWS Architecture Blog - Exponential Backoff And Jitter",
+      url: "https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/",
+      snippet: "we show that the benefits of adding jitter to backoff are substantial, and that full jitter performs best..."
+    }
+  }
+];
