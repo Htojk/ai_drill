@@ -1,6 +1,8 @@
 import { createDb } from "./core/db.mjs";
 import { createLogger } from "./core/log.mjs";
 import { createRouter } from "./router.mjs";
+import { createAccountRepo } from "./repo/accounts.mjs";
+import { authRoutes } from "./routes/auth-routes.mjs";
 import { healthRoutes } from "./routes/health-routes.mjs";
 import { loadConfig } from "./core/config.mjs";
 
@@ -12,7 +14,7 @@ export function createApp({ env = process.env, log = createLogger("api"), db = n
   const config = loadConfig(env);
   const database = db || createDb(config, log);
 
-  const ctx = { config, log, db: database, ...repos };
-  const routes = [...healthRoutes(ctx)];
+  const ctx = { config, log, db: database, accounts: repos?.accounts || createAccountRepo(database) };
+  const routes = [...healthRoutes(ctx), ...authRoutes(ctx)];
   return { ctx, router: createRouter(routes), routes };
 }
