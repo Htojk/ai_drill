@@ -5,6 +5,7 @@ import { ApiError } from "../lib/api";
 import type { ApiUser } from "../types";
 import AccountPanel from "./AccountPanel";
 import LoginForm from "./LoginForm";
+import ReminderCard from "./ReminderCard";
 
 /**
  * 「我的」页：本地有令牌就先拿服务端核一次身份。
@@ -42,22 +43,36 @@ export default function Account() {
 
   if (checking && !user) {
     return (
-      <div className="card">
-        <p className="muted">正在核对登录状态…</p>
+      <div>
+        <div className="card">
+          <p className="muted">正在核对登录状态…</p>
+        </div>
+        <ReminderCard />
       </div>
     );
   }
 
-  if (!user) return <LoginForm onDone={() => setUser(session.loadSession()?.user ?? null)} />;
+  // 提醒是本机设置、不依赖账号，所以未登录也要能导出日历
+  if (!user) {
+    return (
+      <div>
+        <LoginForm onDone={() => setUser(session.loadSession()?.user ?? null)} />
+        <ReminderCard />
+      </div>
+    );
+  }
 
   return (
-    <AccountPanel
-      user={user}
-      offline={offline}
-      onLogout={() => {
-        setUser(null);
-        setOffline(false);
-      }}
-    />
+    <div>
+      <AccountPanel
+        user={user}
+        offline={offline}
+        onLogout={() => {
+          setUser(null);
+          setOffline(false);
+        }}
+      />
+      <ReminderCard />
+    </div>
   );
 }
