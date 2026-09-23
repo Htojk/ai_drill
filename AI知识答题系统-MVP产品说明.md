@@ -1,7 +1,7 @@
-- 版本：v0.13（MVP）
-- 日期：2026-09-22
-- 状态：**功能闭环已实现，线上产物已同步到最新**；简答/判断题型 + Agent 批阅 + 艾宾浩斯推荐已完成（T-018 / T-019）；题库 315 题 + 203 道待确认版权的简答草稿（T-020~T-023）；**手机实测仍未做**
-- 本版变更：一次**线上功能体检**（T-025）。用 Playwright 跑通真实流程后发现并修掉两个缺陷：① 简答本地评分阈值 0.5 是按测试夹具标定的，拿题库 180 道真题实测时**参考答案自己只有 21% 能过 partial 线**，等于写对了也不给分 —— 按真实语料重新标定为 0.2，并补了题库级回归测试；② 简答题「直接查看答案」会显示「✅ 答对了」（记录里其实写的 false，只有显示撒谎）。另外**把线上产物同步到最新**并清理了 5 个历史遗留的旧 JS/CSS。详见附录 A.1
+- 版本：v0.14（MVP）
+- 日期：2026-09-23
+- 状态：**功能闭环 + 后端（账号/同步）+ 每日提醒的代码均已完成**；题库 315 题 + 203 道待确认版权的简答草稿；⚠️ **后端尚未部署**，线上跑的还是纯静态旧版（v0.9 产物）；**手机实测仍未做**
+- 本版变更：一次**架构决策反转**（T-026~T-031）。用户明确「自己用、不碰备案」，于是把 v0.3 的「纯静态、不做账号、不买服务器」推翻：新增 **CloudBase HTTP 云函数 + PostgreSQL** 做注册登录与按账号隔离的进度同步（本地优先，离线照常答题）；另新增**每日提醒**，做法是导出 `.ics` 交给手机自带日历按天响铃（零后端、零推送）。反转的理由、边界与遗留风险见 10.12 / 10.13，完整记录见附录 A.1
 
 ---
 
@@ -12,13 +12,14 @@
 ### 0.0 接手须知（30 秒版）
 
 1. **目标**：给 AI 从业者一个「每天 10 题」的工程知识巩固工具，靠「每日任务感 + streak + 长期掌握度画像」立足（见 0.1）。
-2. **当前进度**：功能闭环已完成（0.3），题库已扩到 315 题；**唯一卡住的是手机实测**（10.7）。⚠️ 线上跑的还是 v0.9 的产物，**题库与批阅功能的改动都还没部署**。
+2. **当前进度**：功能闭环已完成（0.3），题库 315 题；v0.14 新增**后端（注册登录 + 跨设备同步）**与**每日提醒**，代码与测试均已就绪。⚠️ **后端代码还没部署，线上仍是 v0.9 的纯静态产物**——题库、批阅、账号、提醒的改动都还没上线。
 3. **怎么改代码**：先读 `AGENTS.md`（分层 / 计划 / 800 行提交 / 只跑相关测试 / 完成即提交），任务清单在 `docs/PLAN.md`。
 4. **加题**：`tools/gen-questions.mjs --draft` 出草稿 → 人工审 → `--merge` 合并（见 0.5）。
    合并会重排 id，**必须同步 `app/src/data/questions/all.test.ts` 里 `EXPECTED_FILES` 的题量计数**（v0.11 起该文件锁的是「每文件题量 + 分块升序」，不再逐条列 id）。
    合并逻辑已按 id 升序落盘，不会因为填补空号而打乱顺序。
    （v0.10 起可先用 `node tools/pipeline/run.mjs --all` 从 6 个权威开源项目自动抓素材出草稿，见 0.5）
-5. **标准收尾**：`node tools/finish-task.mjs --task T-0NN --message "feat(scope): 说明" --evidence "验证方式"`。
+5. **改后端 / 部署后端**：后端全在 `cloud/functions/api/`（HTTP 云函数 + CloudBase PostgreSQL），本机用 `node tools/backend.mjs <secret|migrate|deploy|smoke|status>` 操作；**密钥不入库**（生成到已 gitignore 的 `cloudbaserc.local.json` / `.secrets/`）。改前先读 `AGENTS.md` 第 9 节。
+6. **标准收尾**：`node tools/finish-task.mjs --task T-0NN --message "feat(scope): 说明" --evidence "验证方式"`。
 
 ### 0.1 项目是什么
 
@@ -32,19 +33,24 @@
 
 靠这三点与「面试鸭（求职八股）」「Gemini Notebook（免费替代品）」错位竞争。
 
-**明确不做**：微信小程序、原生 App、服务器、账号体系、付费体系、面试题库。
+**明确不做**：微信小程序、原生 App、付费体系、面试题库。
+
+> ⚠️ **v0.14 反转**：「服务器」与「账号体系」原先在「明确不做」里，现已**改为要做并已实现**（用户自己用、不碰备案）。原因见 10.12。
 
 ### 0.2 已定路线（不可逆决策，不要再重新比较方案）
 
 | 决策 | 结论 | 依据 |
 | --- | --- | --- |
 | 技术栈 | Vite + React + TypeScript + 原生 CSS | 已实现并上线 |
-| 系统形态 | 纯静态 Web PWA（零服务器 / 零数据库 / 零运维） | 第 10.1 节 |
+| 系统形态 | **Web PWA 本地优先 + CloudBase HTTP 云函数后端**（v0.14 起） | 第 10.1 / 10.12 节 |
 | 托管 | 腾讯云 CloudBase 静态网站托管（体验版，¥0） | 第 10.3 节 |
 | 微信小程序 | **已评估并否决**（request 域名需备案 HTTPS，个人主体类目受限） | `docs/research/小程序调研.md` |
-| 账号体系 | MVP 不做，用「进度导出码」兜底跨设备迁移 | 第 10.8 节 |
+| 账号体系 | **v0.14 反转：要做**。注册登录 + 自签会话令牌，进度/错题按账号隔离 | 第 10.12 节 |
+| 数据存储 | 浏览器 localStorage 为主（离线优先）+ CloudBase PostgreSQL 作同步副本；**题库不入库**，仍留仓库 JSON | 第 7.2 / 10.12 节 |
+| 每日提醒 | **v0.14 新增**：导出 `.ics` 交给手机自带日历按天响铃（等于闹钟），零后端零推送 | 第 10.13 节 |
+| 模型批阅 key | 仍然只存本机 `aq.agent.v1`，**不上云、不进同步、不进进度码** | 第 0.3 / 10.12 节 |
 
-### 0.3 当前进度（核实日期 2026-09-22）
+### 0.3 当前进度（核实日期 2026-09-23）
 
 | 项 | 状态 | 备注 |
 | --- | --- | --- |
@@ -70,6 +76,8 @@
 | PWA（manifest + Service Worker） | ✅ 已完成 | v0.9 补齐 192/512 PNG + maskable + apple-touch-icon（iOS 可用） |
 | 构建 `npm run build`（含 `tsc --noEmit`） | ✅ 通过 | 2026-09-22 复验无报错 |
 | 部署到 CloudBase 静态托管 | ✅ 已完成 | 2026-09-22 复核：线上 12 个文件与本地 `dist` **逐字节一致**（sha256 比对），`index-BaGNxCyh.js`，图标全 200；并清掉 5 个历史遗留旧产物 |
+| **后端：账号 + 同步（T-026~T-030）** | ✅ 代码完成 / ⏳ **未部署** | `cloud/functions/api/`：注册、登录、改密、`/auth/me` + `/progress` 按账号隔离读写（乐观并发，冲突返 409 带最新值）；前端 `lib/api.ts` / `session.ts` / `account.ts` / `sync.ts` + 「我的」页 + 底部第 5 个 Tab。云函数 35 个用例通过 |
+| **每日提醒（T-031）** | ✅ 已完成 | 导出 `.ics`（`lib/reminder.ts` + `pages/ReminderCard.tsx`）：`VTIMEZONE` + `RRULE:FREQ=DAILY` + `VALARM`，手机日历到点响铃；设置只存本机 `aq.reminder.v1`，24 个用例 |
 | **手机 4G/5G 真实网络实测** | ⏳ **未完成（唯一卡住的一步）** | 清单见第 10.7 节 |
 | 题库扩容（T-002 / T-020 / T-021 / T-022） | ✅ 已完成 | 全库 **315 题**；RAG / Agent / 本体各 100 题；工程判断题（`isPractice`）**99 道**，满足 T-002 的 ≥60 验收下限 |
 | 题目笔记（B3 下半） | ❌ 未做 | 收藏已做，个人笔记未做 |
@@ -77,7 +85,7 @@
 | README.md | ✅ 已完成 | 指向第 0 章交接摘要（v0.6 新增） |
 | **开发约束（agent harness）** | ✅ 已建立 | `AGENTS.md` + `tools/`：分层、计划、行数、测试四道门禁（v0.8） |
 | git 仓库 | ✅ 已建立 | 远程 `https://github.com/Htojk/ai_drill.git`（v0.7） |
-| 自动化测试 | ✅ 已有 | **425 个用例**（vitest，11 个文件），命令见 `AGENTS.md` |
+| 自动化测试 | ✅ 已有 | **496 个用例**（vitest，17 个文件）+ **云函数 35 个**（`node --test`）+ 流水线 127 个，命令见 `AGENTS.md` |
 | **CI** | ✅ 已完成 | v0.9 新增 `.github/workflows/ci.yml`（题库校验 → 分层 → 构建 → 全量测试），首次运行已通过 |
 | 流水线单测 | ✅ 已扩充 | `node --test "tools/pipeline/*.test.mjs"` 共 **127 个用例**（v0.12 新增 notes 34 个） |
 
@@ -90,6 +98,10 @@
 | `docs/PLAN.md` | 任务计划；已完成只留 5 条，更早的归档到 `docs/plan-archive/` |
 | `docs/research/` | 调研笔记：竞品（2 篇）、小程序否决、CloudBase 默认域名风控（v0.9 从根目录移入） |
 | `tools/` | 约束脚本 5 个（plan / check-commit-size / check-layers / test-related / finish-task）+ 内容脚本与共享模块（gen-icons / gen-questions / question-schema / llm / **extract-notes（v0.12）**） |
+| `cloud/functions/api/` | **后端云函数（v0.14）**：`index.mjs`（入口 + 事件适配 + 路由）→ `routes/`（endpoint）→ `repo/`（PostgREST 读写）→ `core/`（口令 scrypt、自签令牌、日志、校验）。分层靠目录约定，单文件 ≤250 行 |
+| `cloud/functions/api/schema.sql` | 后端表结构：`drill_accounts` / `drill_progress`；**刻意不授权给 anon / authenticated**，只有 `service_role` 与数据库内部角色能读写 |
+| `tools/backend.mjs` | 后端运维 CLI：`secret`（生成密钥）→ `migrate`（建表）→ `deploy`（部署函数）→ `smoke`（线上冒烟）→ `status`（函数与静态托管状态） |
+| `cloudbaserc.json` | CloudBase 函数声明（函数名 `api`、`type: HTTP`、`gatewayPath: /api`、Nodejs20.19）；密钥走 `cloudbaserc.local.json`（已 gitignore） |
 | `content/drafts/`（已 gitignore） | 出题草稿；v0.11 的 315 题就是分批写草稿 → `--merge` 入库的 |
 | `tools/pipeline/` | **内容流水线**：`run.mjs` 抓权威源（v0.10）→ `normalize.mjs` / `chunk.mjs` / `stages.mjs`；**`notes.mjs` 解析笔记型仓库（v0.12，纯函数，配套 34 个用例）**。各文件 ≤ 320 行 |
 | `content/`（`raw` / `corpus` / `chunks` / `logs` / `reports` 子目录） | 流水线中间产物（可重建，已 gitignore）：原始素材 → CorpusDoc → 切块 → JSONL 日志 → 运行报告 |
@@ -109,12 +121,19 @@
 | `app/src/lib/task.ts` | 当天任务的断点续答（第一道没做的题 / 标记完成） |
 | `app/src/lib/categories.ts` | 分类练习的进度统计与出题顺序（未练 → 错题 → 已对） |
 | `app/src/lib/crypto.ts` | 进度码口令加密（PBKDF2 + AES-GCM） |
-| `app/src/lib/storage.ts` | localStorage 封装 + 进度导出码 + 题目反馈存储 |
+| `app/src/lib/storage.ts` | localStorage 封装 + 整包读写（`readAll` / `writeAll`）+ 进度导出码 + 题目反馈存储 |
+| `app/src/lib/merge.ts` | **同步合并规则**：整包按字段合并 + `isSamePayload` 规范化比较，避免无谓上传（v0.14） |
+| `app/src/lib/api.ts` | 前端 HTTP 客户端：`ApiError`（含离线语义）、统一 `POST/GET/PUT /api/*`（v0.14） |
+| `app/src/lib/session.ts` | 会话令牌的本机存储与登录态判断（v0.14） |
+| `app/src/lib/account.ts` | 账号编排层：注册 / 登录 / 改密 / 登出 + 错误码翻译成人话（v0.14） |
+| `app/src/lib/sync.ts` | **本地优先同步**：`pull` / `push`（409 时合并重投一次）/ 4 秒防抖上传 / 事件订阅（v0.14） |
+| `app/src/hooks/use-sync.ts` | 把同步层接到 React：合并落地后重读本机数据（v0.14） |
+| `app/src/lib/reminder.ts` | **每日提醒 ICS 生成**（纯函数：时区、RRULE、75 字节折行、文本转义）（v0.14） |
 | `app/src/lib/stats.ts` | 掌握度统计 |
-| `app/src/pages/*.tsx` | Today / Quiz / QuizExplanation / Result / WrongBook（含收藏标签）/ Categories / Stats / **ShortAnswerBox（简答输入）/ QuestionBody（题干与选项）/ MasteryPicker（熟练度选择）/ AgentSettings（批阅配置）/ NavBar** |
+| `app/src/pages/*.tsx` | Today / Quiz / QuizExplanation / Result / WrongBook（含收藏标签）/ Categories / Stats / **ShortAnswerBox（简答输入）/ QuestionBody（题干与选项）/ MasteryPicker（熟练度选择）/ AgentSettings（批阅配置）/ NavBar / Account（我的页）/ AccountPanel（账号面板）/ LoginForm（登录注册）/ ReminderCard（每日提醒，v0.14）** |
 | `app/src/types.ts` | 全部数据模型类型定义 |
 | `app/vite.config.ts` | Vite 配置 + PWA manifest / workbox |
-| `app/dist/` | 构建产物（部署的就是这个目录，共 8 个文件） |
+| `app/dist/` | 构建产物（部署的就是这个目录，共 12 个文件） |
 
 **版本控制**：已托管到 `https://github.com/Htojk/ai_drill.git`（分支 `main`）。`node_modules` 与 `app/dist` 已在 `.gitignore` 中忽略。
 
@@ -140,15 +159,19 @@
   - **为什么没并进题库**：源仓库 `wdndev/llm_interview_note` 没有 LICENSE，默认版权保留；整段复制进公开站点有侵权风险。决策口径见 `AGENTS.md` 第 8 节。
   - 草稿在 `content/drafts/`（已 gitignore，可重建），重建命令：`node tools/extract-notes.mjs --local <笔记目录>`。
 
-### 0.6 已知问题与技术债（v0.13 核实，按优先级）
+### 0.6 已知问题与技术债（v0.14 核实，按优先级）
 
 | 优先级 | 问题 | 说明 |
 | --- | --- | --- |
-| P0 | 手机实测尚未执行 | 第 10.7 节清单，是决定「要不要备案」的唯一依据 |
+| P0 | **后端尚未部署** | 代码与测试已就绪，但 `node tools/backend.mjs deploy` 还没跑：线上没有注册登录，也没有跨设备同步（见 10.12）。**部署前需用户确认** |
+| P0 | 手机实测尚未执行 | 第 10.7 节清单，是决定「要不要备案」的唯一依据。用户已表态「自己用」，所以默认接受默认域名的中间页 |
 | ~~P0~~ | ~~线上产物落后于本地~~ | ✅ **已解决（v0.13）**：线上 12 个文件与本地 `dist` 逐字节一致 |
 | P1 | 题库只做了 3 个重点领域 | RAG / Agent / 本体各 100 题，其余 5 个分类仍是占位级的 3 题（用户要求聚焦这三块） |
 | P1 | Agent 批阅未做过真实模型验证 | 需要用户自带 API key 才能跑通模型批阅；目前只有单测覆盖，没有端到端实测记录 |
-| P1 | 简答题评分偏「要点覆盖率」 | 中文按相邻二字 token 做模糊匹配，只能判断要点是否被提到，无法评价论述质量与逻辑。**v0.13 修掉了阈值标定错误**（详见 A.1），但「同义不同词」仍会漏判：例如要点写「OWA」而用户写「开放世界假设」，字面对不上就是 0 分。根治要靠模型批阅（配 key）或引入同义词表 |
+| P1 | **同步是「整包覆盖 + 乐观并发」，不是字段级合并** | 两台设备各自离线改同一道题，最终以 revision 更大的一方为准（合并规则见 `lib/merge.ts`）。自用够，但别指望它像 CRDT 那样两边都保住 |
+| P1 | **注册是开放式的** | 云函数默认允许任何人注册（`DRILL_ALLOW_REGISTER=off` 可一键关闭）。自用场景建议注册完自己就关掉 |
+| P1 | 会话令牌没有撤销列表 | 自签 HS256 令牌，改密会让旧令牌失效（密钥派生变了），但没有「逐条吊销某个设备」的能力；令牌有效期见 `cloud/functions/api/core/token.mjs` |
+| P1 | 简答题评分偏「要点覆盖率」 | 中文按相邻二字 token 做模糊匹配，只能判断要点是否被提到，无法评价论述质量与逻辑。**v0.13 修掉了阈值标定错误**（详见 A.2），但「同义不同词」仍会漏判：例如要点写「OWA」而用户写「开放世界假设」，字面对不上就是 0 分。根治要靠模型批阅（配 key）或引入同义词表 |
 | P1 | **203 道社区笔记草稿悬而未决** | 已抽好并通过契约校验，但源仓库无 LICENSE；合与不合都需要用户拍板（见 `AGENTS.md` 第 8 节）。**用户点头前不要 merge** |
 | P2 | 题目笔记未做 | 收藏已做（v0.9），笔记仍是空档（B3 下半） |
 | P2 | 明文进度码仍可导出 | 明文 base64 保留兼容性；加密导出需用户主动选择（v0.9 已有 AES-GCM） |
@@ -156,15 +179,18 @@
 | P2 | 流水线 `llm` 出题模式未实测 | T-013 只验证了离线模式；`--stage draft --mode llm` 尚未跑真实模型出题 |
 | P2 | 流水线无增量缓存 | 每次 `fetch` 都重拉整棵文件树，暂未做「已抓过就跳过」 |
 | P2 | 笔记抽题只能出简答题 | 笔记结构是「标题即问题、正文即答案」，无法可靠地自动生成干扰项，所以只产出 `short` 题；要补选择/判断题仍需人工或走 `pipeline` + 模型 |
-| P2 | 页面文件接近行数上限 | `App.tsx`(209) 与 `pages/Quiz.tsx`(203) 已过 200 行告警线，>250 会被提交拦截，加功能前应先拆 |
+| P2 | 页面文件接近行数上限 | `App.tsx`(229)、`lib/storage.ts`(215)、`pages/Quiz.tsx`(203) 已过 200 行告警线，>250 会被提交拦截，加功能前应先拆 |
+| P2 | 云函数日志没有集中检索 | 结构化日志打在云函数输出里（CloudBase 控制台可查），但没有导出到本地或做告警；排查线上问题要手动翻 |
+| P2 | 提醒只支持「一个每日时刻」 | 不支持工作日/周末区分、不支持多条提醒；要改时间得重新导出 .ics 并删掉旧日程（见 10.13） |
 | P2 | 部署不会自动清理旧产物 | `tcb hosting deploy` 只上传、不删除，历史 `assets/*` 会一直堆积（本次手工清了 5 个）。部署后建议跑一次 `tcb hosting list /` 核对 |
 
 ### 0.7 建议的下一步（按顺序）
 
-1. **手机实测**（第 10.7 节清单）：线上已是最新产物（v0.13 已复核），直接用手机扫 `手机访问二维码.png` 测即可。实测结果决定是否走 ICP 备案。
-2. **决定 203 道社区笔记草稿的去留**（v0.12 新增）：三个选项——(a) 不入库，仅留本地草稿；(b) 先按「仅本地/小范围使用」入库；(c) 改写表述后入库并标注来源。**没有用户明确表态就不要 merge。**
-3. **验证 Agent 批阅**：在「设置」里填一个 OpenAI 兼容的 key，随便答一道简答题，确认模型批阅生效、断网/填错 key 时能降级到本地评分。
-4. 之后可选：其余 5 个分类补题、题目笔记、练习模式的掌握度筛选、CI 覆盖率门槛、`App.tsx` / `Quiz.tsx` 拆分。
+1. **部署后端并实测账号链路**（第 10.12 节）：`node tools/backend.mjs deploy` → `smoke` → 注册两个账号，确认进度互相看不见、换设备能同步回来。**这一步要用户点头才做。**
+2. **手机实测**（第 10.7 节清单）：先用手机扫 `手机访问二维码.png` 过一遍静态功能；后端上线后再补测登录与同步。
+3. **决定 203 道社区笔记草稿的去留**（v0.12 新增）：三个选项——(a) 不入库，仅留本地草稿；(b) 先按「仅本地/小范围使用」入库；(c) 改写表述后入库并标注来源。**没有用户明确表态就不要 merge。**
+4. **验证 Agent 批阅**：在「设置」里填一个 OpenAI 兼容的 key，随便答一道简答题，确认模型批阅生效、断网/填错 key 时能降级到本地评分。
+5. 之后可选：其余 5 个分类补题、题目笔记、随机模考、练习模式的掌握度筛选、CI 覆盖率门槛、`App.tsx` / `Quiz.tsx` 拆分。
 
 ### 0.8 怎么把它跑起来
 
@@ -175,11 +201,19 @@ npm run dev          # 本地开发 http://localhost:5173
 npm run build        # 构建（含 tsc --noEmit 类型检查）
 npm run preview      # 本地预览构建产物
 
-# 部署（需已登录 tcb CLI）
+# 部署前端静态站（需已登录 tcb CLI）
 tcb hosting deploy "app/dist" / -e test-d2gk9bnf2dc862288
+
+# 后端（HTTP 云函数 + PostgreSQL；密钥不入库，全部生成到已 gitignore 的文件里）
+node tools/backend.mjs secret     # 生成会话签名密钥 → .secrets/backend.env
+node tools/backend.mjs migrate    # 建表 drill_accounts / drill_progress（幂等）
+node tools/backend.mjs deploy     # 生成 cloudbaserc.local.json 并部署 api 函数
+node tools/backend.mjs smoke      # 线上冒烟：/health 等
+node tools/backend.mjs status     # 看函数与静态托管状态
 ```
 
 - 线上地址：`https://test-d2gk9bnf2dc862288-1304936445.tcloudbaseapp.com`
+- 后端入口：`https://test-d2gk9bnf2dc862288.service.tcloudbase.com/api`（前端只认这一个 base）
 - 环境 ID：`test-d2gk9bnf2dc862288`（地域 ap-shanghai，体验版有效期至 2027-03-22）
 
 ---
@@ -788,7 +822,28 @@ v0.3 起，**题库数据与用户数据分离**：题库在构建期固化为�
 
 ## 附录 A：变更记录
 
-### A.1 v0.12 → v0.13（本版）
+### A.1 v0.13 → v0.14（本版）
+
+本轮做的是**架构决策反转：加后端 + 账号 + 每日提醒**（T-026~T-031）。用户的需求很明确：① 注册登录，每天的刷题进度与错题按账号隔离；② 数据要持久化；③ 题库仍以 JSON 形式留在代码仓；④ 每天定时提醒，最好能像闹钟一样响。并明确「**自己用，不用碰备案相关的**」。
+
+**为什么推翻 v0.3 的「纯静态、不做账号」**：v0.3 那一刻的判断依据是「零服务器 = 零成本 + 省 2 周」，前提是单设备自用。现在需求里出现了「进度要持久、要能换设备接着答」，纯本地 + 导出码已经不够用了，所以决意引入最小后端。**注意：这只是决策被新需求推翻，不是当初判断错了**——若以后要做成对外产品，10.6 的备案问题会立刻回来。
+
+| 变更 | 说明 |
+| --- | --- |
+| **技术选型（T-026）** | 存储用 **CloudBase PostgreSQL 模式**（体验版没有文档型数据库，实测确认）。前端**不直连数据库**，也不持有任何数据库凭据：浏览器 → HTTP 云函数 → PostgREST，云函数内部用 service_role 读写；`drill_accounts` / `drill_progress` 两张表**刻意不授权给 anon / authenticated**（已核实只有 service_role 与数据库内部角色有权限） |
+| **后端骨架（T-026）** | `cloud/functions/api/`：`index.mjs` 适配三类事件形态（gateway / framework / direct）+ 后缀路由 + 结构化日志 + 入参校验 + `/health`；配套 `tools/backend.mjs`（secret/migrate/deploy/smoke/status）与 `schema.sql` |
+| **账号体系（T-027）** | 平台**不允许「用户名 + 密码」自助注册**（官方原文：`you can not signup just by username and password`），所以注册登录完全在应用内闭环：scrypt(N=16384) 存口令摘要，**自签 HMAC-SHA256 会话令牌**。接口 `/auth/register` `/auth/login` `/auth/me` `/auth/password`；`DRILL_ALLOW_REGISTER=off` 可一键关注册 |
+| **进度同步（T-028）** | `/progress` GET/PUT：整包进度按账号隔离；写入带 `baseRevision` 做乐观并发，对不上返 **409 并回带服务端最新值**，由前端合并后重投一次 |
+| **前端接入（T-029）** | `lib/api.ts`（`ApiError` / 离线语义）、`lib/session.ts`（令牌本机存储）、`lib/account.ts`（编排 + 错误码翻译成人话）、`pages/LoginForm.tsx` / `AccountPanel.tsx` / `Account.tsx`，底部导航新增第 5 个 Tab「我的」 |
+| **本地优先同步（T-030）** | 仍是**离线优先**：答题先写 localStorage，再 4 秒防抖后台上传；远端有更新则合并落地并重读界面。`lib/storage.ts` 收口出 `readAll` / `writeAll`，`lib/merge.ts` 定义合并规则 + 规范化比较（避免无意义上传）。**地铁里没信号照样答题**，联网后自动补同步 |
+| **每日提醒（T-031）** | 网页设不了系统闹钟，Web Push 在 iOS 上也不可靠，所以做成**日历订阅**：`lib/reminder.ts` 生成 `.ics`（带 `VTIMEZONE` + `RRULE:FREQ=DAILY` + `VALARM` + 75 字节折行），用户在「我的」页导出后交给手机自带日历——到点由系统响铃，等于真闹钟，**零后端、零推送、断网也响** |
+| **题库保持 JSON** | 按用户要求，题库**不进数据库**，仍然是 `app/src/data/questions/*.json`；同步的只是「用户进度整包」（records / reviews / profile / bookmarks / mastery / tasks），后端不认识题目 |
+| **模型批阅 key 不上云** | 仍只存本机 `aq.agent.v1`，既不进同步整包，也不进进度导出码（这是刻意的：key 不该跟着数据到处跑） |
+| **门禁同步扩容** | `tools/check-layers.mjs` 纳入 `cloud/` 的单文件预算（≤250 行）；`tools/test-related.mjs` 纳入云函数测试（`node --test "cloud/functions/api/test/*.test.mjs"`）；新增 `hooks/` 层（rank 2.5，只允许被 pages 依赖） |
+| **测试与校验** | vitest **496 个用例**（17 文件）+ 云函数 **35 个**（`node --test`）+ 流水线 127 个全绿；`tsc --noEmit` 无错；`npm run build` 通过（bundle 433.04 kB / gzip 192.89 kB）；`check-layers` 通过 |
+| **仍未做** | ① **后端还没部署**（`backend.mjs deploy` 未执行），线上仍是纯静态旧版，账号与同步要部署后才可用；② 手机 4G 实测仍未做；③ 同步是整包覆盖 + 乐观并发，不是字段级 CRDT；④ 注册默认开放，自用建议注册完关掉 |
+
+### A.2 v0.12 → v0.13
 
 本轮是一次**线上功能体检（T-025）**：先用 Playwright 把部署好的站点从头到尾走一遍（首页 → 今日 10 题 → 单选/判断/简答作答 → 解析 → 查看答案 → 结果页 → 复习/分类/我的数据 → 导出进度码 → 刷新验证持久化），再回头修查出来的问题。
 
@@ -805,7 +860,7 @@ v0.3 起，**题库数据与用户数据分离**：题库在构建期固化为�
 | **测试与校验** | vitest **425 个用例通过**（+5）；`tsc --noEmit` 无错；`node tools/check-layers.mjs` 通过；`gen-questions --check` 通过（315 题） |
 | **仍未解决** | ① 手机 4G 实测仍未做（唯一的 P0）；② 字面匹配的固有限制仍在：要点写「OWA」而用户写「开放世界假设」会判漏，根治要配模型 key 或引入同义词表；③ 203 道社区笔记草稿仍待版权口径 |
 
-### A.2 v0.11 → v0.12
+### A.3 v0.11 → v0.12
 
 本轮做的是**笔记型仓库抽题（T-023）**：把「标题即问题、正文即答案」的社区面试笔记批量变成简答草稿。**边界很清楚——只产出草稿，不入库**，因为源仓库没有 LICENSE。
 
@@ -821,7 +876,7 @@ v0.3 起，**题库数据与用户数据分离**：题库在构建期固化为�
 | **测试** | 新增 `tools/pipeline/notes.test.mjs` 34 个用例（`isQuestionTitle` / `parseSections` / `cleanAnswer` / `pickKeyPoints` / `classifyPath` / 去重 / `toDraftQuestion` 等）；流水线用例总数 93 → **127**，全绿 |
 | **未做** | 203 道草稿**没有并入题库**，等用户决定使用方式；题库仍是 315 题 |
 
-### A.3 v0.10 → v0.11
+### A.4 v0.10 → v0.11
 
 本轮一口气做完四件事：**加题型（判断 / 简答）+ Agent 批阅 + 艾宾浩斯推荐 + 题库扩到 315 题**。此前文档只写「题库 24 题、题型只有选择」，这一版把真实状态全部写回第 0 章与第 4 / 8 / 9 章。
 
@@ -843,7 +898,7 @@ v0.3 起，**题库数据与用户数据分离**：题库在构建期固化为�
 | **测试与校验** | vitest 全量 **420 个用例通过**（11 个文件，含新增 ebbinghaus 16 / mastery 9 / grading 9 / agent 13 / recommend 7）；`node tools/gen-questions.mjs --check` 通过（题库 315 题）；`tsc --noEmit` 无错 |
 | **尚未部署** | 线上仍是 v0.9 的 `dist`；本轮改动**还没重新部署**（见 0.7 第 1 步） |
 
-### A.4 v0.9 → v0.10
+### A.5 v0.9 → v0.10
 
 本轮做的是**题目获取流水线（T-013）**：把「从权威开源项目拿到可引用的素材 → 规范化 → 切分 → 出草稿」做成一条可重复运行、与业务解耦、全程有结构化日志的流水线。目标是让扩题库不再依赖手抄素材。
 
@@ -862,7 +917,7 @@ v0.3 起，**题库数据与用户数据分离**：题库在构建期固化为�
 | **产物不入库** | `.gitignore` 补 `content/raw`、`corpus`、`chunks`、`logs`、`reports`（都可由 `content/sources/` 或权威源重建） |
 | **实测证据** | `node tools/pipeline/run.mjs --all --limit 2 --source owasp-llm-top10`：`docs.fetched=2`、`chunks.total=12`、`drafts.total=1`、`corpus.nonverbatim=0`，warn/error 均为 0；草稿出处（url / title / snippet）与原材料逐字一致 |
 
-### A.5 v0.8 → v0.9
+### A.6 v0.8 → v0.9
 
 本轮把「0.3 进度表里剩下的待办」全部做掉（除题库扩容，按用户要求暂缓），并把题库改为可流水线生产的 JSON 源数据。
 
@@ -881,7 +936,7 @@ v0.3 起，**题库数据与用户数据分离**：题库在构建期固化为�
 | **仓库整理** | 根目录 4 个调研文件移入 `docs/research/`；主文档版本与引用路径同步 |
 | 本轮提交 | 拆成 9 个提交（每 800 行内：143 / 655 / 290 / 366 / 374 / 45 / 249 / 162 / 218 …），全部带任务号 |
 
-### A.6 v0.7 → v0.8
+### A.7 v0.7 → v0.8
 
 本轮为**工程化建设**：给仓库建立开发约束（agent harness），并把最臃肿的文件按分层规则拆开。
 
@@ -899,7 +954,7 @@ v0.3 起，**题库数据与用户数据分离**：题库在构建期固化为�
 | 文档同步 | 0.3 进度表、0.4 文件地图、0.6 技术债、0.7 下一步 |
 
 首次克隆后需启用钩子：`git config core.hooksPath .githooks`
-### A.7 v0.6 → v0.7
+### A.8 v0.6 → v0.7
 
 本轮为**工程化改动**：把代码纳入版本控制并推送到远程仓库。
 
@@ -911,7 +966,7 @@ v0.3 起，**题库数据与用户数据分离**：题库在构建期固化为�
 | 文档状态更新 | 0.3 进度表、0.4 注意、0.6 技术债、0.7 下一步、README 均改为「已有 git 仓库」 |
 | **未包含** | `cloudbase-418.md`（根目录调研残留）仍在，但已不属于代码；未做测试/CI |
 
-### A.8 v0.5 → v0.6
+### A.9 v0.5 → v0.6
 
 本轮**有代码改动**，并同步更新文档。
 
@@ -925,7 +980,7 @@ v0.3 起，**题库数据与用户数据分离**：题库在构建期固化为�
 | **标注线上待重新部署** | `dist` 哈希已变，线上仍是旧版；已在 0.3、0.7、10.5 三处标出 |
 | 验证方式 | `npm run build` 通过；用内置浏览器跑了真实交互：片段渲染 ✅、反馈写入 ✅、刷新后计数仍在 ✅ |
 
-### A.9 v0.4 → v0.5
+### A.10 v0.4 → v0.5
 
 本轮**未改动任何代码**，只做文档纠偏与整理。
 
@@ -942,7 +997,7 @@ v0.3 起，**题库数据与用户数据分离**：题库在构建期固化为�
 | 里程碑标注实际达成 | 第 11 章 W1 标注「200 题 + 出题脚本」实际未完成 |
 | 待确认问题标注已决 | 第 13 章 Q7/Q9 注明已由路线决策回答 |
 
-### A.10 v0.3 → v0.4
+### A.11 v0.3 → v0.4
 
 | 变更 | 说明 |
 | --- | --- |
@@ -955,7 +1010,7 @@ v0.3 起，**题库数据与用户数据分离**：题库在构建期固化为�
 | 里程碑更新 | W4 改为部署到 CloudBase + 手机实测 + 按结果决定是否备案 |
 | 风险表更新 | 删除「pages.dev 不可达」「CloudBase 6 个月后收费」两条，新增默认域名中间页、体验版额度与有效期两条 |
 
-### A.11 v0.2 → v0.3
+### A.12 v0.2 → v0.3
 
 | 变更 | 说明 |
 | --- | --- |
@@ -972,7 +1027,7 @@ v0.3 起，**题库数据与用户数据分离**：题库在构建期固化为�
 | 风险表 | 新增 4 条部署相关风险（国内不可达、CloudBase 收费、本地数据丢失、无账号无法同步） |
 | 待确认问题 | 新增 2 条（是否接受无账号、手机运营商） |
 
-### A.12 v0.1 → v0.2
+### A.13 v0.1 → v0.2
 
 | 变更 | 说明 |
 | --- | --- |
