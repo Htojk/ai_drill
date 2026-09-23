@@ -10,6 +10,18 @@ cd app && npm install          # 首次
 npm run dev                    # 本地开发
 ```
 
+前端之外的**后端**（HTTP 云函数 + PostgreSQL，v0.14 起）不参与 `npm run dev`：
+
+```bash
+node tools/backend.mjs secret     # 生成会话签名密钥（写 .secrets/backend.env，已 gitignore）
+node tools/backend.mjs migrate    # 建表（幂等）
+node tools/backend.mjs deploy     # 生成 cloudbaserc.local.json 并部署 api 函数
+node tools/backend.mjs smoke      # 线上冒烟
+node tools/backend.mjs status     # 函数与静态托管状态
+```
+
+⚠️ **不要擅自部署**：`deploy` 会改动线上环境，先问用户。改后端的约定见第 9 节。
+
 一次标准开发循环：
 
 ```bash
@@ -34,6 +46,7 @@ node tools/finish-task.mjs --task T-00N \
 | 类型 | `app/src/types.ts` | 0 | 无 |
 | 数据 | `app/src/data/**` | 1 | types |
 | 逻辑 | `app/src/lib/**` | 2 | types、data |
+| 钩子 | `app/src/hooks/**` | 2.5 | types、data、lib（只能被 pages / 入口依赖） |
 | 页面 | `app/src/pages/**` | 3 | types、data、lib |
 | 入口 | `app/src/App.tsx`、`main.tsx` | 4 | 全部 |
 
@@ -64,6 +77,13 @@ node tools/finish-task.mjs --task T-00N \
 | 改掌握度统计 | `lib/stats.ts` | ~48 行 |
 | 改答题交互 | `pages/Quiz.tsx` | ~200 行 |
 | 改数据结构 | `types.ts`（**全仓都会受影响，改前先想清楚**） | ~76 行 |
+| 改后端接口 / 路由 | `cloud/functions/api/index.mjs` + `src/router.mjs` + `src/routes/*`（一个 endpoint 一个文件） | 各 ≤ 150 行 |
+| 改账号 / 口令 / 令牌 | `cloud/functions/api/src/core/`（`password.mjs` / `token.mjs`） | 各 ≤ 120 行 |
+| 改数据库读写 | `cloud/functions/api/src/repo/` | 各 ≤ 100 行 |
+| 改前端 HTTP 调用 | `app/src/lib/api.ts`（错误码翻译在 `lib/account.ts`） | 各 ≤ 120 行 |
+| 改会话存储 | `app/src/lib/session.ts` | ~50 行 |
+| 改同步策略（合并 / 防抖） | `app/src/lib/merge.ts` + `lib/sync.ts` | 各 ≤ 150 行 |
+| 改每日提醒 / ICS | `app/src/lib/reminder.ts` + `pages/ReminderCard.tsx` | 各 ≤ 210 行 |
 
 ### 校验
 
@@ -120,6 +140,14 @@ node tools/test-related.mjs --all    # 全量：仅发布前或大改动时偶�
 
 选测逻辑：从测试文件出发求传递依赖闭包，只要闭包里出现本次改动的文件就选中它。题库 JSON 也算改动源，改了题会选中 `all.test.ts`。
 
+云函数是另一套运行器（`node --test`，不是 vitest），改动 `cloud/` 时只跑这一组：
+
+```bash
+node --test "cloud/functions/api/test/*.test.mjs"
+```
+
+> Windows 上 `node --test <目录>` 不生效，必须用上面的 glob 写法。
+
 > v0.11 起 `pre-commit` 会自动跑一次 `test-related.mjs`：跑相关的、不跑全量。
 > 提交被测试拦下时**不要去 `--no-verify`**，先修好测试。
 
@@ -172,6 +200,9 @@ node tools/finish-task.mjs --task T-003 --message "feat(scope): 说明" --eviden
 - 不要把题目写进 `data/questions/index.ts`（那是组装入口），新增题一律加到对应分类的 `.json`。
 - 不要引入重量级依赖（UI 框架、状态库、jsdom 等）而不先说明理由。
 - 不要提交 `app/dist/`、`node_modules/`（已在 `.gitignore`）。
+- **不要擅自部署**（`tools/backend.mjs deploy`、`tcb hosting deploy` 都算）——先问用户。
+- 不要把密钥、数据库连接串写进代码或 `cloudbaserc.json`；一律走 `.secrets/` 与 `cloudbaserc.local.json`（均已 gitignore）。
+- 不要在 `src/repo/` 里直连数据库或硬编码 SQL 客户端——它接收注入的客户端，这样才能离线测。
 
 ---
 
@@ -187,9 +218,10 @@ docs/research/                调研笔记（竞品、小程序、CloudBase 风�
 tools/                        约束与流程脚本
   plan.mjs                    计划增删改 + 自动归档
   check-commit-size.mjs       提交行数门禁
-  check-layers.mjs            分层方向 + 文件体积门禁
+  check-layers.mjs            分层方向 + 文件体积门禁（含 cloud/ 的体积预算）
   test-related.mjs            只跑相关测试
   finish-task.mjs             收尾：校验 + 测试 + 计划 + 提交
+  backend.mjs                 后端运维：secret / migrate / deploy / smoke / status
   gen-icons.mjs               生成 PWA / iOS 的 PNG 图标
   gen-questions.mjs           出题流水线：--check 校验题库 / --draft 生成草稿 / --merge 合并
   question-schema.mjs         题目契约（pipeline 与 gen-questions 共用的**唯一**契约）
@@ -217,10 +249,36 @@ app/src/
   data/questions/<分类>.json   分类题库源数据（加题只动这里）
   lib/                         纯逻辑，可测（storage / task / stats / categories / crypto /
                                recommend / ebbinghaus / mastery / grading / agent / agent-store /
-                               question-kind / ...）
+                               question-kind / merge / api / session / account / sync / reminder /
+                               ...）
+  hooks/use-sync.ts            同步层接到 React（合并落地后重读本机数据）
   pages/                       页面渲染
   App.tsx                      路由与状态编排
+cloud/functions/api/           后端 HTTP 云函数（Nodejs20.19）
+  index.mjs                    入口：事件适配（gateway / framework / direct）
+  src/app.mjs                  装配：日志 → 路由 → 兜底错误
+  src/router.mjs               路径匹配（按后缀，容忍 /api 前缀差异）
+  src/routes/                  一个 endpoint 一个文件（auth-routes / progress-routes / health-routes）
+  src/repo/                    PostgREST 读写（唯一接触数据库的地方；客户端可注入，测试不连库）
+  src/core/                    口令 scrypt、自签令牌、结构化日志、入参校验、错误类型、配置
+  src/http/                    请求解析与响应封装（事件形态差异都收在这两个文件里）
+  schema.sql                   建表 + revoke（anon / authenticated 一律不给权限）
+  test/                        node --test 用例（含 fakes.mjs 假 repo / 假事件）
+cloudbaserc.json               函数声明；密钥走 cloudbaserc.local.json（已 gitignore）
 ```
+
+### 后端改动流程（v0.14）
+
+```bash
+node tools/backend.mjs secret                # 只在首次/轮换密钥时跑
+node tools/backend.mjs migrate               # 改了 schema.sql 就要跑（幂等）
+node --test "cloud/functions/api/test/*.test.mjs"   # 只跑云函数用例
+node tools/backend.mjs deploy                # 部署（先问用户！）
+node tools/backend.mjs smoke                 # 部署后冒烟
+```
+
+- 云函数的依赖在 `cloud/functions/api/package.json`，由 `installDependency: true` 在部署时安装。
+- **本地跑云函数测试不需要网络也不需要数据库**：repo 层是注入式的，用假客户端验证 SQL 调用顺序与参数。
 
 ### 题库改动流程
 
@@ -315,3 +373,37 @@ node tools/extract-notes.mjs --repo <owner/repo> --cache-only    # 只拉仓库�
 （v0.2 · 2026-09-22 更新：新增题目获取流水线）
 （v0.3 · 2026-09-22 更新：新增笔记型仓库抽题流水线；补版权口径）
 （v0.4 · 2026-09-22 更新：补第 4 节的评分阈值标定说明 —— 阈值必须按真实题库校准）
+
+---
+
+## 9. 后端与同步（v0.14 新增）
+
+**背景**：v0.3 的「纯静态、不做账号」在 v0.14 被新需求推翻（进度要按账号隔离、要持久化）。后端是**最小引入**：只做账号与进度同步，不碰题库，也不替用户保管模型 key。完整背景见产品文档第 10.12 节。
+
+### 三条不可越界的边界
+
+1. **前端不碰数据库**：浏览器只认云函数 base，请求走 `app/src/lib/api.ts`。数据库账号只存在于云函数环境变量里（`core/config.mjs` 读），**不要**把任何数据库凭据写进前端或仓库。
+2. **云函数不认识题库**：后端只搬「用户进度整包」（`ProgressPayload`），字段名与 `app/src/lib/storage.ts` 的本地 key 一一对应。加题型、加题库都不该改后端；反过来，后端加字段时必须同步 `types.ts` 与 `lib/merge.ts`。
+3. **密钥与本地配置不入库**：`.secrets/`、`cloudbaserc.local.json` 已在 `.gitignore`；`cloudbaserc.json` 里只放非敏感声明（`DRILL_ENV`）。新增任何密钥都要走同样的路。
+
+### 改后端时的手感
+
+| 想做什么 | 动哪里 | 注意 |
+| --- | --- | --- |
+| 加一个接口 | `src/routes/<域>-routes.mjs` + 在 `src/router.mjs` 注册 | 路由按**后缀**匹配，所以要容忍 `/api` 前缀的有无 |
+| 改口令 / 会话 | `src/core/password.mjs` / `src/core/token.mjs` | 口令是 scrypt(N=16384)；令牌是自签 HS256，**不是**平台登录态（平台不允许用户名+密码自助注册） |
+| 改表结构 | `schema.sql` → `node tools/backend.mjs migrate` | 迁移是幂等的；新表继续 `revoke all from anon, authenticated` |
+| 改 SQL 读写 | `src/repo/*.mjs` | repo 收「注入的客户端」，测试用 `test/helpers/fakes.mjs` 断言调用顺序，**不要**在 repo 里直连 |
+| 改同步策略 | `app/src/lib/merge.ts`（规则）+ `lib/sync.ts`（时机） | 合并规则要有用例；409 的语义是「带服务端最新值，让前端合并后重投一次」 |
+
+### 收尾清单（改后端时）
+
+```bash
+node --test "cloud/functions/api/test/*.test.mjs"   # 云函数用例（不需要网络/数据库）
+node tools/check-layers.mjs                          # 云函数单文件 ≤250 行
+node tools/test-related.mjs                          # 若同时改了 app/src，会再挑前端相关用例
+```
+
+**不要擅自 `deploy`**：部署会改动线上环境，必须先问用户；部署后跑 `smoke` 确认 `/health`。
+
+（v0.5 · 2026-09-23 更新：新增第 9 节后端与同步约定；第 1 节补 hooks 层与 cloud/ 目录；第 4 节补云函数测试命令）

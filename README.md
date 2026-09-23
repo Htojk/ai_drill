@@ -10,19 +10,21 @@
 >
 > **改代码前，请先读 [`AGENTS.md`](./AGENTS.md)**：里面是分层规则、提交流程和四道门禁。
 
-## 当前状态（2026-09-22）
+## 当前状态（2026-09-23）
 
-- 路线已定：**纯静态 Web PWA**（Vite + React + TS）+ 腾讯云 CloudBase 静态托管，零服务器、零数据库、¥0。
+- 路线已定：**Web PWA**（Vite + React + TS）+ 腾讯云 CloudBase 静态托管；**v0.14 起另加最小后端**（CloudBase HTTP 云函数 + PostgreSQL），只做账号与进度同步，仍是 ¥0（体验版额度内）。
 - 已上线：<https://test-d2gk9bnf2dc862288-1304936445.tcloudbaseapp.com>
 - 功能闭环已完成：今日 10 题 / 分层解析 / 错题复习 / 分类专项 / 收藏 / 断点续答 / 统计与 streak / 加密码备份 / PWA（含 iOS 图标）。
+- **账号与云同步（v0.14）**：注册登录 + 自签会话令牌，进度与错题**按账号隔离**；本地优先（离线照常答题），联网后 4 秒防抖上传，冲突走乐观并发（409 合并重投）。⚠️ **代码与测试已就绪，但尚未部署**——线上目前仍没有登录与同步。
+- **每日定时提醒（v0.14）**：导出 `.ics` 交给手机自带日历按天响铃（等于真闹钟），零后端、零推送；入口在「我的」页。
 - **题型已扩到判断 + 简答**：简答支持用户输入，批阅走「模型（用户在设置里自带 API key，只存本机）+ 本地要点覆盖率」双路，失败自动降级；**查看答案即判为未掌握**。
 - **复习节奏改为艾宾浩斯遗忘曲线**：间隔 1/2/4/7/15/30/60 天 × 熟练度倍率，按记忆保持率 `R = e^(-Δt/S)` 排序；每题可自评「已掌握 / 模糊 / 未掌握」。
-- 唯一卡住的一步：**手机 4G 真实网络实测**（清单见产品说明 10.7）；线上已是最新产物（v0.12 + T-025 修复），可直接测。
+- 待办两件：① **部署后端**（需用户点头，`node tools/backend.mjs deploy`）；② **手机 4G 真实网络实测**（清单见产品说明 10.7）。
 - **题库已扩到 315 题**：RAG / Agent / 本体与知识图谱各 100 题（每类 20 单选 + 20 判断 + 60 简答），其余 5 个分类各 3 题；其中工程判断题（`isPractice`）99 道。
 - **线上已同步**（2026-09-22 复核）：CloudBase 静态托管 12 个文件与本地 `dist` 逐字节一致；顺带清掉了历史遗留的 5 个旧 JS/CSS 产物。
 - **题目获取流水线已跑通**（`tools/pipeline/`）：从 6 个权威开源项目（OpenAI Cookbook / DAIR.AI / 微软 / HuggingFace / OWASP / arXiv）抓素材 → 规范化 → 切块 → 出草稿，全程结构化日志与运行报告；与业务解耦，只有 `--merge` 才会进题库。
 - **面试笔记抽题已跑通**（`tools/extract-notes.mjs`）：解析 `wdndev/llm_interview_note` 的「标题即问题、正文即答案」结构，抽出 203 道简答草稿（已过题库契约校验，**尚未入库**——该仓库无 LICENSE，待确认使用口径，见 `AGENTS.md` 第 8 节）。
-- 质量基线：**425 个 vitest 用例**（11 个文件）+ 127 个流水线用例；GitHub Actions CI（题库校验 + 分层 + 构建 + 全量测试）。
+- 质量基线：**496 个 vitest 用例**（17 个文件）+ **35 个云函数用例**（`node --test`）+ 127 个流水线用例；GitHub Actions CI（题库校验 + 分层 + 构建 + 全量测试）。
 
 ## 跑起来
 
@@ -34,11 +36,20 @@ npm run build      # 构建（含 tsc --noEmit 类型检查）
 npm run preview    # 本地预览构建产物
 ```
 
+后端（不参与 `npm run dev`；密钥只在本地生成，不入库）：
+
+```bash
+node tools/backend.mjs secret     # 生成会话签名密钥
+node tools/backend.mjs migrate    # 建表（幂等）
+node tools/backend.mjs deploy     # 部署 api 函数（⚠️ 先问用户）
+node tools/backend.mjs status     # 看函数与静态托管状态
+```
+
 ## 开发约束（改代码前必读）
 
 详见 [`AGENTS.md`](./AGENTS.md)。摘要：
 
-- **分层**：依赖只能向下（`types → data → lib → pages → entry`）；单文件超 200 行警告、超 250 行拦截。
+- **分层**：依赖只能向下（`types → data → lib / hooks → pages → entry`）；单文件超 200 行警告、超 250 行拦截（`cloud/` 同样受体积预算约束）。
 - **计划**：任务写在 `docs/PLAN.md`，用 `node tools/plan.mjs` 维护；已完成只留 5 条，更早的自动归档。
 - **提交**：单次提交不超过 800 行，超了要拆；`.githooks/pre-commit` 会自动拦。
 - **测试**：每完成一个功能只跑相关用例（`node tools/test-related.mjs`），不跑全量。
@@ -46,6 +57,12 @@ npm run preview    # 本地预览构建产物
 
 ```bash
 node tools/finish-task.mjs --task T-00N --message "feat(scope): 说明" --evidence "验证方式"
+```
+
+改了 `cloud/` 下的后端代码时，只跑云函数那一组：
+
+```bash
+node --test "cloud/functions/api/test/*.test.mjs"
 ```
 
 首次克隆后启用钩子：
@@ -88,6 +105,10 @@ node tools/gen-questions.mjs --merge content/drafts/oss-<runId>.json RAG   # 人
 | `docs/PLAN.md` | 任务计划（脚本维护） |
 | `tools/` | 约束脚本（plan / check-commit-size / check-layers / test-related / finish-task）+ 内容脚本（gen-icons / gen-questions / question-schema / llm / extract-notes） |
 | `app/src/lib/` | 纯逻辑层：推荐（`recommend`）、艾宾浩斯（`ebbinghaus`）、熟练度（`mastery`）、简答评分（`grading`）、模型批阅（`agent`）等 |
+| `app/src/lib/api.ts` `session.ts` `account.ts` `sync.ts` | 后端客户端、会话存储、账号编排、本地优先同步（v0.14） |
+| `app/src/lib/reminder.ts` | 每日提醒的 `.ics` 生成（纯函数） |
+| `cloud/functions/api/` | **后端云函数**（v0.14）：账号与进度同步；`schema.sql` 建表；不碰题库，前端不持有数据库凭据 |
+| `tools/backend.mjs` | 后端运维 CLI：secret / migrate / deploy / smoke / status |
 | `tools/pipeline/` | 内容流水线：`run.mjs` 抓权威源 → 规范化 → 切块 → 出草稿；`notes.mjs` 解析笔记型仓库。与业务解耦，只产出草稿 |
 | `content/sources/` | 人工出题素材；流水线产物（raw / corpus / chunks / drafts / logs / reports）已 gitignore |
 | `app/` | 前端源码（Vite + React + TS） |
@@ -97,4 +118,5 @@ node tools/gen-questions.mjs --merge content/drafts/oss-<runId>.json RAG   # 人
 ## 注意
 
 - 代码托管：`https://github.com/Htojk/ai_drill.git`（分支 `main`）。`node_modules` 与 `app/dist` 已被 `.gitignore` 忽略，克隆后需先 `npm install` 再 `npm run build`。
-- 「明确不做」的清单见产品说明 0.1（微信小程序、原生 App、服务器、账号体系、付费体系）。
+- 「明确不做」的清单见产品说明 0.1（微信小程序、原生 App、付费体系、面试题库）。
+  **注意**：「服务器」与「账号体系」原先在这份清单里，**v0.14 已被新需求推翻**（自己用、不碰备案）；决策反转记录见产品说明 10.12 与附录 A.1。
