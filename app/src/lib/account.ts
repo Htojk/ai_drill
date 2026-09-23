@@ -1,5 +1,6 @@
 import { ApiError, authApi } from "./api";
 import * as session from "./session";
+import { clearSyncState } from "./sync";
 import type { ApiUser } from "../types";
 
 /** 账号编排层：把 API 调用 + 本地会话存取绑成一步，页面只调这里。 */
@@ -18,6 +19,8 @@ export async function login(username: string, password: string): Promise<ApiUser
 
 export function logout(): void {
   session.clearSession();
+  // 顺手清掉同步游标：换个账号登录时不能拿着上一个账号的 revision 去推数据
+  clearSyncState();
 }
 
 /**

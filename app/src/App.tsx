@@ -1,10 +1,12 @@
 import { useCallback, useMemo, useState } from "react";
+import { useSyncBridge } from "./hooks/use-sync";
 import { QUESTIONS } from "./data/questions";
 import { buildDailyTask, DAILY_SIZE } from "./lib/recommend";
 import { applyAnswer } from "./lib/ebbinghaus";
 import { inferMastery, resolveMastery } from "./lib/mastery";
 import { firstPendingIndex, markCompleted, pendingCount } from "./lib/task";
 import * as store from "./lib/storage";
+import * as sync from "./lib/sync";
 import type { AnswerMode, AnswerRecord, DailyTask, MasteryLevel, MasteryState, Profile, ReviewState } from "./types";
 import Today from "./pages/Today";
 import Quiz from "./pages/Quiz";
@@ -58,6 +60,18 @@ export default function App() {
     });
     return [...last.values()].filter((r) => !r.isCorrect).map((r) => r.questionId);
   }, [records]);
+
+  /** 远端进度合并进本地后，统一重读一遍本机数据（同步层只管存储，不碰 React 状态）。 */
+  const reloadFromStore = useCallback(() => {
+    setProfile(store.loadProfile());
+    setRecords(store.loadRecords());
+    setReviews(store.loadReviews());
+    setBookmarks(store.loadBookmarks());
+    setMastery(store.loadMastery());
+    setTask((prev) => store.loadTask(today) ?? prev);
+  }, [today]);
+
+  useSyncBridge(reloadFromStore);
 
   const startSession = useCallback((ids: string[], mode: AnswerMode, startIndex = 0) => {
     setSession({ ids, mode, results: [], startIndex });
@@ -129,6 +143,9 @@ export default function App() {
         if (next !== prev) store.saveTask(next);
         return next;
       });
+
+      // 进度变了就安排一次后台上传（防抖合并；未登录时是空操作）
+      sync.scheduleUpload();
     },
     [reviews, today, writeMastery]
   );

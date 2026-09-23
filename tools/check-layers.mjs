@@ -22,6 +22,7 @@ const LAYERS = [
   { name: "types", rank: 0, match: (p) => p === "types.ts" },
   { name: "data", rank: 1, match: (p) => p.startsWith("data/") },
   { name: "lib", rank: 2, match: (p) => p.startsWith("lib/") },
+  { name: "hooks", rank: 2.5, match: (p) => p.startsWith("hooks/") },
   { name: "pages", rank: 3, match: (p) => p.startsWith("pages/") },
   { name: "entry", rank: 4, match: (p) => p === "App.tsx" || p === "main.tsx" }
 ];
