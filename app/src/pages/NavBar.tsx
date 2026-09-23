@@ -1,10 +1,11 @@
-export type Route = "today" | "quiz" | "result" | "wrong" | "categories" | "stats";
+export type Route = "today" | "quiz" | "result" | "wrong" | "categories" | "stats" | "account";
 
 const ITEMS: { route: Route; icon: string; label: string }[] = [
   { route: "today", icon: "📅", label: "今日" },
   { route: "wrong", icon: "📕", label: "复习" },
   { route: "categories", icon: "📚", label: "分类" },
-  { route: "stats", icon: "📊", label: "我的数据" }
+  { route: "stats", icon: "📊", label: "数据" },
+  { route: "account", icon: "👤", label: "我的" }
 ];
 
 interface Props {

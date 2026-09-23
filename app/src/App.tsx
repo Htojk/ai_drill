@@ -12,6 +12,7 @@ import Result from "./pages/Result";
 import WrongBook from "./pages/WrongBook";
 import Stats from "./pages/Stats";
 import Categories from "./pages/Categories";
+import Account from "./pages/Account";
 import NavBar from "./pages/NavBar";
 import type { Route } from "./pages/NavBar";
 
@@ -192,6 +193,8 @@ export default function App() {
       )}
 
       {route === "stats" && <Stats profile={profile} records={records} onProfileChange={setProfile} />}
+
+      {route === "account" && <Account />}
 
       <NavBar route={route} onNavigate={setRoute} />
     </div>
