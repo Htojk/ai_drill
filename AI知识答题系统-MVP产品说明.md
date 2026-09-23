@@ -1,6 +1,6 @@
 - 版本：v0.14（MVP）
 - 日期：2026-09-23
-- 状态：**功能闭环 + 后端（账号/同步）+ 每日提醒的代码均已完成**；题库 315 题 + 203 道待确认版权的简答草稿；⚠️ **后端尚未部署**，线上跑的还是纯静态旧版（v0.9 产物）；**手机实测仍未做**
+- 状态：**功能闭环 + 后端（账号/同步）+ 每日提醒的代码均已完成**；题库 315 题 + 203 道待确认版权的简答草稿；✅ **后端已于 2026-09-23 部署，全链路冒烟通过**（健康 → 注册/登录 → `/auth/me` → 进度读写）；⚠️ 前端静态产物还没重新上传，线上页面仍是旧版；**手机实测仍未做**
 - 本版变更：一次**架构决策反转**（T-026~T-031）。用户明确「自己用、不碰备案」，于是把 v0.3 的「纯静态、不做账号、不买服务器」推翻：新增 **CloudBase HTTP 云函数 + PostgreSQL** 做注册登录与按账号隔离的进度同步（本地优先，离线照常答题）；另新增**每日提醒**，做法是导出 `.ics` 交给手机自带日历按天响铃（零后端、零推送）。反转的理由、边界与遗留风险见 10.12 / 10.13，完整记录见附录 A.1
 
 ---
@@ -12,13 +12,13 @@
 ### 0.0 接手须知（30 秒版）
 
 1. **目标**：给 AI 从业者一个「每天 10 题」的工程知识巩固工具，靠「每日任务感 + streak + 长期掌握度画像」立足（见 0.1）。
-2. **当前进度**：功能闭环已完成（0.3），题库 315 题；v0.14 新增**后端（注册登录 + 跨设备同步）**与**每日提醒**，代码与测试均已就绪。⚠️ **后端代码还没部署，线上仍是 v0.9 的纯静态产物**——题库、批阅、账号、提醒的改动都还没上线。
+2. **当前进度**：功能闭环已完成（0.3），题库 315 题；v0.14 的**后端（注册登录 + 跨设备同步）**与**每日提醒**代码、测试均已就绪，**后端已部署并冒烟通过**（T-033，2026-09-23）。⚠️ 但**前端静态产物还没重新构建上传**，线上页面仍是旧版，账号 / 提醒入口看不到（`tcb hosting deploy` 同样**先问用户**）。
 3. **怎么改代码**：先读 `AGENTS.md`（分层 / 计划 / 800 行提交 / 只跑相关测试 / 完成即提交），任务清单在 `docs/PLAN.md`。
 4. **加题**：`tools/gen-questions.mjs --draft` 出草稿 → 人工审 → `--merge` 合并（见 0.5）。
    合并会重排 id，**必须同步 `app/src/data/questions/all.test.ts` 里 `EXPECTED_FILES` 的题量计数**（v0.11 起该文件锁的是「每文件题量 + 分块升序」，不再逐条列 id）。
    合并逻辑已按 id 升序落盘，不会因为填补空号而打乱顺序。
    （v0.10 起可先用 `node tools/pipeline/run.mjs --all` 从 6 个权威开源项目自动抓素材出草稿，见 0.5）
-5. **改后端 / 部署后端**：后端全在 `cloud/functions/api/`（HTTP 云函数 + CloudBase PostgreSQL），本机用 `node tools/backend.mjs <secret|migrate|deploy|smoke|status>` 操作；**密钥不入库**（生成到已 gitignore 的 `cloudbaserc.local.json` / `.secrets/`）。改前先读 `AGENTS.md` 第 9 节。
+5. **改后端 / 部署后端**：后端全在 `cloud/functions/api/`（事件云函数 + HTTP 访问服务 + CloudBase PostgreSQL），本机用 `node tools/backend.mjs <secret|apikey|migrate|deploy|smoke|status>` 操作；**密钥不入库**（生成到已 gitignore 的 `cloudbaserc.local.json` / `.secrets/`）。改前先读 `AGENTS.md` 第 9 节——尤其是「为什么要 API Key」那一节。
 6. **标准收尾**：`node tools/finish-task.mjs --task T-0NN --message "feat(scope): 说明" --evidence "验证方式"`。
 
 ### 0.1 项目是什么
@@ -99,9 +99,9 @@
 | `docs/research/` | 调研笔记：竞品（2 篇）、小程序否决、CloudBase 默认域名风控（v0.9 从根目录移入） |
 | `tools/` | 约束脚本 5 个（plan / check-commit-size / check-layers / test-related / finish-task）+ 内容脚本与共享模块（gen-icons / gen-questions / question-schema / llm / **extract-notes（v0.12）**） |
 | `cloud/functions/api/` | **后端云函数（v0.14）**：`index.mjs`（入口 + 事件适配 + 路由）→ `routes/`（endpoint）→ `repo/`（PostgREST 读写）→ `core/`（口令 scrypt、自签令牌、日志、校验）。分层靠目录约定，单文件 ≤250 行 |
-| `cloud/functions/api/schema.sql` | 后端表结构：`drill_accounts` / `drill_progress`；**刻意不授权给 anon / authenticated**，只有 `service_role` 与数据库内部角色能读写 |
-| `tools/backend.mjs` | 后端运维 CLI：`secret`（生成密钥）→ `migrate`（建表）→ `deploy`（部署函数）→ `smoke`（线上冒烟）→ `status`（函数与静态托管状态） |
-| `cloudbaserc.json` | CloudBase 函数声明（函数名 `api`、`type: HTTP`、`gatewayPath: /api`、Nodejs20.19）；密钥走 `cloudbaserc.local.json`（已 gitignore） |
+| `cloud/functions/api/schema.sql` | 后端表结构：`drill_accounts` / `drill_progress`；**刻意不授权给 anon / authenticated**；云函数要带 `DRILL_API_KEY`（JWT 里 `role=service_role`）才能读写 |
+| `tools/backend.mjs` | 后端运维 CLI：`secret`（会话密钥）/ `apikey`（数据库 API Key）→ `migrate`（建表）→ `deploy`（部署函数）→ `smoke`（真实 HTTP 全链路冒烟）→ `status` |
+| `cloudbaserc.json` | CloudBase 函数声明（函数名 `api`、`type: Event`、Nodejs20.19）；HTTP 入口靠 `fn deploy --path /api` 的访问服务挂出来；密钥走 `cloudbaserc.local.json`（已 gitignore） |
 | `content/drafts/`（已 gitignore） | 出题草稿；v0.11 的 315 题就是分批写草稿 → `--merge` 入库的 |
 | `tools/pipeline/` | **内容流水线**：`run.mjs` 抓权威源（v0.10）→ `normalize.mjs` / `chunk.mjs` / `stages.mjs`；**`notes.mjs` 解析笔记型仓库（v0.12，纯函数，配套 34 个用例）**。各文件 ≤ 320 行 |
 | `content/`（`raw` / `corpus` / `chunks` / `logs` / `reports` 子目录） | 流水线中间产物（可重建，已 gitignore）：原始素材 → CorpusDoc → 切块 → JSONL 日志 → 运行报告 |
@@ -163,7 +163,7 @@
 
 | 优先级 | 问题 | 说明 |
 | --- | --- | --- |
-| P0 | **后端尚未部署** | 代码与测试已就绪，但 `node tools/backend.mjs deploy` 还没跑：线上没有注册登录，也没有跨设备同步（见 10.12）。**部署前需用户确认** |
+| P0 | **前端静态产物未更新** | 后端已部署并冒烟通过，但 `app/dist` 还没重新构建上传：线上页面仍是旧版，账号 / 提醒入口看不到（见 0.7 第 1 步）。**部署前需用户确认** |
 | P0 | 手机实测尚未执行 | 第 10.7 节清单，是决定「要不要备案」的唯一依据。用户已表态「自己用」，所以默认接受默认域名的中间页 |
 | ~~P0~~ | ~~线上产物落后于本地~~ | ✅ **已解决（v0.13）**：线上 12 个文件与本地 `dist` 逐字节一致 |
 | P1 | 题库只做了 3 个重点领域 | RAG / Agent / 本体各 100 题，其余 5 个分类仍是占位级的 3 题（用户要求聚焦这三块） |
@@ -186,8 +186,8 @@
 
 ### 0.7 建议的下一步（按顺序）
 
-1. **部署后端并实测账号链路**（第 10.12 节）：`node tools/backend.mjs deploy` → `smoke` → 注册两个账号，确认进度互相看不见、换设备能同步回来。**这一步要用户点头才做。**
-2. **手机实测**（第 10.7 节清单）：先用手机扫 `手机访问二维码.png` 过一遍静态功能；后端上线后再补测登录与同步。
+1. **把前端静态产物重新构建并上传**（第 10.3 节）：`cd app && npm run build` → `tcb hosting deploy "app/dist" / -e test-d2gk9bnf2dc862288`。后端的账号与同步已上线，但**线上页面还是旧版**，不部署这一步用户看不到登录与提醒入口。**这一步同样要用户点头。**
+2. **手机实测**（第 10.7 节清单）：先用手机扫 `手机访问二维码.png` 过一遍静态功能；后端已上线，可一并补测登录与跨设备同步。
 3. **决定 203 道社区笔记草稿的去留**（v0.12 新增）：三个选项——(a) 不入库，仅留本地草稿；(b) 先按「仅本地/小范围使用」入库；(c) 改写表述后入库并标注来源。**没有用户明确表态就不要 merge。**
 4. **验证 Agent 批阅**：在「设置」里填一个 OpenAI 兼容的 key，随便答一道简答题，确认模型批阅生效、断网/填错 key 时能降级到本地评分。
 5. 之后可选：其余 5 个分类补题、题目笔记、随机模考、练习模式的掌握度筛选、CI 覆盖率门槛、`App.tsx` / `Quiz.tsx` 拆分。
@@ -206,9 +206,10 @@ tcb hosting deploy "app/dist" / -e test-d2gk9bnf2dc862288
 
 # 后端（HTTP 云函数 + PostgreSQL；密钥不入库，全部生成到已 gitignore 的文件里）
 node tools/backend.mjs secret     # 生成会话签名密钥 → .secrets/backend.env
+node tools/backend.mjs apikey     # 生成数据库 API Key（service_role）→ 同一个文件
 node tools/backend.mjs migrate    # 建表 drill_accounts / drill_progress（幂等）
-node tools/backend.mjs deploy     # 生成 cloudbaserc.local.json 并部署 api 函数
-node tools/backend.mjs smoke      # 线上冒烟：/health 等
+node tools/backend.mjs deploy     # 生成 cloudbaserc.local.json（含两个密钥）并部署 api 函数
+node tools/backend.mjs smoke      # 线上冒烟：健康 → 注册/登录 → 进度读写（真实 HTTP）
 node tools/backend.mjs status     # 看函数与静态托管状态
 ```
 
@@ -388,7 +389,7 @@ node tools/backend.mjs status     # 看函数与静态托管状态
 
 | 编号 | 功能 | 优先级 | 进 MVP |
 | --- | --- | --- | --- |
-| E1 | 账号体系 | P1 | **是（v0.14 反转，T-026~T-030）**：注册登录 + 自签会话令牌；进度与错题按账号隔离；**代码完成但尚未部署**，见 10.12 |
+| E1 | 账号体系 | P1 | **是（v0.14 反转，T-026~T-030）**：注册登录 + 自签会话令牌；进度与错题按账号隔离；**后端已部署并冒烟通过（T-033）**，见 10.12 |
 | E2 | 响应式 Web，手机可用（PWA） | P0 | 是 |
 | E3 | 管理后台 | P1 | **否**（v0.3 定为本地脚本；v0.9 该脚本已就位：`tools/gen-questions.mjs`） |
 | E4 | 埋点与基础数据看板 | P1 | 否（本地统计足够） |
@@ -550,7 +551,7 @@ v0.3 起，**题库数据与用户数据分离**：题库在构建期固化为�
 > | `drill_accounts` | uid(uuid PK), username, username_key(unique), pwd_salt, pwd_hash, created_at, last_login_at | 账号；`username_key` 是大小写归一后的唯一键；口令只存 scrypt 摘要 |
 > | `drill_progress` | uid(PK, FK), payload(jsonb), revision(bigint), updated_at | 进度整包 = 上表的 JSON 形态；`revision` 用于乐观并发 |
 >
-> 两张表**不授权给 anon / authenticated**，只有云函数（service_role）能读写。**题库不入库**，仍是仓库里的 JSON。
+> 两张表**不授权给 anon / authenticated**；云函数要带 API Key（`DRILL_API_KEY`，其 JWT 的 `role=service_role`）才能读写——不带就退化成 anon，一碰库就 `permission denied`。**题库不入库**，仍是仓库里的 JSON。
 
 **题目 JSON 示例**
 
@@ -669,7 +670,7 @@ v0.3 起，**题库数据与用户数据分离**：题库在构建期固化为�
 | 样式 | 原生 CSS（当前，体积小） | MVP 不引入 Tailwind / UI 框架，避免额外依赖 |
 | PWA | `vite-plugin-pwa` | 生成 manifest + service worker，可加到主屏幕、可离线 |
 | 本地存储 | localStorage 封装（当前）→ 数据量上来后换 IndexedDB | 答题记录、错题本、掌握度、每日任务 |
-| 后端（v0.14） | CloudBase **HTTP 云函数** + **PostgreSQL**（`@cloudbase/node-sdk` 的 rdb → PostgREST） | 只承担账号与进度同步；service_role 只在云函数内使用 |
+| 后端（v0.14） | CloudBase **事件云函数 + HTTP 访问服务** + **PostgreSQL**（`@cloudbase/node-sdk` 的 rdb → PostgREST） | 只承担账号与进度同步；云函数用 API Key 拿 service_role，凭据只在函数环境变量里 |
 | 会话 | **自签 HMAC-SHA256 令牌**（`Authorization: Bearer`） | 平台不允许用户名密码自助注册，所以不走平台登录态 |
 | 题库 | 构建期常量（源数据 `app/src/data/questions/*.json`，由 `index.ts` 组装） | 现有 **315 题**：原始 JSON 约 487 KB（≈1.55 KB/题），构建后 JS **417.75 kB（gzip 187 kB）**；按此推算 500 题约 660 KB（gzip ≈290 KB）。PWA 预缓存 15 项 / 598 KiB。⚠️ 题库已是主包体积的主要来源，再扩量时考虑按分类懒加载或把题目挪出主 chunk |
 | 出题/审核工具 | 本地 Node 脚本 + LLM API | 只在开发机运行，不部署 |
@@ -710,7 +711,7 @@ v0.3 起，**题库数据与用户数据分离**：题库在构建期固化为�
 | 静态托管上传（**8 个文件**，状态 Online） | ✅ |
 | **手机 4G/5G 关代理实测** | ⏳ **待验证，见 10.7** |
 | v0.6 代码改动后重新部署 | ⚠️ **未执行**：本地 `dist` 已更新（新哈希），线上仍为 v0.5 产物 |
-| **后端函数 `api` 部署（v0.14）** | ⚠️ **未执行**：`cloudbaserc.json` / `schema.sql` / `tools/backend.mjs` 都已就绪，但 `deploy` 还没跑，线上没有账号与同步 |
+| **后端函数 `api` 部署（v0.14）** | ✅ **已执行（T-033，2026-09-23）**：函数按 Event 类型部署 + `--path /api` 挂 HTTP 访问服务；全链路冒烟通过（健康 / 注册登录 / 进度读写） |
 
 ### 10.6 ⚠️ 默认域名的硬限制（已查证，必须知道）
 
@@ -790,23 +791,24 @@ v0.3 起，**题库数据与用户数据分离**：题库在构建期固化为�
 
 ---
 
-### 10.12 后端：账号与同步（v0.14 新增；代码已就绪，**尚未部署**）
+### 10.12 后端：账号与同步（v0.14 新增；**已部署并冒烟通过**）
 
 **背景：这是一次决策反转。** v0.3 明确「不做账号、不买服务器」（见 4.6 的调整理由）；v0.14 的需求变成「进度按账号隔离 + 数据持久化」，纯本地 + 导出码不够用了，于是加了一个最小后端。**反转的是决策，不是当初的判断**——「单设备自用 → 纯静态够用」当时是对的，只是需求变了。
 
 #### 10.12.1 数据通路（前端不碰数据库）
 
 ```
-浏览器 --HTTP--> 云函数 /api/* --PostgREST--> PostgreSQL
-                （唯一持有 service_role 的地方）
+浏览器 --HTTP--> 云函数 /api/* --(API Key: service_role)--> PostgREST --> PostgreSQL
+                （唯一持有数据库凭据的地方）
 ```
 
 | 环节 | 说明 |
 | --- | --- |
-| 入口 | `https://test-d2gk9bnf2dc862288.service.tcloudbase.com/api`（`cloudbaserc.json` 里配 `gatewayPath: /api`） |
+| 入口 | `https://test-d2gk9bnf2dc862288.service.tcloudbase.com/api`。函数按 **Event** 类型部署，再用 `fn deploy --path /api` 挂上 **HTTP 访问服务**；事件形状正好是适配层的 gateway 分支 |
 | 云函数 | `cloud/functions/api/`，Nodejs20.19，入口 `index.main`；适配三类事件形态（gateway / framework / direct），本地直调与线上网关都能跑 |
 | 数据库 | CloudBase **PostgreSQL 模式**（`rdb({ database })` → `.from()`）。体验版**没有**文档型数据库，这是实测后的选型 |
 | 授权 | `drill_accounts` / `drill_progress` **不给 anon / authenticated 任何权限**（`revoke all`），只有 `service_role` 与数据库内部角色能读写 |
+| 凭据 | 云函数**必须**带 `DRILL_API_KEY`：`init({ env, accessKey })`。函数自身的 CAM 签名只会被判成 `anon`，一碰库就是 `permission denied for table`（T-033 踩坑，见 `AGENTS.md` 第 9 节） |
 
 #### 10.12.2 接口
 
@@ -828,9 +830,10 @@ v0.3 起，**题库数据与用户数据分离**：题库在构建期固化为�
 
 #### 10.12.4 运维命令与部署前置
 
-命令见 0.8。三个关键点：
+命令见 0.8。四个关键点：
 
-- **密钥不入库**：`tools/backend.mjs secret` 生成到 `.secrets/backend.env`，`deploy` 时写进已 gitignore 的 `cloudbaserc.local.json`。
+- **密钥不入库**：`tools/backend.mjs secret`（会话密钥）与 `apikey`（数据库 API Key）都生成到 `.secrets/backend.env`，`deploy` 时写进已 gitignore 的 `cloudbaserc.local.json` 并注入函数环境变量。
+- **冒烟要碰数据库**：`smoke` 走真实 HTTP 全链路（健康 → 注册/登录 → `/auth/me` → 进度读写），只打 `/health` 不碰库，正是上面那个 anon 坑能溜过去的空当。探针账号固定为 `drill_smoke`（口令存 `.secrets/`），不会每次冒烟都往账号表里堆新行。
 - **Windows 上 `tcb` 要用 node 拉起**：`execFileSync` 直接调 `tcb.cmd` 会失败，`tools/backend.mjs` 已改走 `node <cli>/bin/tcb`。
 - **部署前需用户确认**（harness 铁律：不要擅自部署）。
 
@@ -919,7 +922,7 @@ v0.3 起，**题库数据与用户数据分离**：题库在构建期固化为�
 9. **（v0.3 新增）能否接受「不做账号、数据只存本机 + 导出码」作为第一版？**
    → **已实现并通过验证（见 10.8）**；**v0.14 起改为要做账号**：本地优先仍是主路径，另加云端同步（见 10.12）
 10. **（v0.3 新增，v0.4 更新）手机实测结果如何？** 见 10.7 清单。用户已表态「自己用、不碰备案」，所以默认接受默认域名的中间页；实测只用于确认功能是否正常。
-11. **（v0.14 新增）后端什么时候部署？** 代码与测试已就绪，等用户点头（`node tools/backend.mjs deploy`）。部署后要补测：注册两个账号 → 进度互相看不见 → 换设备能拉回来。
+11. **（v0.14 新增）后端什么时候部署？** → **已于 2026-09-23 部署（T-033）**，`smoke` 全链路通过。仍待用户侧补测：注册两个账号 → 进度互相看不见 → 换设备能拉回来（单账号的读写链路由 `smoke` 覆盖）。
 
 ---
 
@@ -933,7 +936,8 @@ v0.3 起，**题库数据与用户数据分离**：题库在构建期固化为�
 
 | 变更 | 说明 |
 | --- | --- |
-| **技术选型（T-026）** | 存储用 **CloudBase PostgreSQL 模式**（体验版没有文档型数据库，实测确认）。前端**不直连数据库**，也不持有任何数据库凭据：浏览器 → HTTP 云函数 → PostgREST，云函数内部用 service_role 读写；`drill_accounts` / `drill_progress` 两张表**刻意不授权给 anon / authenticated**（已核实只有 service_role 与数据库内部角色有权限） |
+| **技术选型（T-026）** | 存储用 **CloudBase PostgreSQL 模式**（体验版没有文档型数据库，实测确认）。前端**不直连数据库**，也不持有任何数据库凭据：浏览器 → 云函数 → PostgREST，云函数内部用 service_role 读写；`drill_accounts` / `drill_progress` 两张表**刻意不授权给 anon / authenticated**（已核实只有 service_role 与数据库内部角色有权限） |
+| **部署与踩坑（T-033）** | 函数按 **Event** 部署（`cloudbaserc.json` 里 `type: HTTP` 指 Web 云函数，形态不对），再用 `fn deploy --path /api` 挂 HTTP 访问服务。**踩坑**：云函数自身的 CAM 签名在网关里只是 `anon`，被 revoke 的表一律 `permission denied`——症状是 `/health` 200 但 `/auth/register` 500 `DB_ERROR`。修法是 `init({ accessKey: DRILL_API_KEY })`（key 的 JWT 带 `role=service_role`），并把 `smoke` 从「只打 /health」升级为真实全链路 |
 | **后端骨架（T-026）** | `cloud/functions/api/`：`index.mjs` 适配三类事件形态（gateway / framework / direct）+ 后缀路由 + 结构化日志 + 入参校验 + `/health`；配套 `tools/backend.mjs`（secret/migrate/deploy/smoke/status）与 `schema.sql` |
 | **账号体系（T-027）** | 平台**不允许「用户名 + 密码」自助注册**（官方原文：`you can not signup just by username and password`），所以注册登录完全在应用内闭环：scrypt(N=16384) 存口令摘要，**自签 HMAC-SHA256 会话令牌**。接口 `/auth/register` `/auth/login` `/auth/me` `/auth/password`；`DRILL_ALLOW_REGISTER=off` 可一键关注册 |
 | **进度同步（T-028）** | `/progress` GET/PUT：整包进度按账号隔离；写入带 `baseRevision` 做乐观并发，对不上返 **409 并回带服务端最新值**，由前端合并后重投一次 |
@@ -944,7 +948,7 @@ v0.3 起，**题库数据与用户数据分离**：题库在构建期固化为�
 | **模型批阅 key 不上云** | 仍只存本机 `aq.agent.v1`，既不进同步整包，也不进进度导出码（这是刻意的：key 不该跟着数据到处跑） |
 | **门禁同步扩容** | `tools/check-layers.mjs` 纳入 `cloud/` 的单文件预算（≤250 行）；`tools/test-related.mjs` 纳入云函数测试（`node --test "cloud/functions/api/test/*.test.mjs"`）；新增 `hooks/` 层（rank 2.5，只允许被 pages 依赖） |
 | **测试与校验** | vitest **496 个用例**（17 文件）+ 云函数 **35 个**（`node --test`）+ 流水线 127 个全绿；`tsc --noEmit` 无错；`npm run build` 通过（bundle 433.04 kB / gzip 192.89 kB）；`check-layers` 通过 |
-| **仍未做** | ① **后端还没部署**（`backend.mjs deploy` 未执行），线上仍是纯静态旧版，账号与同步要部署后才可用；② 手机 4G 实测仍未做；③ 同步是整包覆盖 + 乐观并发，不是字段级 CRDT；④ 注册默认开放，自用建议注册完关掉 |
+| **仍未做** | ① **前端静态产物还没重新上传**（后端已上线，但线上页面仍是旧版）；② 手机 4G 实测仍未做；③ 同步是整包覆盖 + 乐观并发，不是字段级 CRDT；④ 注册默认开放，自用建议注册完关掉 |
 
 ### A.2 v0.12 → v0.13
 
@@ -999,7 +1003,7 @@ v0.3 起，**题库数据与用户数据分离**：题库在构建期固化为�
 | **题库合并修复** | `tools/gen-questions.mjs --merge` 取号会填补被删除的空号，旧实现只做追加会把文件内顺序打乱，违反「id 成块升序」不变量；现在合并后统一按 id 升序落盘，提示信息也从 `EXPECTED_IDS` 更正为 `EXPECTED_FILES` 计数 |
 | **题库不变量测试重写** | `all.test.ts` 不再逐条列出几百个 id（没人会看），改为锁定「每个文件的题量 + 各文件 id 成块升序」；字段完整性测试改为按题型分支：简答题校验「无选项 + 有参考答案与要点」，判断题校验「恰好 2 个选项」 |
 | **测试与校验** | vitest 全量 **420 个用例通过**（11 个文件，含新增 ebbinghaus 16 / mastery 9 / grading 9 / agent 13 / recommend 7）；`node tools/gen-questions.mjs --check` 通过（题库 315 题）；`tsc --noEmit` 无错 |
-| **尚未部署** | 线上仍是 v0.9 的 `dist`；本轮改动**还没重新部署**（见 0.7 第 1 步） |
+| **尚未部署** | 线上仍是 v0.9 的 `dist`；本轮前端改动**还没重新部署**（见 0.7 第 1 步）。后端部分已由 T-033 单独部署上线 |
 
 ### A.5 v0.9 → v0.10
 

@@ -6,6 +6,9 @@
 --    这样前端一次会话只需要一读一写，显著降低请求次数。
 -- 2. 这两张表刻意「不」授权给 anon / authenticated：只有云函数（service_role）
 --    能访问。客户端拿不到数据库凭据，也就不存在绕过隔离的可能。
+--    注意 service_role 不是「跑在云函数里」就自动有的：函数必须带 DRILL_API_KEY
+--    （网关按 API Key 的 role=service_role 授权）。不带就是 anon，读这两张表只会
+--    得到 permission denied for table。
 
 create table if not exists public.drill_accounts (
   uid           uuid primary key,

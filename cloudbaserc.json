@@ -6,8 +6,7 @@
     {
       "name": "api",
       "description": "ai_drill 后端：账号体系 + 进度同步（数据落 CloudBase PostgreSQL）",
-      "type": "HTTP",
-      "gatewayPath": "/api",
+      "type": "Event",
       "runtime": "Nodejs20.19",
       "handler": "index.main",
       "dir": "cloud/functions/api",

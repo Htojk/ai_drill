@@ -12,19 +12,19 @@
 
 ## 当前状态（2026-09-23）
 
-- 路线已定：**Web PWA**（Vite + React + TS）+ 腾讯云 CloudBase 静态托管；**v0.14 起另加最小后端**（CloudBase HTTP 云函数 + PostgreSQL），只做账号与进度同步，仍是 ¥0（体验版额度内）。
+- 路线已定：**Web PWA**（Vite + React + TS）+ 腾讯云 CloudBase 静态托管；**v0.14 起另加最小后端**（CloudBase 事件云函数 + HTTP 访问服务 + PostgreSQL），只做账号与进度同步，仍是 ¥0（体验版额度内）。
 - 已上线：<https://test-d2gk9bnf2dc862288-1304936445.tcloudbaseapp.com>
 - 功能闭环已完成：今日 10 题 / 分层解析 / 错题复习 / 分类专项 / 收藏 / 断点续答 / 统计与 streak / 加密码备份 / PWA（含 iOS 图标）。
-- **账号与云同步（v0.14）**：注册登录 + 自签会话令牌，进度与错题**按账号隔离**；本地优先（离线照常答题），联网后 4 秒防抖上传，冲突走乐观并发（409 合并重投）。⚠️ **代码与测试已就绪，但尚未部署**——线上目前仍没有登录与同步。
+- **账号与云同步（v0.14）**：注册登录 + 自签会话令牌，进度与错题**按账号隔离**；本地优先（离线照常答题），联网后 4 秒防抖上传，冲突走乐观并发（409 合并重投）。✅ **后端已于 2026-09-23 部署，`smoke` 全链路通过**（健康 → 注册/登录 → `/auth/me` → 进度读写）；⚠️ 但**前端静态产物还没重新上传**，线上页面仍是旧版。
 - **每日定时提醒（v0.14）**：导出 `.ics` 交给手机自带日历按天响铃（等于真闹钟），零后端、零推送；入口在「我的」页。
 - **题型已扩到判断 + 简答**：简答支持用户输入，批阅走「模型（用户在设置里自带 API key，只存本机）+ 本地要点覆盖率」双路，失败自动降级；**查看答案即判为未掌握**。
 - **复习节奏改为艾宾浩斯遗忘曲线**：间隔 1/2/4/7/15/30/60 天 × 熟练度倍率，按记忆保持率 `R = e^(-Δt/S)` 排序；每题可自评「已掌握 / 模糊 / 未掌握」。
-- 待办两件：① **部署后端**（需用户点头，`node tools/backend.mjs deploy`）；② **手机 4G 真实网络实测**（清单见产品说明 10.7）。
+- 待办两件：① **重新构建并上传前端**（需用户点头，`cd app && npm run build` 后 `tcb hosting deploy "app/dist" / -e <envId>`）；② **手机 4G 真实网络实测**（清单见产品说明 10.7）。
 - **题库已扩到 315 题**：RAG / Agent / 本体与知识图谱各 100 题（每类 20 单选 + 20 判断 + 60 简答），其余 5 个分类各 3 题；其中工程判断题（`isPractice`）99 道。
 - **线上已同步**（2026-09-22 复核）：CloudBase 静态托管 12 个文件与本地 `dist` 逐字节一致；顺带清掉了历史遗留的 5 个旧 JS/CSS 产物。
 - **题目获取流水线已跑通**（`tools/pipeline/`）：从 6 个权威开源项目（OpenAI Cookbook / DAIR.AI / 微软 / HuggingFace / OWASP / arXiv）抓素材 → 规范化 → 切块 → 出草稿，全程结构化日志与运行报告；与业务解耦，只有 `--merge` 才会进题库。
 - **面试笔记抽题已跑通**（`tools/extract-notes.mjs`）：解析 `wdndev/llm_interview_note` 的「标题即问题、正文即答案」结构，抽出 203 道简答草稿（已过题库契约校验，**尚未入库**——该仓库无 LICENSE，待确认使用口径，见 `AGENTS.md` 第 8 节）。
-- 质量基线：**496 个 vitest 用例**（17 个文件）+ **35 个云函数用例**（`node --test`）+ 127 个流水线用例；GitHub Actions CI（题库校验 + 分层 + 构建 + 全量测试）。
+- 质量基线：**496 个 vitest 用例**（17 个文件）+ **41 个云函数用例**（`node --test`）+ 127 个流水线用例；GitHub Actions CI（题库校验 + 分层 + 构建 + 全量测试）。
 
 ## 跑起来
 
@@ -39,9 +39,11 @@ npm run preview    # 本地预览构建产物
 后端（不参与 `npm run dev`；密钥只在本地生成，不入库）：
 
 ```bash
-node tools/backend.mjs secret     # 生成会话签名密钥
+node tools/backend.mjs secret     # 生成会话签名密钥 → .secrets/backend.env
+node tools/backend.mjs apikey     # 生成数据库 API Key（service_role）→ 同一文件
 node tools/backend.mjs migrate    # 建表（幂等）
 node tools/backend.mjs deploy     # 部署 api 函数（⚠️ 先问用户）
+node tools/backend.mjs smoke      # 真实 HTTP 全链路冒烟（会碰数据库）
 node tools/backend.mjs status     # 看函数与静态托管状态
 ```
 

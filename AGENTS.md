@@ -10,13 +10,14 @@ cd app && npm install          # 首次
 npm run dev                    # 本地开发
 ```
 
-前端之外的**后端**（HTTP 云函数 + PostgreSQL，v0.14 起）不参与 `npm run dev`：
+前端之外的**后端**（事件云函数 + HTTP 访问服务 + PostgreSQL，v0.14 起）不参与 `npm run dev`：
 
 ```bash
 node tools/backend.mjs secret     # 生成会话签名密钥（写 .secrets/backend.env，已 gitignore）
+node tools/backend.mjs apikey     # 生成数据库 API Key（service_role，同上）
 node tools/backend.mjs migrate    # 建表（幂等）
 node tools/backend.mjs deploy     # 生成 cloudbaserc.local.json 并部署 api 函数
-node tools/backend.mjs smoke      # 线上冒烟
+node tools/backend.mjs smoke      # 线上冒烟（真实 HTTP 全链路，会碰数据库）
 node tools/backend.mjs status     # 函数与静态托管状态
 ```
 
@@ -380,6 +381,20 @@ node tools/extract-notes.mjs --repo <owner/repo> --cache-only    # 只拉仓库�
 
 **背景**：v0.3 的「纯静态、不做账号」在 v0.14 被新需求推翻（进度要按账号隔离、要持久化）。后端是**最小引入**：只做账号与进度同步，不碰题库，也不替用户保管模型 key。完整背景见产品文档第 10.12 节。
 
+### 数据库权限：为什么要 API Key
+
+`schema.sql` 把两张表对 `anon` / `authenticated` **全部 revoke**，只留给 `service_role`。
+但 `service_role` 不会因为「代码跑在云函数里」就自动拿到：
+
+> 云函数调 `app.rdb()` 时用的是函数自身的 CAM 签名，网关把它判成 **`anon`**，
+> 于是每次读写都返回 `permission denied for table drill_accounts`（HTTP 401）。
+> 症状很有迷惑性：函数部署成功、`/health` 200，但 `/auth/register` 一律 500 `DB_ERROR`。
+
+所以函数**必须**带 API Key：`core/db.mjs` 在 `init()` 里传 `accessKey: DRILL_API_KEY`
+（该 key 的 JWT 里 `role=service_role`）。key 由 `node tools/backend.mjs apikey` 走
+`tcb env apikey create` 生成、落 `.secrets/backend.env`，部署时 `deploy` 自动注入环境变量。
+`assertConfig` 在缺 `DRILL_API_KEY` 时直接启动失败——宁可起不来，也不要静默降级成 anon。
+
 ### 三条不可越界的边界
 
 1. **前端不碰数据库**：浏览器只认云函数 base，请求走 `app/src/lib/api.ts`。数据库账号只存在于云函数环境变量里（`core/config.mjs` 读），**不要**把任何数据库凭据写进前端或仓库。
@@ -394,6 +409,7 @@ node tools/extract-notes.mjs --repo <owner/repo> --cache-only    # 只拉仓库�
 | 改口令 / 会话 | `src/core/password.mjs` / `src/core/token.mjs` | 口令是 scrypt(N=16384)；令牌是自签 HS256，**不是**平台登录态（平台不允许用户名+密码自助注册） |
 | 改表结构 | `schema.sql` → `node tools/backend.mjs migrate` | 迁移是幂等的；新表继续 `revoke all from anon, authenticated` |
 | 改 SQL 读写 | `src/repo/*.mjs` | repo 收「注入的客户端」，测试用 `test/helpers/fakes.mjs` 断言调用顺序，**不要**在 repo 里直连 |
+| 改数据库连接 / 权限 | `src/core/db.mjs` + `DRILL_API_KEY` | 不带 API Key 就退化成 anon（见上一节）；`appOptions()` 有单测兜底 |
 | 改同步策略 | `app/src/lib/merge.ts`（规则）+ `lib/sync.ts`（时机） | 合并规则要有用例；409 的语义是「带服务端最新值，让前端合并后重投一次」 |
 
 ### 收尾清单（改后端时）
@@ -404,6 +420,9 @@ node tools/check-layers.mjs                          # 云函数单文件 ≤250
 node tools/test-related.mjs                          # 若同时改了 app/src，会再挑前端相关用例
 ```
 
-**不要擅自 `deploy`**：部署会改动线上环境，必须先问用户；部署后跑 `smoke` 确认 `/health`。
+**不要擅自 `deploy`**：部署会改动线上环境，必须先问用户。部署后跑 `smoke`——它是一条
+**真实 HTTP 全链路**（健康 → 注册/登录 → `/auth/me` → 进度读写）。只打 `/health` 不碰
+数据库，而这正是上面那个 anon 坑能溜过去的空当。
 
 （v0.5 · 2026-09-23 更新：新增第 9 节后端与同步约定；第 1 节补 hooks 层与 cloud/ 目录；第 4 节补云函数测试命令）
+（v0.6 · 2026-09-23 更新：第 9 节补「为什么要 API Key」与全链路冒烟口径，踩坑记录见 T-033）
