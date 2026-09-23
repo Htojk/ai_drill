@@ -11,12 +11,11 @@ _（空）_
 ## 待办
 
 - [ ] T-024 把 llm_interview_note 抽取的 203 道简答草稿并入题库（待版权口径确认） · 新增 2026-09-22
-- [ ] T-034 前端重新构建并上传静态托管：账号/提醒入口上线（需用户点头） · 新增 2026-09-23
 
 ## 已完成（仅保留最近 5 条，更早的见 docs/plan-archive/）
 
+- [x] T-034 前端重新构建并上传静态托管：账号/提醒入口上线（需用户点头） · 完成 2026-09-23 · 证据: npm run build 通过（bundle 433.04 kB / gzip 192.89 kB）；tcb hosting deploy 后线上 12 个文件与本地 dist 逐字节一致（sha256）；上一版 index-BaGNxCyh.js / index-DaYnSyyH.css 已删（均 404）；bundle 内 API base 指向已部署的 /api
 - [x] T-033 后端部署：改事件函数 + HTTP 访问服务，并打通线上冒烟 · 完成 2026-09-23 · 证据: 线上 6 步全链路冒烟通过（健康→注册/登录→/auth/me→进度读写）；独立 E2E 11 项断言全过（两账号互相看不见、409 带服务端最新值、401/400）；云函数用例 41 个绿；check-layers 通过
 - [x] T-032 文档与 AGENTS 同步：账号/后端/提醒的决策反转记录 · 完成 2026-09-23 · 证据: 产品文档 v0.14（第 0/4/7/10-13 章 + 附录 A.1 决策反转记录）；AGENTS 补 hooks 层、cloud/ 目录地图、后端改动流程与四道门禁；README 同步 496+35 用例与未部署状态
 - [x] T-031 .ics 每日定时提醒（订阅式日历，手机闹钟响铃） · 完成 2026-09-23 · 证据: lib/reminder.ts 生成 ICS（VTIMEZONE/VALARM/RRULE，75 字节折行）+ ReminderCard 接入「我的」页；24 用例绿；npm run build 通过；提交 aa05842
 - [x] T-030 本地优先同步：localStorage 缓存 + 后台合并上传 · 完成 2026-09-23 · 证据: sync.ts/hooks/use-sync.ts 接入 App；42 用例绿；构建通过；提交 72c286b
-- [x] T-029 前端接入：api 客户端 + 会话存储 + 登录注册页 · 完成 2026-09-23 · 证据: 前端 23 个新用例通过（api 客户端 9 / session 4 / account 10）；tsc --noEmit 通过；npm run build 通过（bundle 424.31 kB，gzip 189.36 kB，未引入新依赖）；分层检查通过（34 个源文件）
