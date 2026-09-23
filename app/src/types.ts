@@ -142,3 +142,43 @@ export interface QuestionReport {
   reason: ReportReason;
   createdAt: number;
 }
+
+/* ---------------- 账号与同步（后端在 cloud/functions/api） ---------------- */
+
+/** 账号的公开字段，后端只会返回这些（口令哈希永不外传）。 */
+export interface ApiUser {
+  uid: string;
+  username: string;
+  createdAt?: string | null;
+}
+
+/**
+ * 同步到服务端的整包进度。
+ * 字段与 storage.ts 的本地 key 一一对应——合并逻辑按字段处理，
+ * 不需要理解题库，因此题库仍然可以只留在仓库的 JSON 里。
+ */
+export interface ProgressPayload {
+  records: AnswerRecord[];
+  reviews: Record<string, ReviewState>;
+  profile: Profile;
+  bookmarks: string[];
+  reports: QuestionReport[];
+  mastery: Record<string, MasteryState>;
+  /** 日期 → 当天任务，用于换设备后接着答 */
+  tasks: Record<string, DailyTask>;
+}
+
+export interface ServerProgress {
+  revision: number;
+  payload: ProgressPayload | null;
+  updatedAt: string | null;
+}
+
+/** 每日提醒设置：导出成 .ics 订阅，由手机自带日历负责响铃。 */
+export interface ReminderSettings {
+  enabled: boolean;
+  /** HH:mm（本地时间） */
+  time: string;
+  /** 提醒文案里提到的题量 */
+  dailySize?: number;
+}
