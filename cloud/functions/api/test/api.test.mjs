@@ -63,8 +63,48 @@ test("改密：旧密码不对 401，改完旧密码失效新密码可用", asyn
 
 test("未登录访问受保护接口返回 401", async () => {
   const { app } = makeApp();
+  assert.equal(parse(await call(app, "GET", "/progress")).status, 401);
   assert.equal(parse(await call(app, "GET", "/auth/me")).status, 401);
   assert.equal(parse(await call(app, "GET", "/auth/me", { token: "forged.token.value" })).status, 401);
+});
+
+test("进度：首次 PUT 建行，GET 能读回，两个账号互相看不见", async () => {
+  const { app } = makeApp();
+  const a = await register(app, "alice", "long-enough-pass");
+  const b = await register(app, "bob", "long-enough-pass");
+
+  assert.deepEqual(parse(await call(app, "GET", "/progress", { token: a.token })).json, { revision: 0, payload: null, updatedAt: null });
+
+  const saved = parse(await call(app, "PUT", "/progress", { token: a.token, body: { baseRevision: 0, payload: { records: [1, 2] } } }));
+  assert.equal(saved.status, 200);
+  assert.equal(saved.json.revision, 1);
+
+  const readA = parse(await call(app, "GET", "/progress", { token: a.token })).json;
+  assert.deepEqual(readA.payload, { records: [1, 2] });
+  assert.deepEqual(parse(await call(app, "GET", "/progress", { token: b.token })).json.payload, null);
+});
+
+test("进度：版本对不上返回 409 并带上服务端最新值", async () => {
+  const { app } = makeApp();
+  const { token } = await register(app);
+  await call(app, "PUT", "/progress", { token, body: { baseRevision: 0, payload: { v: 1 } } });
+
+  const conflict = parse(await call(app, "PUT", "/progress", { token, body: { baseRevision: 0, payload: { v: 2 } } }));
+  assert.equal(conflict.status, 409);
+  assert.equal(conflict.json.error, "CONFLICT");
+  assert.equal(conflict.json.server.revision, 1);
+  assert.deepEqual(conflict.json.server.payload, { v: 1 });
+
+  const ok = parse(await call(app, "PUT", "/progress", { token, body: { baseRevision: 1, payload: { v: 2 } } }));
+  assert.equal(ok.json.revision, 2);
+});
+
+test("进度：payload 缺失或 baseRevision 非法一律 400", async () => {
+  const { app } = makeApp();
+  const { token } = await register(app);
+  assert.equal(parse(await call(app, "PUT", "/progress", { token, body: { baseRevision: 0 } })).status, 400);
+  assert.equal(parse(await call(app, "PUT", "/progress", { token, body: { payload: {} } })).status, 400);
+  assert.equal(parse(await call(app, "PUT", "/progress", { token, body: { payload: {}, baseRevision: -1 } })).status, 400);
 });
 
 test("注册开关可以关掉（DRILL_ALLOW_REGISTER=off）", async () => {
