@@ -1,0 +1,14 @@
+{
+  "name": "ai-drill-api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "index.mjs",
+  "description": "ai_drill 后端云函数：账号体系 + 进度同步。单一 HTTP 入口，数据落在 CloudBase PostgreSQL。",
+  "dependencies": {
+    "@cloudbase/node-sdk": "^3.18.3"
+  },
+  "scripts": {
+    "test": "node --test test/"
+  }
+}
