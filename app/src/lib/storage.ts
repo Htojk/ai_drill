@@ -3,6 +3,7 @@ import type {
   DailyTask,
   MasteryState,
   Profile,
+  ProgressPayload,
   QuestionReport,
   ReviewState
 } from "../types";
@@ -120,27 +121,65 @@ export function saveMastery(mastery: Record<string, MasteryState>): void {
   write(K.mastery, mastery);
 }
 
-export interface ProgressBundle {
+/* ---------------- 整包读写（同步与导出码共用同一份形状） ---------------- */
+
+/** 扫出所有「按日期存放」的当天任务，同步时要用。 */
+export function loadTasks(): Record<string, DailyTask> {
+  const out: Record<string, DailyTask> = {};
+  try {
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const key = localStorage.key(i);
+      if (!key || !key.startsWith(K.taskPrefix)) continue;
+      const task = read<DailyTask | null>(key, null);
+      if (task && Array.isArray(task.questionIds)) out[key.slice(K.taskPrefix.length)] = task;
+    }
+  } catch {
+    /* 隐私模式下读不到，当作没有历史任务 */
+  }
+  return out;
+}
+
+/** 读出本机整包进度。同步、导出码、重置都走这里，避免几处各读一遍读岔。 */
+export function readAll(): ProgressPayload {
+  return {
+    records: loadRecords(),
+    reviews: loadReviews(),
+    profile: loadProfile(),
+    bookmarks: loadBookmarks(),
+    reports: loadReports(),
+    mastery: loadMastery(),
+    tasks: loadTasks()
+  };
+}
+
+/**
+ * 覆盖写整包进度。
+ * 只写「显式给了」的字段——老版本导出码缺失字段时不应该把本机数据抹掉。
+ */
+export function writeAll(payload: Partial<ProgressPayload>): void {
+  if (payload.records) write(K.records, payload.records);
+  if (payload.reviews) write(K.reviews, payload.reviews);
+  if (payload.profile && payload.profile.lastActiveDate !== undefined) write(K.profile, payload.profile);
+  if (payload.bookmarks) write(K.bookmarks, payload.bookmarks);
+  if (payload.reports) write(K.reports, payload.reports);
+  if (payload.mastery) write(K.mastery, payload.mastery);
+  if (payload.tasks) {
+    for (const [date, task] of Object.entries(payload.tasks)) {
+      if (task) write(K.taskPrefix + date, { ...task, date });
+    }
+  }
+}
+
+export interface ProgressBundle extends ProgressPayload {
   version: 1;
   exportedAt: number;
-  records: AnswerRecord[];
-  reviews: Record<string, ReviewState>;
-  profile: Profile;
-  bookmarks: string[];
-  reports: QuestionReport[];
-  mastery: Record<string, MasteryState>;
 }
 
 export function exportProgress(): string {
   const bundle: ProgressBundle = {
     version: 1,
     exportedAt: Date.now(),
-    records: loadRecords(),
-    reviews: loadReviews(),
-    profile: loadProfile(),
-    bookmarks: loadBookmarks(),
-    reports: loadReports(),
-    mastery: loadMastery()
+    ...readAll()
   };
   // 刻意不带 agent 配置：进度码会明文/加密导出，API key 不该跟着到处跑
   return btoa(unescape(encodeURIComponent(JSON.stringify(bundle))));
@@ -150,12 +189,7 @@ export function importProgress(code: string): { ok: boolean; message: string } {
   try {
     const parsed = JSON.parse(decodeURIComponent(escape(atob(code.trim())))) as ProgressBundle;
     if (parsed.version !== 1) return { ok: false, message: "进度码版本不匹配" };
-    write(K.records, parsed.records ?? []);
-    write(K.reviews, parsed.reviews ?? {});
-    write(K.profile, parsed.profile ?? {});
-    write(K.bookmarks, parsed.bookmarks ?? []);
-    write(K.reports, parsed.reports ?? []);
-    write(K.mastery, parsed.mastery ?? {});
+    writeAll(parsed);
     return { ok: true, message: `已导入 ${parsed.records?.length ?? 0} 条答题记录` };
   } catch {
     return { ok: false, message: "进度码格式不正确" };
