@@ -17,6 +17,9 @@ import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
 
 const APP = "app";
+/** 云函数测试：用 node --test 跑（不是 vitest），和 app/src 是两套运行器。 */
+const CLOUD_DIR = resolve("cloud/functions");
+const CLOUD_TEST_GLOB = "cloud/functions/api/test/*.test.mjs";
 // 统一用绝对路径：否则「改动文件」（来自 git，已 resolve）与「依赖图节点」
 // （来自 walk，原本是相对路径）无法比较，会漏选测试。
 const SRC = resolve(APP, "src");
@@ -61,6 +64,7 @@ const args = process.argv.slice(2);
 const useAll = args.includes("--all");
 
 let changed = [];
+let cloudChanged = [];
 if (useAll) {
   changed = all.slice();
 } else if (args.includes("--paths")) {
@@ -70,11 +74,22 @@ if (useAll) {
     .map((p) => resolve(p));
 } else {
   const out = execFileSync("git", ["diff", "--cached", "--name-only"], { encoding: "utf8" });
-  changed = out
-    .split("\n")
-    .filter(Boolean)
-    .map((p) => resolve(p))
-    .filter((p) => p.startsWith(resolve(SRC)) && SOURCE_RE.test(p));
+  const staged = out.split("\n").filter(Boolean).map((p) => resolve(p));
+  cloudChanged = staged.filter((p) => p.startsWith(CLOUD_DIR) && /\.mjs$/.test(p));
+  changed = staged.filter((p) => p.startsWith(resolve(SRC)) && SOURCE_RE.test(p));
+}
+
+/** 云函数改动：整目录一起跑（几十个用例，秒级），不做依赖图选择。 */
+let ranCloud = false;
+if (cloudChanged.length > 0) {
+  console.log(`• 改动 ${cloudChanged.length} 个云函数文件 → 跑 cloud/functions/api 测试`);
+  try {
+    execFileSync(process.execPath, ["--test", CLOUD_TEST_GLOB], { stdio: "inherit" });
+  } catch {
+    console.error("\n✗ 云函数测试未通过，先修好再提交。");
+    process.exit(1);
+  }
+  ranCloud = true;
 }
 
 const changedSet = new Set(changed);
@@ -92,7 +107,7 @@ for (const t of tests) {
 }
 
 if (changed.length === 0) {
-  console.log("• 本次没有改动 app/src 下的代码，跳过测试。");
+  if (!ranCloud) console.log("• 本次没有改动 app/src 或 cloud/ 下的代码，跳过测试。");
   process.exit(0);
 }
 

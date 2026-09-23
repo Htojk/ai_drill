@@ -27,3 +27,9 @@ content/reports/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# 后端/部署的机密与本地配置（会话密钥只在本地生成，绝不入库）
+.secrets/
+cloudbaserc.local.json
+cloud/functions/*/node_modules/
+app/.env.local

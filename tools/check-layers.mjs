@@ -10,7 +10,7 @@
  * 测试文件（*.test.ts）不受这两条约束——它们本来就要跨界。
  */
 
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative, dirname, sep } from "node:path";
 
 const SRC = "app/src";
@@ -47,6 +47,23 @@ const files = walk(SRC).filter((f) => /\.tsx?$/.test(f) && !isTest(f));
 const violations = [];
 const sizeWarn = [];
 const sizeFail = [];
+
+/**
+ * 云函数（cloud/）不是 app/src 的分层体系，但同样受「单文件预算」约束：
+ * 改一个小功能时，要读的文件必须是有限的。依赖方向在那边是
+ * index → routes → repo → core，靠目录约定而非脚本强制。
+ */
+const CLOUD_ROOT = "cloud/functions";
+const cloudFiles = existsSync(CLOUD_ROOT)
+  ? walk(CLOUD_ROOT).filter((f) => /\.mjs$/.test(f) && !/\.test\.mjs$/.test(f))
+  : [];
+
+for (const full of cloudFiles) {
+  const rel = relative(".", full).split(sep).join("/");
+  const lineCount = readFileSync(full, "utf8").split("\n").length;
+  if (lineCount > FAIL_LINES) sizeFail.push({ rel, lineCount });
+  else if (lineCount > WARN_LINES) sizeWarn.push({ rel, lineCount });
+}
 
 for (const full of files) {
   const rel = toRel(full);
@@ -99,7 +116,7 @@ if (violations.length) {
 }
 
 if (!failed) {
-  console.log(`✓ 分层检查通过（${files.length} 个源文件）`);
+  console.log(`✓ 分层检查通过（${files.length} 个源文件 + ${cloudFiles.length} 个云函数文件）`);
   if (sizeWarn.length) {
     console.log(`  提示：${sizeWarn.length} 个文件接近上限（> ${WARN_LINES} 行）：`);
     for (const f of sizeWarn.sort((a, b) => b.lineCount - a.lineCount).slice(0, 5)) {

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://static.cloudbase.net/cli/cloudbaserc.schema.json",
+  "envId": "test-d2gk9bnf2dc862288",
+  "functionRoot": "cloud/functions",
+  "functions": [
+    {
+      "name": "api",
+      "description": "ai_drill 后端：账号体系 + 进度同步（数据落 CloudBase PostgreSQL）",
+      "type": "HTTP",
+      "gatewayPath": "/api",
+      "runtime": "Nodejs20.19",
+      "handler": "index.main",
+      "dir": "cloud/functions/api",
+      "timeout": 15,
+      "memorySize": 256,
+      "installDependency": true,
+      "envVariables": {
+        "DRILL_ENV": "test-d2gk9bnf2dc862288"
+      }
+    }
+  ]
+}
